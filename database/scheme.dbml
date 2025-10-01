@@ -1,0 +1,127 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+Table services {
+  id bigserial [primary key]
+  name varchar(64) [not null, unique]
+  callback_url varchar(255) [default: null]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table domains {
+  id bigserial [primary key]
+  value varchar(255) [not null, unique]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table links {
+  id bigserial [primary key]
+  service_id bigint [not null]
+  domain_id bigint [not null]
+  code varchar(8) [not null]
+  title varchar(64) [default: null]
+  forward_query boolean [not null, default: false]
+  callback_data jsonb [default: null]
+  created_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz [default: null]
+
+  Indexes {
+    (domain_id, code) [unique]
+  }
+
+  // CHECK (code ~ '^[A-Za-z0-9_-]{1,8}$')
+}
+
+Ref: services.id < links.service_id [delete: restrict]
+Ref: domains.id < links.domain_id [delete: restrict]
+
+Table urls {
+  id bigserial [primary key]
+  value varchar(2048) [not null, unique]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table conditions {
+  id bigserial [primary key]
+  type varchar(32) [not null]
+  value jsonb [not null]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table link_url {
+  id bigserial [primary key]
+  link_id bigint [not null]
+  url_id bigint [not null]
+  condition_id bigint [default: null]
+  priority integer [not null, default: 0]
+
+  Indexes {
+    (link_id, priority) [unique]
+  }
+}
+
+Ref: links.id < link_url.link_id [delete: CASCADE]
+Ref: urls.id < link_url.url_id [delete: restrict]
+Ref: conditions.id < link_url.condition_id [delete: restrict]
+
+Table referrers {
+  id bigserial [primary key]
+  value varchar(2048) [not null, unique]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table user_agents {
+  id bigserial [primary key]
+  value text [not null, unique]
+}
+
+Table ip_addresses {
+  id bigserial [primary key]
+  value inet [not null, unique]
+}
+
+Table clicks {
+  id bigserial [primary key]
+  service_id bigint [not null]
+  link_id bigint [not null]
+  url_id bigint [not null]
+  referrer_id bigint [not null]
+  user_agent_id bigint [not null]
+  ip_address_id bigint [not null]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Ref: services.id < clicks.service_id [delete: restrict]
+Ref: links.id < clicks.link_id [delete: restrict]
+Ref: urls.id < clicks.url_id [delete: restrict]
+Ref: referrers.id < clicks.referrer_id [delete: restrict]
+Ref: user_agents.id < clicks.user_agent_id [delete: restrict]
+Ref: ip_addresses.id < clicks.ip_address_id [delete: restrict]
+
+Enum callback_status {
+  pending
+  queued
+  processing
+  success
+  failed
+  discarded
+}
+
+Table callbacks {
+  id bigserial [primary key]
+  service_id bigint [not null]
+  click_id bigint [not null]
+  data jsonb [not null]
+  response_code int
+  response_body text
+  status callback_status [not null, default: 'pending']
+  attempts int [not null, default: 0]
+  last_attempt_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (status)
+  }
+}
+
+Ref: services.id < callbacks.service_id [delete: cascade]
+Ref: clicks.id < callbacks.click_id [delete: cascade]
