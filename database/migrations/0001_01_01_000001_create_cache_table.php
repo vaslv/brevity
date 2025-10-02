@@ -7,6 +7,15 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('cache');
+        Schema::dropIfExists('cache_locks');
+    }
+
+    /**
      * Run the migrations.
      */
     public function up(): void
@@ -22,14 +31,5 @@ return new class extends Migration
             $table->string('owner');
             $table->integer('expiration');
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('cache');
-        Schema::dropIfExists('cache_locks');
     }
 };
