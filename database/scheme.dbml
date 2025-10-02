@@ -17,7 +17,7 @@ Table links {
   id bigserial [primary key]
   service_id bigint [not null]
   domain_id bigint [not null]
-  code varchar(8) [not null]
+  code varchar(8) [default: null]
   title varchar(64) [default: null]
   forward_query boolean [not null, default: false]
   callback_data jsonb [default: null]
@@ -47,21 +47,22 @@ Table conditions {
   created_at timestamptz [not null, default: `now()`]
 }
 
-Table link_url {
+Table link_rules {
   id bigserial [primary key]
   link_id bigint [not null]
-  url_id bigint [not null]
   condition_id bigint [default: null]
+  url_id bigint [not null]
   priority integer [not null, default: 0]
+  created_at timestamptz [not null, default: `now()`]
 
   Indexes {
     (link_id, priority) [unique]
   }
 }
 
-Ref: links.id < link_url.link_id [delete: CASCADE]
-Ref: urls.id < link_url.url_id [delete: restrict]
-Ref: conditions.id < link_url.condition_id [delete: restrict]
+Ref: links.id < link_rules.link_id [delete: CASCADE]
+Ref: urls.id < link_rules.url_id [delete: restrict]
+Ref: conditions.id < link_rules.condition_id [delete: restrict]
 
 Table referrers {
   id bigserial [primary key]
@@ -72,11 +73,13 @@ Table referrers {
 Table user_agents {
   id bigserial [primary key]
   value text [not null, unique]
+  created_at timestamptz [not null, default: `now()`]
 }
 
 Table ip_addresses {
   id bigserial [primary key]
   value inet [not null, unique]
+  created_at timestamptz [not null, default: `now()`]
 }
 
 Table clicks {
