@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Relations\BelongsToClick;
 use App\Models\Relations\BelongsToLink;
 use App\Models\Relations\BelongsToService;
 use Illuminate\Database\Eloquent\Model;
 
 class Callback extends Model
 {
+    use BelongsToClick;
     use BelongsToLink;
     use BelongsToService;
 
