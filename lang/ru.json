@@ -1,0 +1,9 @@
+{
+    "Create API Token": "Создать API токен",
+    "Create a new API token?": "Создать новый API токен?",
+    "The token will be shown once. Store it securely.": "Токен будет показан один раз. Сохраните его в безопасном месте.",
+    "Create": "Создать",
+    "API token created": "Токен создан",
+    "Token: :token": "Токен: :token",
+    "Hint: copy and store the token — it will not be shown again.": "Подсказка: скопируйте и сохраните токен — он больше не будет показан."
+}
