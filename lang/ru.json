@@ -5,5 +5,13 @@
     "Create": "Создать",
     "API token created": "Токен создан",
     "Token: :token": "Токен: :token",
-    "Hint: copy and store the token — it will not be shown again.": "Подсказка: скопируйте и сохраните токен — он больше не будет показан."
+    "Hint: copy and store the token — it will not be shown again.": "Подсказка: скопируйте и сохраните токен — он больше не будет показан.",
+    "Name": "Название",
+    "Abilities": "Права",
+    "Last used at": "Последнее использование",
+    "Created at": "Создан",
+    "Revoke": "Отозвать",
+    "Revoke token?": "Отозвать токен?",
+    "This will delete the token and cannot be undone.": "Это удалит токен и действие нельзя отменить.",
+    "Revoke selected": "Отозвать выбранные"
 }

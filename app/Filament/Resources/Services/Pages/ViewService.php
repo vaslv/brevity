@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Services\Pages;
 
 use App\Filament\Resources\Services\ServiceResource;
+use App\Models\Service;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
@@ -25,6 +26,7 @@ class ViewService extends ViewRecord
                 ->modalDescription(__('The token will be shown once. Store it securely.'))
                 ->modalSubmitActionLabel(__('Create'))
                 ->action(function () {
+                    /** @var Service $service */
                     $service = $this->getRecord();
                     $plainTextToken = $service->createToken('service-token')->plainTextToken;
 
