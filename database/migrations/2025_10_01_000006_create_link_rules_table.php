@@ -8,12 +8,12 @@ return new class extends Migration
 {
     public function down(): void
     {
-        Schema::dropIfExists('link_url');
+        Schema::dropIfExists('link_rules');
     }
 
     public function up(): void
     {
-        Schema::create('link_url', function (Blueprint $table) {
+        Schema::create('link_rules', function (Blueprint $table) {
             $table->id();
             $table->foreignId('link_id')->constrained('links')->cascadeOnDelete();
             $table->foreignId('condition_id')->nullable()->constrained('conditions')->restrictOnDelete();
