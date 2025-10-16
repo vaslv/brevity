@@ -12,10 +12,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class UserAgentResource extends Resource
 {
     protected static ?string $model = UserAgent::class;
+
+    protected static string|null|UnitEnum $navigationGroup = 'Dictionaries';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
