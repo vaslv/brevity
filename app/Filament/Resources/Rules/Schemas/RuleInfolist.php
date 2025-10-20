@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Filament\Resources\LinkRules\Schemas;
+namespace App\Filament\Resources\Rules\Schemas;
 
 use Filament\Schemas\Schema;
 
-class LinkRuleInfolist
+class RuleInfolist
 {
     public static function configure(Schema $schema): Schema
     {

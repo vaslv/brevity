@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\LinkRules\Pages;
+namespace App\Filament\Resources\Rules\Pages;
 
-use App\Filament\Resources\LinkRules\LinkRuleResource;
+use App\Filament\Resources\Rules\RuleResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
-class ListLinkRules extends ListRecords
+class ListRules extends ListRecords
 {
-    protected static string $resource = LinkRuleResource::class;
+    protected static string $resource = RuleResource::class;
 
     protected function getHeaderActions(): array
     {

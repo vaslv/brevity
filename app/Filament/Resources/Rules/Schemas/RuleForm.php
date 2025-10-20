@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Filament\Resources\LinkRules\Schemas;
+namespace App\Filament\Resources\Rules\Schemas;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
-class LinkRuleForm
+class RuleForm
 {
     public static function configure(Schema $schema): Schema
     {

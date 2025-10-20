@@ -47,7 +47,7 @@ Table conditions {
   created_at timestamptz [not null, default: `now()`]
 }
 
-Table link_rules {
+Table rules {
   id bigserial [primary key]
   link_id bigint [not null]
   condition_id bigint [default: null]

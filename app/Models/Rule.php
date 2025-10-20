@@ -7,7 +7,7 @@ use App\Models\Relations\BelongsToLink;
 use App\Models\Relations\BelongsToUrl;
 use Illuminate\Database\Eloquent\Model;
 
-class LinkRule extends Model
+class Rule extends Model
 {
     use BelongsToCondition;
     use BelongsToLink;

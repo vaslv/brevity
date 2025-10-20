@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Models\Relations\BelongsToDomain;
 use App\Models\Relations\BelongsToService;
 use App\Models\Relations\HasManyClicks;
-use App\Models\Relations\HasManyLinkUrls;
+use App\Models\Relations\HasManyRules;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -14,7 +14,7 @@ class Link extends Model
     use BelongsToDomain;
     use BelongsToService;
     use HasManyClicks;
-    use HasManyLinkUrls;
+    use HasManyRules;
     use SoftDeletes;
 
     public const UPDATED_AT = null;
