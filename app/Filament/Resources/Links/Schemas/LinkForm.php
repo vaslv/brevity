@@ -22,18 +22,19 @@ class LinkForm
                 Select::make('domain_id')
                     ->relationship('domain', 'value')
                     ->searchable()
-                    ->preload()
-                    ->required(),
-                TextInput::make('code'),
-                TextInput::make('title'),
+                    ->preload(),
+                TextInput::make('title')
+                    ->columnSpan(2),
                 Toggle::make('forward_query')
-                    ->required(),
+                    ->required()
+                    ->columnSpan(2),
                 KeyValue::make('callback_data')
                     ->reorderable()
                     ->keyLabel('Key')
                     ->valueLabel('Value')
                     ->addActionLabel('Add')
-                    ->nullable(),
+                    ->nullable()
+                    ->columnSpan(2),
             ]);
     }
 }

@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('conditions', function (Blueprint $table) {
             $table->id();
             $table->string('type', 32);
-            $table->jsonb('value');
+            $table->jsonb('data');
             $table->timestampTz('created_at')->useCurrent();
         });
     }

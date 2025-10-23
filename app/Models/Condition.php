@@ -12,11 +12,11 @@ class Condition extends Model
     public const UPDATED_AT = null;
 
     protected $casts = [
-        'value' => 'array',
+        'data' => 'array',
     ];
 
     protected $fillable = [
         'type',
-        'value',
+        'data',
     ];
 }

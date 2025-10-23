@@ -43,7 +43,7 @@ Table urls {
 Table conditions {
   id bigserial [primary key]
   type varchar(32) [not null]
-  value jsonb [not null]
+  data jsonb [not null]
   created_at timestamptz [not null, default: `now()`]
 }
 
@@ -60,9 +60,9 @@ Table rules {
   }
 }
 
-Ref: links.id < link_rules.link_id [delete: CASCADE]
-Ref: urls.id < link_rules.url_id [delete: restrict]
-Ref: conditions.id < link_rules.condition_id [delete: restrict]
+Ref: links.id < rules.link_id [delete: CASCADE]
+Ref: urls.id < rules.url_id [delete: restrict]
+Ref: conditions.id < rules.condition_id [delete: restrict]
 
 Table referrers {
   id bigserial [primary key]

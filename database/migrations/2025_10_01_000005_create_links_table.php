@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('links', function (Blueprint $table) {
             $table->id();
             $table->foreignId('service_id')->constrained('services')->restrictOnDelete();
-            $table->foreignId('domain_id')->constrained('domains')->restrictOnDelete();
+            $table->foreignId('domain_id')->nullable()->constrained('domains')->restrictOnDelete();
             $table->string('code', 8)->nullable();
             $table->string('title', 64)->nullable();
             $table->boolean('forward_query')->default(false);
