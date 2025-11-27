@@ -7,6 +7,37 @@ use App\Models\Relations\BelongsToLink;
 use App\Models\Relations\BelongsToService;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $service_id
+ * @property int $click_id
+ * @property array<array-key, mixed> $data
+ * @property int|null $response_code
+ * @property string|null $response_body
+ * @property string $status
+ * @property int $attempts
+ * @property \Illuminate\Support\Carbon|null $last_attempt_at
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property-read \App\Models\Click $click
+ * @property-read \App\Models\Link|null $link
+ * @property-read \App\Models\Service $service
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback whereAttempts($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback whereClickId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback whereData($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback whereLastAttemptAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback whereResponseBody($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback whereResponseCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback whereServiceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback whereStatus($value)
+ *
+ * @mixin \Eloquent
+ */
 class Callback extends Model
 {
     use BelongsToClick;

@@ -11,6 +11,38 @@ use App\Models\Relations\BelongsToUserAgent;
 use App\Models\Relations\HasManyCallbacks;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $service_id
+ * @property int $link_id
+ * @property int $url_id
+ * @property int $referrer_id
+ * @property int $user_agent_id
+ * @property int $ip_address_id
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Callback> $callbacks
+ * @property-read int|null $callbacks_count
+ * @property-read \App\Models\IpAddress $ipAddress
+ * @property-read \App\Models\Link $link
+ * @property-read \App\Models\Referrer $referrer
+ * @property-read \App\Models\Service $service
+ * @property-read \App\Models\Url $url
+ * @property-read \App\Models\UserAgent $userAgent
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Click newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Click newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Click query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Click whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Click whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Click whereIpAddressId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Click whereLinkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Click whereReferrerId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Click whereServiceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Click whereUrlId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Click whereUserAgentId($value)
+ *
+ * @mixin \Eloquent
+ */
 class Click extends Model
 {
     use BelongsToIpAddress;
