@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Domain::create([
-            'value' => 'example.com'
+            'value' => 'example.com',
         ]);
     }
 }

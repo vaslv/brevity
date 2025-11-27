@@ -5,4 +5,3 @@ return [
     // Supported: 'hashid' (default)
     'code_strategy' => env('LINK_CODE_STRATEGY', 'hashid'),
 ];
-

@@ -7,8 +7,8 @@ use App\Models\Service;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Str;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Str;
 
 class ViewService extends ViewRecord
 {

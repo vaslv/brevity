@@ -19,7 +19,7 @@ class TokensRelationManager extends RelationManager
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('abilities')
-                    ->formatStateUsing(fn($state) => is_array($state) ? implode(', ', $state) : (string) $state)
+                    ->formatStateUsing(fn ($state) => is_array($state) ? implode(', ', $state) : (string) $state)
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('last_used_at')
                     ->dateTime()

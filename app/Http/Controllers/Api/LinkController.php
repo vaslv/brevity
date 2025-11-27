@@ -44,7 +44,7 @@ class LinkController extends Controller
 
                 $conditionId = null;
 
-                if (!empty($rule['condition'])) {
+                if (! empty($rule['condition'])) {
                     $condition = Condition::firstOrCreate([
                         'type' => $rule['condition']['type'],
                         'data' => $rule['condition']['data'],

@@ -9,6 +9,11 @@ use Illuminate\Support\ServiceProvider;
 
 class CodeStrategyServiceProvider extends ServiceProvider implements DeferrableProvider
 {
+    public function provides(): array
+    {
+        return [CodeGenerator::class];
+    }
+
     public function register(): void
     {
         $this->app->singleton(CodeGenerator::class, function ($app) {
@@ -21,10 +26,4 @@ class CodeStrategyServiceProvider extends ServiceProvider implements DeferrableP
             };
         });
     }
-
-    public function provides(): array
-    {
-        return [CodeGenerator::class];
-    }
 }
-

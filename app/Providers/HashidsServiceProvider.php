@@ -8,6 +8,14 @@ use Illuminate\Support\ServiceProvider;
 class HashidsServiceProvider extends ServiceProvider
 {
     /**
+     * Bootstrap services.
+     */
+    public function boot(): void
+    {
+        //
+    }
+
+    /**
      * Register services.
      */
     public function register(): void
@@ -21,13 +29,5 @@ class HashidsServiceProvider extends ServiceProvider
                 $config['alphabet']
             );
         });
-    }
-
-    /**
-     * Bootstrap services.
-     */
-    public function boot(): void
-    {
-        //
     }
 }

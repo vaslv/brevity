@@ -11,4 +11,3 @@ interface CodeGenerator
      */
     public function generate(Link $link): string;
 }
-
