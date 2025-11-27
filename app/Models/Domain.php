@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Relations\HasManyLinks;
 use Illuminate\Database\Eloquent\Model;
+use League\Uri\Uri;
 
 class Domain extends Model
 {
@@ -14,4 +15,16 @@ class Domain extends Model
     protected $fillable = [
         'value',
     ];
+
+    protected $appends = [
+        'url'
+    ];
+
+    public function getUrlAttribute(): string
+    {
+        return Uri::new()
+            ->withHost($this->value)
+            ->withScheme('https')
+            ->toString();
+    }
 }
