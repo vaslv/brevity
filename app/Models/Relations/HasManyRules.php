@@ -9,6 +9,8 @@ trait HasManyRules
 {
     public function rules(): HasMany
     {
-        return $this->hasMany(Rule::class);
+        return $this->hasMany(Rule::class)
+            ->orderBy('priority')
+            ->orderBy('id');
     }
 }
