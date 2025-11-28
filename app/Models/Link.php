@@ -6,7 +6,7 @@ use App\Models\Relations\BelongsToDomain;
 use App\Models\Relations\BelongsToService;
 use App\Models\Relations\HasManyClicks;
 use App\Models\Relations\HasManyRules;
-use App\Services\CodeStrategy\CodeGenerator;
+use App\Services\Links\CodeStrategy\CodeGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use League\Uri\Uri;

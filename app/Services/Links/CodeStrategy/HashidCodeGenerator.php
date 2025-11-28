@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\CodeStrategy;
+namespace App\Services\Links\CodeStrategy;
 
 use App\Models\Link;
 use Hashids\Hashids;

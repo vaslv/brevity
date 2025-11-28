@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Services\CodeStrategy\CodeGenerator;
-use App\Services\CodeStrategy\HashidCodeGenerator;
+use App\Services\Links\CodeStrategy\CodeGenerator;
+use App\Services\Links\CodeStrategy\HashidCodeGenerator;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 
