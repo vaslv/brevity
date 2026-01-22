@@ -24,15 +24,15 @@ class StoreLinkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'domain' => ['sometimes', 'string', 'max:255', 'exists:domains,value'],
-            'title' => ['sometimes', 'string', 'max:255'],
-            'forward_query' => ['sometimes', 'boolean'],
-            'callback_data' => ['sometimes', 'array'],
+            'domain' => ['nullable', 'string', 'max:255', 'exists:domains,value'],
+            'title' => ['nullable', 'string', 'max:255'],
+            'forward_query' => ['nullable', 'boolean'],
+            'callback_data' => ['nullable', 'array'],
             'rules' => ['required', 'array', 'min:1'],
             'rules.*.url' => ['required', 'url', 'max:2048'],
-            'rules.*.condition' => ['sometimes', 'array'],
+            'rules.*.condition' => ['nullable', 'array'],
             'rules.*.condition.type' => ['required_with:rules.*.condition', 'string', 'max:32'],
-            'rules.*.condition.data' => ['sometimes', 'array'],
+            'rules.*.condition.data' => ['nullable', 'array'],
         ];
     }
 }

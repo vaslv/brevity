@@ -25,7 +25,7 @@ class LinkController extends Controller
         $data['service_id'] = $request->user()->id;
         $data['domain_id'] = null;
 
-        if ($request->safe()->has('domain')) {
+        if ($request->safe()->input('domain')) {
             $domain = Domain::where('value', $request->safe()->string('domain'))->first();
             $data['domain_id'] = $domain->id;
         }
@@ -36,9 +36,10 @@ class LinkController extends Controller
             $link = Link::create($data);
 
             foreach ($rules as $i => $rule) {
-                $url = Modifier::from($rule['url'])
+                $url = Modifier::wrap($rule['url'])
+                    ->normalize()
                     ->sortQuery()
-                    ->getUriString();
+                    ->toString();
 
                 $url = Url::firstOrCreate(['value' => $url]);
 
