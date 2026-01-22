@@ -8,10 +8,10 @@ use App\Models\Url;
 use App\Services\Links\Conditions\ConditionContext;
 use App\Services\Links\Conditions\ConditionRegistry;
 
-class LinkUrlResolver
+readonly class LinkUrlResolver
 {
     public function __construct(
-        private readonly ConditionRegistry $registry
+        private ConditionRegistry $registry
     ) {}
 
     public function resolve(Link $link, ConditionContext $context): ?Url

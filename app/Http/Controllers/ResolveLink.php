@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Link;
+use App\Services\Links\Conditions\ConditionContext;
+use App\Services\Links\LinkUrlResolver;
 use Illuminate\Http\Request;
 
 class ResolveLink extends Controller
@@ -10,7 +12,7 @@ class ResolveLink extends Controller
     /**
      * Handle the incoming request.
      */
-    public function __invoke(string $code, Request $request)
+    public function __invoke(string $code, Request $request, LinkUrlResolver $resolver)
     {
         $link = Link::findByCode($code);
 
@@ -23,8 +25,14 @@ class ResolveLink extends Controller
             abort(404);
         }
 
-        dd(
-            $link->rules
-        );
+        $context = new ConditionContext($link, $request, now()->toImmutable());
+
+        $url = $resolver->resolve($link, $context);
+
+        if (! $url) {
+            abort(404);
+        }
+
+        return redirect()->away($url->value);
     }
 }
