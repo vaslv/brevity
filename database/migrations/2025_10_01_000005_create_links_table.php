@@ -17,14 +17,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('service_id')->constrained('services')->restrictOnDelete();
             $table->foreignId('domain_id')->nullable()->constrained('domains')->restrictOnDelete();
-            $table->string('code', 8)->nullable();
+            $table->string('code', 8)->nullable()->unique();
             $table->string('title', 64)->nullable();
             $table->boolean('forward_query')->default(false);
             $table->jsonb('callback_data')->nullable();
             $table->timestampTz('created_at')->useCurrent();
             $table->softDeletesTz();
-
-            $table->unique(['domain_id', 'code']);
         });
     }
 };
