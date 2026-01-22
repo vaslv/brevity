@@ -72,6 +72,11 @@ class Link extends Model
         'callback_data',
     ];
 
+    public static function findByCode(string $code): ?Link
+    {
+        return static::where('code', $code)->first();
+    }
+
     public function getUrlAttribute(): string
     {
         $base = $this->domain?->url ?? config('app.url');
