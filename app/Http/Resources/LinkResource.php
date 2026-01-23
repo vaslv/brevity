@@ -25,7 +25,7 @@ class LinkResource extends JsonResource
             'title' => $this->resource->title,
             'forward_query' => $this->resource->forward_query,
             'callback_data' => $this->resource->callback_data,
-            'rules' => RuleResource::collection($this->rules),
+            'rules' => RuleResource::collection($this->resource->rules),
         ];
     }
 }

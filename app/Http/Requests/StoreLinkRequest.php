@@ -3,8 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Models\Service;
+use App\Services\Links\Conditions\ConditionRegistry;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreLinkRequest extends FormRequest
 {
@@ -31,8 +33,13 @@ class StoreLinkRequest extends FormRequest
             'rules' => ['required', 'array', 'min:1'],
             'rules.*.url' => ['required', 'url', 'max:2048'],
             'rules.*.condition' => ['nullable', 'array'],
-            'rules.*.condition.type' => ['required_with:rules.*.condition', 'string', 'max:32'],
-            'rules.*.condition.data' => ['nullable', 'array'],
+            'rules.*.condition.type' => [
+                'required_with:rules.*.condition',
+                'string',
+                'max:32',
+                Rule::in(app(ConditionRegistry::class)->types()),
+            ],
+            'rules.*.condition.data' => ['nullable', 'array'], // TODO: validation data by type
         ];
     }
 }

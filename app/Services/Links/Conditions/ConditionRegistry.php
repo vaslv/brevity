@@ -32,6 +32,14 @@ class ConditionRegistry
         return $this->getHandler($condition->type);
     }
 
+    public function types(): array
+    {
+        $types = array_keys($this->handlers);
+        sort($types);
+
+        return $types;
+    }
+
     public function validate(string $type, array $data): array
     {
         $handler = $this->getHandler($type);

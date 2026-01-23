@@ -5,10 +5,10 @@ namespace App\Services\Links\Conditions;
 use App\Models\Condition;
 use InvalidArgumentException;
 
-class ConditionFactory
+readonly class ConditionFactory
 {
     public function __construct(
-        private readonly ConditionRegistry $registry,
+        private ConditionRegistry $registry,
     ) {}
 
     public function create(array $payload): Condition

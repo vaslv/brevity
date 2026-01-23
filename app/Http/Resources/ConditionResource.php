@@ -2,14 +2,14 @@
 
 namespace App\Http\Resources;
 
-use App\Models\Rule;
+use App\Models\Condition;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @property Rule $resource
+ * @property Condition $resource
  */
-class RuleResource extends JsonResource
+class ConditionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -19,8 +19,8 @@ class RuleResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'url' => $this->resource->url->value,
-            'condition' => ConditionResource::make($this->resource->condition),
+            'type' => $this->resource->type,
+            'data' => $this->resource->data,
         ];
     }
 }

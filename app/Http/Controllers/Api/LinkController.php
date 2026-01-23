@@ -30,13 +30,13 @@ class LinkController extends Controller
             $data['domain_id'] = $domain->id;
         }
 
-        $rules = $request->safe()->array('rules');
+        $rulesData = $request->safe()->array('rules');
 
-        return DB::transaction(function () use ($data, $rules) {
+        return DB::transaction(function () use ($data, $rulesData) {
             $link = Link::create($data);
 
-            foreach ($rules as $i => $rule) {
-                $url = Modifier::wrap($rule['url'])
+            foreach ($rulesData as $i => $ruleData) {
+                $url = Modifier::wrap($ruleData['url'])
                     ->normalize()
                     ->sortQuery()
                     ->toString();
@@ -45,11 +45,17 @@ class LinkController extends Controller
 
                 $conditionId = null;
 
-                if (! empty($rule['condition'])) {
-                    $condition = Condition::firstOrCreate([
-                        'type' => $rule['condition']['type'],
-                        'data' => $rule['condition']['data'],
-                    ]);
+                if (! empty($ruleData['condition'])) {
+                    $conditionData = $ruleData['condition'];
+
+                    $json = json_encode($conditionData['data'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                    $condition = Condition::query()
+                        ->where('type', $conditionData['type'])
+                        ->whereRaw('"data"::jsonb = ?::jsonb', [$json])
+                        ->first();
+
+                    $condition ??= Condition::create($conditionData);
 
                     $conditionId = $condition->id;
                 }
@@ -61,7 +67,7 @@ class LinkController extends Controller
                 ]);
             }
 
-            $link->load('rules');
+            $link->load('rules.condition');
 
             return LinkResource::make($link)
                 ->response()
