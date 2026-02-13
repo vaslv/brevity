@@ -41,7 +41,6 @@ deploy:
       docker exec laravel-scheduler php artisan event:cache &&
       docker exec laravel-scheduler php artisan route:cache &&
       docker exec laravel-scheduler php artisan view:cache &&
-      docker exec laravel-scheduler php artisan dictionary:sync &&
       docker exec laravel-scheduler php artisan schedule:clear-cache
       "
   only:
