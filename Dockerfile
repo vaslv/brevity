@@ -17,6 +17,7 @@ RUN apt update \
 RUN mkdir -p /root/.ssh && ssh-keyscan git.example.com >> /root/.ssh/known_hosts
 
 RUN install-php-extensions \
+    intl \
     pcntl \
     pdo_pgsql \
     redis \
