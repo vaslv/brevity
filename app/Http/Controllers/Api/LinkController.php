@@ -46,16 +46,20 @@ class LinkController extends Controller
                 $conditionId = null;
 
                 if (! empty($ruleData['condition'])) {
-                    $conditionData = $ruleData['condition'];
-
-                    $json = json_encode($conditionData['data'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    $conditionType = $ruleData['condition']['type'];
+                    $conditionData = $ruleData['condition']['data'] ?? [];
 
                     $condition = Condition::query()
-                        ->where('type', $conditionData['type'])
-                        ->whereRaw('"data"::jsonb = ?::jsonb', [$json])
+                        ->where('type', $conditionType)
+                        ->whereRaw('"data"::jsonb = ?::jsonb', [
+                            json_encode($conditionData),
+                        ])
                         ->first();
 
-                    $condition ??= Condition::create($conditionData);
+                    $condition ??= Condition::create([
+                        'type' => $conditionType,
+                        'data' => $conditionData,
+                    ]);
 
                     $conditionId = $condition->id;
                 }
