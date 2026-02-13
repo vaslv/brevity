@@ -1,0 +1,96 @@
+x-laravel: &laravel
+  image: "${LARAVEL_IMAGE}"
+  restart: always
+  volumes:
+    - ./.env:/app/.env
+  depends_on:
+    - redis
+  networks:
+    - proxy
+
+services:
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy:alpine
+    container_name: nginx-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - nginx_html:/usr/share/nginx/html
+      - nginx_certs:/etc/nginx/certs:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    labels:
+      com.github.nginx-proxy.nginx: "true"
+    networks:
+      - proxy
+
+  acme-companion:
+    image: nginxproxy/acme-companion
+    container_name: acme-companion
+    restart: always
+    volumes:
+      - nginx_html:/usr/share/nginx/html
+      - nginx_certs:/etc/nginx/certs:rw
+      - nginx_acme:/etc/acme.sh
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - nginx-proxy
+    networks:
+      - proxy
+
+  web:
+    <<: *laravel
+    container_name: laravel-web
+    environment:
+      VIRTUAL_HOST: ${APP_HOST}
+      VIRTUAL_PORT: 8000
+      LETSENCRYPT_HOST: ${APP_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+    command: php artisan octane:frankenphp
+
+  scheduler:
+    <<: *laravel
+    container_name: laravel-scheduler
+    healthcheck:
+      test: [ "CMD-SHELL", "test -f /tmp/healthy && find /tmp/healthy -mmin -2" ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    command: >
+      sh -c "while true; do php artisan schedule:run --verbose --no-interaction && touch /tmp/healthy; sleep 60; done"
+
+  horizon:
+    <<: *laravel
+    container_name: laravel-horizon
+    healthcheck:
+      test: [ "CMD-SHELL", "php artisan horizon:status | grep running" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: php artisan horizon
+
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - proxy
+
+volumes:
+  nginx_html:
+  nginx_certs:
+  nginx_acme:
+  redis_data:
+
+networks:
+  proxy:
+    driver: bridge
