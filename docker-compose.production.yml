@@ -7,6 +7,8 @@ x-laravel: &laravel
     - redis
   networks:
     - proxy
+  extra_hosts:
+    - 'host.docker.internal:host-gateway'
 
 services:
   nginx-proxy:
