@@ -20,14 +20,14 @@ class ListSettings extends ListRecords
 
             'general' => Tab::make('General')
                 ->modifyQueryUsing(
-                    fn(Builder $query) => $query->whereNull('group')
+                    fn (Builder $query) => $query->whereNull('group')
                 ),
         ];
 
         foreach (setting()->groups() as $group) {
             $tabs[$group] = Tab::make(Str::title($group))
                 ->modifyQueryUsing(
-                    fn(Builder $query) => $query->where('group', $group)
+                    fn (Builder $query) => $query->where('group', $group)
                 );
         }
 

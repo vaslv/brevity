@@ -33,7 +33,7 @@ class SettingForm
                     ->reactive()
                     ->columnSpan(2),
                 Group::make()
-                    ->schema(fn(callable $get) => match ($get('type')) {
+                    ->schema(fn (callable $get) => match ($get('type')) {
                         'boolean' => [
                             Toggle::make('value'),
                         ],

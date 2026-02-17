@@ -27,11 +27,6 @@ class SettingResource extends Resource
         return SettingForm::configure($schema);
     }
 
-    public static function table(Table $table): Table
-    {
-        return SettingsTable::configure($table);
-    }
-
     public static function getPages(): array
     {
         return [
@@ -39,5 +34,10 @@ class SettingResource extends Resource
             'create' => CreateSetting::route('/create'),
             'edit' => EditSetting::route('/{record}/edit'),
         ];
+    }
+
+    public static function table(Table $table): Table
+    {
+        return SettingsTable::configure($table);
     }
 }
