@@ -8742,16 +8742,16 @@
         },
         {
             "name": "vaslv/laravel-settings",
-            "version": "1.0.4",
+            "version": "1.0.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vaslv/laravel-settings.git",
-                "reference": "b2ee524a6ce9b2668741007f2e333f19acace37f"
+                "reference": "3cbc3ffff9201947618da98cd50d454946448dd0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vaslv/laravel-settings/zipball/b2ee524a6ce9b2668741007f2e333f19acace37f",
-                "reference": "b2ee524a6ce9b2668741007f2e333f19acace37f",
+                "url": "https://api.github.com/repos/vaslv/laravel-settings/zipball/3cbc3ffff9201947618da98cd50d454946448dd0",
+                "reference": "3cbc3ffff9201947618da98cd50d454946448dd0",
                 "shasum": ""
             },
             "require": {
@@ -8789,9 +8789,9 @@
             "description": "Reusable Laravel settings package with typed values and caching.",
             "support": {
                 "issues": "https://github.com/vaslv/laravel-settings/issues",
-                "source": "https://github.com/vaslv/laravel-settings/tree/1.0.4"
+                "source": "https://github.com/vaslv/laravel-settings/tree/1.0.7"
             },
-            "time": "2026-02-17T04:52:47+00:00"
+            "time": "2026-02-17T09:20:18+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
