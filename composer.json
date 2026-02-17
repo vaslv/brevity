@@ -14,7 +14,8 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "league/uri": "^7.0",
-        "sentry/sentry-laravel": "^4.20"
+        "sentry/sentry-laravel": "^4.20",
+        "vaslv/laravel-settings": "^1.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.16",
