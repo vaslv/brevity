@@ -4,12 +4,7 @@ use App\Http\Controllers\ResolveLink;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return [
-        'data' => [
-            'request' => \Illuminate\Support\Str::ulid(),
-            'success' => true,
-        ],
-    ];
+    return view('welcome');
 });
 
 Route::get('/{code}', ResolveLink::class);

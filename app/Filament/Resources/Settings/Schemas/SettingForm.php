@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Settings\Schemas;
 
 use Filament\Forms\Components\MarkdownEditor;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -50,6 +51,9 @@ class SettingForm
                         ],
                         'markdown' => [
                             MarkdownEditor::make('value'),
+                        ],
+                        'html' => [
+                            RichEditor::make('value'),
                         ],
                         default => [
                             TextInput::make('value'),
