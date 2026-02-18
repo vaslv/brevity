@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -31,7 +33,7 @@ use Illuminate\Notifications\Notifiable;
  *
  * @mixin \Eloquent
  */
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use Notifiable;
 
@@ -55,6 +57,11 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true;
+    }
 
     /**
      * Get the attributes that should be cast.
