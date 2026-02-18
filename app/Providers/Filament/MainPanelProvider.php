@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\Login;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
@@ -17,8 +18,8 @@ class MainPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('main')
-            ->path('admin')
-            ->login()
+            ->path('')
+            ->login(Login::class)
             ->authGuard('web')
             ->colors([
                 'primary' => Color::Amber,
