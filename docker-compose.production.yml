@@ -55,12 +55,11 @@ services:
     <<: *laravel
     container_name: laravel-scheduler
     healthcheck:
-      test: [ "CMD-SHELL", "test -f /tmp/healthy && find /tmp/healthy -mmin -2" ]
-      interval: 60s
+      test: [ "CMD-SHELL", "test -f /tmp/healthy && find /tmp/healthy -mmin -1" ]
+      interval: 30s
       timeout: 10s
       retries: 3
-    command: >
-      sh -c "while true; do php artisan schedule:run --verbose --no-interaction && touch /tmp/healthy; sleep 60; done"
+    command: php artisan schedule:work --verbose --no-interaction
 
   horizon:
     <<: *laravel

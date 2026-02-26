@@ -2,6 +2,11 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::call(function () {
+    @touch('/tmp/healthy');
+})->everyTenSeconds();
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
