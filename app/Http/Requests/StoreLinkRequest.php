@@ -25,6 +25,8 @@ class StoreLinkRequest extends FormRequest
      */
     public function rules(): array
     {
+        $conditionRegistry = app(ConditionRegistry::class);
+
         return [
             'domain' => ['nullable', 'string', 'max:255', 'exists:domains,value'],
             'title' => ['nullable', 'string', 'max:255'],
@@ -37,9 +39,48 @@ class StoreLinkRequest extends FormRequest
                 'required_with:rules.*.condition',
                 'string',
                 'max:32',
-                Rule::in(app(ConditionRegistry::class)->types()),
+                Rule::in($conditionRegistry->types()),
             ],
-            'rules.*.condition.data' => ['nullable', 'array'], // TODO: validation data by type
+            'rules.*.condition.data' => ['nullable', 'array'],
+            ...$this->conditionDataRules($conditionRegistry),
         ];
+    }
+
+    /**
+     * @return array<string, ValidationRule|array|string>
+     */
+    private function conditionDataRules(ConditionRegistry $conditionRegistry): array
+    {
+        $rules = $this->input('rules', []);
+
+        if (! is_array($rules)) {
+            return [];
+        }
+
+        $validationRules = [];
+
+        foreach ($rules as $index => $rule) {
+            if (! is_array($rule)) {
+                continue;
+            }
+
+            $type = data_get($rule, 'condition.type');
+
+            if (! is_string($type)) {
+                continue;
+            }
+
+            $handler = $conditionRegistry->getHandler($type);
+
+            if (! $handler) {
+                continue;
+            }
+
+            foreach ($handler::rules() as $field => $fieldRules) {
+                $validationRules["rules.$index.condition.data.$field"] = $fieldRules;
+            }
+        }
+
+        return $validationRules;
     }
 }
