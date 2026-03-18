@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Service;
 use App\Services\Links\Conditions\ConditionRegistry;
+use App\Services\Links\TransitionMode;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -42,6 +43,12 @@ class StoreLinkRequest extends FormRequest
                 Rule::in($conditionRegistry->types()),
             ],
             'rules.*.condition.data' => ['nullable', 'array'],
+            'rules.*.transition_mode' => [
+                'nullable',
+                'string',
+                'max:16',
+                Rule::in(TransitionMode::values()),
+            ],
             ...$this->conditionDataRules($conditionRegistry),
         ];
     }
@@ -83,4 +90,5 @@ class StoreLinkRequest extends FormRequest
 
         return $validationRules;
     }
+
 }

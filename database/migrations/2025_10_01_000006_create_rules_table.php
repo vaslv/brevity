@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('link_id')->constrained('links')->cascadeOnDelete();
             $table->foreignId('url_id')->constrained('urls')->restrictOnDelete();
             $table->foreignId('condition_id')->nullable()->constrained('conditions')->restrictOnDelete();
+            $table->string('transition_mode', 16)->nullable();
             $table->integer('priority')->default(0);
             $table->timestampTz('created_at')->useCurrent();
 

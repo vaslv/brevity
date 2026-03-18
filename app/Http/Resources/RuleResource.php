@@ -21,6 +21,7 @@ class RuleResource extends JsonResource
         return [
             'url' => $this->resource->url->value,
             'condition' => ConditionResource::make($this->resource->condition),
+            'transition_mode' => $this->resource->transition_mode,
         ];
     }
 }

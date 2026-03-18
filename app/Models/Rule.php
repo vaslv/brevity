@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $link_id
  * @property int $url_id
  * @property int|null $condition_id
+ * @property string|null $transition_mode
  * @property int $priority
  * @property \Illuminate\Support\Carbon $created_at
  * @property-read \App\Models\Condition|null $condition
@@ -25,6 +26,7 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule whereLinkId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule whereTransitionMode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule wherePriority($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule whereUrlId($value)
  *
@@ -42,6 +44,7 @@ class Rule extends Model
         'link_id',
         'url_id',
         'condition_id',
+        'transition_mode',
         'priority',
     ];
 }

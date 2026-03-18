@@ -4,17 +4,16 @@ namespace App\Services\Links;
 
 use App\Models\Link;
 use App\Models\Rule;
-use App\Models\Url;
 use App\Services\Links\Conditions\ConditionContext;
 use App\Services\Links\Conditions\ConditionRegistry;
 
-readonly class LinkUrlResolver
+readonly class LinkRuleResolver
 {
     public function __construct(
         private ConditionRegistry $registry
     ) {}
 
-    public function resolve(Link $link, ConditionContext $context): ?Url
+    public function resolve(Link $link, ConditionContext $context): ?Rule
     {
         /** @var Rule[] $rules */
         $rules = $link->rules()
@@ -23,7 +22,7 @@ readonly class LinkUrlResolver
 
         foreach ($rules as $rule) {
             if ($rule->condition === null) {
-                return $rule->url;
+                return $rule;
             }
 
             $condition = $rule->condition;
@@ -38,7 +37,7 @@ readonly class LinkUrlResolver
             }
 
             if ($handler->matches($condition, $context)) {
-                return $rule->url;
+                return $rule;
             }
         }
 

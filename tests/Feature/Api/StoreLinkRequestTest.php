@@ -105,6 +105,22 @@ class StoreLinkRequestTest extends TestCase
             ->assertJsonValidationErrors(['rules.0.condition.data.before']);
     }
 
+    public function test_it_accepts_delayed_transition_mode(): void
+    {
+        $response = $this->postLink([
+            'rules' => [
+                [
+                    'url' => 'https://example.com/redirect',
+                    'transition_mode' => 'delayed',
+                ],
+            ],
+        ]);
+
+        $response
+            ->assertCreated()
+            ->assertJsonMissingValidationErrors(['rules.0.transition_mode']);
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */

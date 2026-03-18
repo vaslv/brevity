@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Link;
 use App\Services\Links\Conditions\ConditionContext;
-use App\Services\Links\LinkUrlResolver;
+use App\Services\Links\LinkRuleResolver;
+use App\Services\Links\TransitionMode;
 use Illuminate\Http\Request;
 
 class ResolveLink extends Controller
@@ -12,7 +13,7 @@ class ResolveLink extends Controller
     /**
      * Handle the incoming request.
      */
-    public function __invoke(string $code, Request $request, LinkUrlResolver $resolver)
+    public function __invoke(string $code, Request $request, LinkRuleResolver $resolver)
     {
         $link = Link::findByCode($code);
 
@@ -27,12 +28,24 @@ class ResolveLink extends Controller
 
         $context = new ConditionContext($link, $request, now()->toImmutable());
 
-        $url = $resolver->resolve($link, $context);
+        $rule = $resolver->resolve($link, $context);
 
-        if (! $url) {
+        if (! $rule) {
             abort(404);
         }
 
-        return redirect()->away($url->value);
+        $transitionMode = TransitionMode::tryFrom((string) $rule->transition_mode) ?? TransitionMode::Direct;
+
+        if (! $transitionMode->usesPage()) {
+            return redirect()->away($rule->url->value);
+        }
+
+        $countdownSeconds = 5;
+
+        return response()->view('link.redirect', [
+            'transitionMode' => $transitionMode,
+            'targetUrl' => $rule->url->value,
+            'countdownSeconds' => $countdownSeconds,
+        ]);
     }
 }

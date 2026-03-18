@@ -67,11 +67,12 @@ class LinkController extends Controller
                 $link->rules()->create([
                     'url_id' => $url->id,
                     'condition_id' => $conditionId,
+                    'transition_mode' => $ruleData['transition_mode'] ?? null,
                     'priority' => $i + 1,
                 ]);
             }
 
-            $link->load('rules.condition');
+            $link->load('rules.condition', 'rules.url');
 
             return LinkResource::make($link)
                 ->response()
