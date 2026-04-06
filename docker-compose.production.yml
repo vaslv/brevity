@@ -49,7 +49,10 @@ services:
       VIRTUAL_PORT: 8000
       LETSENCRYPT_HOST: ${APP_HOST}
       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
-    command: php artisan octane:frankenphp
+    command: >
+      sh -c "php artisan storage:link --force --no-interaction &&
+      php artisan optimize --no-interaction &&
+      php artisan octane:frankenphp --no-interaction"
 
   scheduler:
     <<: *laravel
@@ -59,7 +62,10 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    command: php artisan schedule:work --verbose --no-interaction
+    command: >
+      sh -c "php artisan optimize --except=routes,views --no-interaction &&
+      php artisan schedule:clear-cache --no-interaction &&
+      php artisan schedule:work --verbose --no-interaction"
 
   horizon:
     <<: *laravel
@@ -69,11 +75,13 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    command: php artisan horizon
+    command: >
+      sh -c "php artisan optimize --except=routes,views --no-interaction &&
+      php artisan horizon --no-interaction"
 
 
   redis:
-    image: redis:latest
+    image: redis:8.4.2-alpine
     container_name: redis
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
