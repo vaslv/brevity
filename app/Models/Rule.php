@@ -6,6 +6,7 @@ use App\Models\Relations\BelongsToCondition;
 use App\Models\Relations\BelongsToLink;
 use App\Models\Relations\BelongsToUrl;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -14,10 +15,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $condition_id
  * @property string|null $transition_mode
  * @property int $priority
- * @property \Illuminate\Support\Carbon $created_at
- * @property-read \App\Models\Condition|null $condition
- * @property-read \App\Models\Link $link
- * @property-read \App\Models\Url $url
+ * @property Carbon $created_at
+ * @property-read Condition|null $condition
+ * @property-read Link $link
+ * @property-read Url $url
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule newQuery()

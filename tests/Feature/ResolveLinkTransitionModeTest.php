@@ -22,17 +22,6 @@ class ResolveLinkTransitionModeTest extends TestCase
             ->assertRedirect($targetUrl);
     }
 
-    public function test_it_renders_countdown_page_when_delayed_transition_mode_is_selected(): void
-    {
-        $targetUrl = 'https://example.com/countdown';
-        $code = $this->createRuleForCode($targetUrl, 'delayed');
-
-        $this->get('/'.$code)
-            ->assertOk()
-            ->assertSee($targetUrl)
-            ->assertSee('id="countdown"', false);
-    }
-
     public function test_it_renders_button_page_when_manual_transition_mode_is_selected(): void
     {
         $targetUrl = 'https://example.com/button';
@@ -44,9 +33,17 @@ class ResolveLinkTransitionModeTest extends TestCase
             ->assertSee('Continue');
     }
 
-    /**
-     * @param  string|null  $transitionMode
-     */
+    public function test_it_renders_countdown_page_when_delayed_transition_mode_is_selected(): void
+    {
+        $targetUrl = 'https://example.com/countdown';
+        $code = $this->createRuleForCode($targetUrl, 'delayed');
+
+        $this->get('/'.$code)
+            ->assertOk()
+            ->assertSee($targetUrl)
+            ->assertSee('id="countdown"', false);
+    }
+
     private function createRuleForCode(string $targetUrl, ?string $transitionMode): string
     {
         $service = Service::query()->create([

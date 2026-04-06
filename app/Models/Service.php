@@ -5,21 +5,23 @@ namespace App\Models;
 use App\Models\Relations\HasManyCallbacks;
 use App\Models\Relations\HasManyClicks;
 use App\Models\Relations\HasManyLinks;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\HasApiTokens;
+use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * @property int $id
  * @property string $name
  * @property string|null $callback_url
  * @property string $created_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Callback> $callbacks
+ * @property-read Collection<int, Callback> $callbacks
  * @property-read int|null $callbacks_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Click> $clicks
+ * @property-read Collection<int, Click> $clicks
  * @property-read int|null $clicks_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Link> $links
+ * @property-read Collection<int, Link> $links
  * @property-read int|null $links_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \Laravel\Sanctum\PersonalAccessToken> $tokens
+ * @property-read Collection<int, PersonalAccessToken> $tokens
  * @property-read int|null $tokens_count
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Service newModelQuery()

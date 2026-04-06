@@ -9,7 +9,9 @@ use App\Models\Relations\BelongsToService;
 use App\Models\Relations\BelongsToUrl;
 use App\Models\Relations\BelongsToUserAgent;
 use App\Models\Relations\HasManyCallbacks;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,15 +21,15 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $referrer_id
  * @property int $user_agent_id
  * @property int $ip_address_id
- * @property \Illuminate\Support\Carbon $created_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Callback> $callbacks
+ * @property Carbon $created_at
+ * @property-read Collection<int, Callback> $callbacks
  * @property-read int|null $callbacks_count
- * @property-read \App\Models\IpAddress $ipAddress
- * @property-read \App\Models\Link $link
- * @property-read \App\Models\Referrer $referrer
- * @property-read \App\Models\Service $service
- * @property-read \App\Models\Url $url
- * @property-read \App\Models\UserAgent $userAgent
+ * @property-read IpAddress $ipAddress
+ * @property-read Link $link
+ * @property-read Referrer $referrer
+ * @property-read Service $service
+ * @property-read Url $url
+ * @property-read UserAgent $userAgent
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Click newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Click newQuery()

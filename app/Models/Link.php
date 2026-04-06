@@ -7,8 +7,10 @@ use App\Models\Relations\BelongsToService;
 use App\Models\Relations\HasManyClicks;
 use App\Models\Relations\HasManyRules;
 use App\Services\Links\CodeStrategy\CodeGenerator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use League\Uri\Uri;
 
 /**
@@ -19,15 +21,15 @@ use League\Uri\Uri;
  * @property string|null $title
  * @property bool $forward_query
  * @property array<array-key, mixed>|null $callback_data
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Click> $clicks
+ * @property Carbon $created_at
+ * @property Carbon|null $deleted_at
+ * @property-read Collection<int, Click> $clicks
  * @property-read int|null $clicks_count
- * @property-read \App\Models\Domain|null $domain
+ * @property-read Domain|null $domain
  * @property-read string $url
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Rule> $rules
+ * @property-read Collection<int, Rule> $rules
  * @property-read int|null $rules_count
- * @property-read \App\Models\Service $service
+ * @property-read Service $service
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Link newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Link newQuery()

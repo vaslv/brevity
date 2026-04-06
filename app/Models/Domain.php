@@ -3,15 +3,17 @@
 namespace App\Models;
 
 use App\Models\Relations\HasManyLinks;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use League\Uri\Uri;
 
 /**
  * @property int $id
  * @property string $value
- * @property \Illuminate\Support\Carbon $created_at
+ * @property Carbon $created_at
  * @property-read string $url
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Link> $links
+ * @property-read Collection<int, Link> $links
  * @property-read int|null $links_count
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Domain newModelQuery()

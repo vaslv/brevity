@@ -6,6 +6,7 @@ use App\Models\Relations\BelongsToClick;
 use App\Models\Relations\BelongsToLink;
 use App\Models\Relations\BelongsToService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,11 +17,11 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $response_body
  * @property string $status
  * @property int $attempts
- * @property \Illuminate\Support\Carbon|null $last_attempt_at
- * @property \Illuminate\Support\Carbon $created_at
- * @property-read \App\Models\Click $click
- * @property-read \App\Models\Link|null $link
- * @property-read \App\Models\Service $service
+ * @property Carbon|null $last_attempt_at
+ * @property Carbon $created_at
+ * @property-read Click $click
+ * @property-read Link|null $link
+ * @property-read Service $service
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback newQuery()

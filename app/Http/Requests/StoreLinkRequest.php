@@ -90,5 +90,4 @@ class StoreLinkRequest extends FormRequest
 
         return $validationRules;
     }
-
 }

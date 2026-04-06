@@ -3,14 +3,16 @@
 namespace App\Models;
 
 use App\Models\Relations\HasManyRules;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $type
  * @property array<array-key, mixed> $data
- * @property \Illuminate\Support\Carbon $created_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Rule> $rules
+ * @property Carbon $created_at
+ * @property-read Collection<int, Rule> $rules
  * @property-read int|null $rules_count
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Condition newModelQuery()

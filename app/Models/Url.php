@@ -4,15 +4,16 @@ namespace App\Models;
 
 use App\Models\Relations\HasManyClicks;
 use App\Models\Relations\HasManyRules;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property int $id
  * @property string $value
  * @property string $created_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Click> $clicks
+ * @property-read Collection<int, Click> $clicks
  * @property-read int|null $clicks_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Rule> $rules
+ * @property-read Collection<int, Rule> $rules
  * @property-read int|null $rules_count
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Url newModelQuery()

@@ -11,6 +11,22 @@ class StoreLinkRequestTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_it_accepts_delayed_transition_mode(): void
+    {
+        $response = $this->postLink([
+            'rules' => [
+                [
+                    'url' => 'https://example.com/redirect',
+                    'transition_mode' => 'delayed',
+                ],
+            ],
+        ]);
+
+        $response
+            ->assertCreated()
+            ->assertJsonMissingValidationErrors(['rules.0.transition_mode']);
+    }
+
     public function test_it_accepts_multiple_rules_with_valid_time_before_dates(): void
     {
         $response = $this->postLink([
@@ -65,25 +81,6 @@ class StoreLinkRequestTest extends TestCase
             ->assertJsonMissingValidationErrors(['rules.0.condition.data.before']);
     }
 
-    public function test_it_rejects_missing_before_in_time_before_condition(): void
-    {
-        $response = $this->postLink([
-            'rules' => [
-                [
-                    'url' => 'https://example.com/redirect',
-                    'condition' => [
-                        'type' => 'time_before',
-                        'data' => [],
-                    ],
-                ],
-            ],
-        ]);
-
-        $response
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['rules.0.condition.data.before']);
-    }
-
     public function test_it_rejects_invalid_before_date_format_in_time_before_condition(): void
     {
         $response = $this->postLink([
@@ -105,20 +102,23 @@ class StoreLinkRequestTest extends TestCase
             ->assertJsonValidationErrors(['rules.0.condition.data.before']);
     }
 
-    public function test_it_accepts_delayed_transition_mode(): void
+    public function test_it_rejects_missing_before_in_time_before_condition(): void
     {
         $response = $this->postLink([
             'rules' => [
                 [
                     'url' => 'https://example.com/redirect',
-                    'transition_mode' => 'delayed',
+                    'condition' => [
+                        'type' => 'time_before',
+                        'data' => [],
+                    ],
                 ],
             ],
         ]);
 
         $response
-            ->assertCreated()
-            ->assertJsonMissingValidationErrors(['rules.0.transition_mode']);
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['rules.0.condition.data.before']);
     }
 
     /**
