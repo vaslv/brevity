@@ -8823,26 +8823,27 @@
         },
         {
             "name": "vaslv/laravel-settings",
-            "version": "1.0.8",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vaslv/laravel-settings.git",
-                "reference": "fd18498df805797590811f083639ac1b09510f94"
+                "reference": "131fb248a00839684c1541252f244a3534b8c919"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vaslv/laravel-settings/zipball/fd18498df805797590811f083639ac1b09510f94",
-                "reference": "fd18498df805797590811f083639ac1b09510f94",
+                "url": "https://api.github.com/repos/vaslv/laravel-settings/zipball/131fb248a00839684c1541252f244a3534b8c919",
+                "reference": "131fb248a00839684c1541252f244a3534b8c919",
                 "shasum": ""
             },
             "require": {
-                "illuminate/cache": "^10.0|^11.0|^12.0",
-                "illuminate/database": "^10.0|^11.0|^12.0",
-                "illuminate/support": "^10.0|^11.0|^12.0",
+                "illuminate/cache": "^10.0|^11.0|^12.0|^13.0",
+                "illuminate/database": "^10.0|^11.0|^12.0|^13.0",
+                "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
                 "php": "^8.2"
             },
             "require-dev": {
-                "laravel/pint": "^1.27"
+                "laravel/pint": "^1.27",
+                "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0"
             },
             "type": "library",
             "extra": {
@@ -8870,9 +8871,9 @@
             "description": "Reusable Laravel settings package with typed values and caching.",
             "support": {
                 "issues": "https://github.com/vaslv/laravel-settings/issues",
-                "source": "https://github.com/vaslv/laravel-settings/tree/1.0.8"
+                "source": "https://github.com/vaslv/laravel-settings/tree/1.1.0"
             },
-            "time": "2026-02-17T11:02:55+00:00"
+            "time": "2026-04-06T13:02:30+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
