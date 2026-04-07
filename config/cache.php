@@ -44,6 +44,7 @@ return [
             'table' => env('DB_CACHE_TABLE', 'cache'),
             'lock_connection' => env('DB_CACHE_LOCK_CONNECTION'),
             'lock_table' => env('DB_CACHE_LOCK_TABLE'),
+            'serializable_classes' => false,
         ],
 
         'file' => [
@@ -75,6 +76,7 @@ return [
             'driver' => 'redis',
             'connection' => env('REDIS_CACHE_CONNECTION', 'cache'),
             'lock_connection' => env('REDIS_CACHE_LOCK_CONNECTION', 'default'),
+            'serializable_classes' => false,
         ],
 
         'dynamodb' => [
@@ -84,6 +86,7 @@ return [
             'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
             'table' => env('DYNAMODB_CACHE_TABLE', 'cache'),
             'endpoint' => env('DYNAMODB_ENDPOINT'),
+            'serializable_classes' => false,
         ],
 
         'octane' => [
