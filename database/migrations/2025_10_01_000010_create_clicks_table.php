@@ -18,9 +18,9 @@ return new class extends Migration
             $table->foreignId('service_id')->constrained('services')->restrictOnDelete();
             $table->foreignId('link_id')->constrained('links')->restrictOnDelete();
             $table->foreignId('url_id')->constrained('urls')->restrictOnDelete();
-            $table->foreignId('referrer_id')->constrained('referrers')->restrictOnDelete();
-            $table->foreignId('user_agent_id')->constrained('user_agents')->restrictOnDelete();
-            $table->foreignId('ip_address_id')->constrained('ip_addresses')->restrictOnDelete();
+            $table->foreignId('referrer_id')->nullable()->constrained('referrers')->restrictOnDelete();
+            $table->foreignId('user_agent_id')->nullable()->constrained('user_agents')->restrictOnDelete();
+            $table->foreignId('ip_address_id')->nullable()->constrained('ip_addresses')->restrictOnDelete();
             $table->timestampTz('created_at')->useCurrent();
         });
     }

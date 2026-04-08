@@ -18,18 +18,18 @@ use Illuminate\Support\Carbon;
  * @property int $service_id
  * @property int $link_id
  * @property int $url_id
- * @property int $referrer_id
- * @property int $user_agent_id
- * @property int $ip_address_id
+ * @property int|null $referrer_id
+ * @property int|null $user_agent_id
+ * @property int|null $ip_address_id
  * @property Carbon $created_at
  * @property-read Collection<int, Callback> $callbacks
  * @property-read int|null $callbacks_count
- * @property-read IpAddress $ipAddress
+ * @property-read IpAddress|null $ipAddress
  * @property-read Link $link
- * @property-read Referrer $referrer
+ * @property-read Referrer|null $referrer
  * @property-read Service $service
  * @property-read Url $url
- * @property-read UserAgent $userAgent
+ * @property-read UserAgent|null $userAgent
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Click newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Click newQuery()

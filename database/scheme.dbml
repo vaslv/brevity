@@ -87,9 +87,9 @@ Table clicks {
   service_id bigint [not null]
   link_id bigint [not null]
   url_id bigint [not null]
-  referrer_id bigint [not null]
-  user_agent_id bigint [not null]
-  ip_address_id bigint [not null]
+  referrer_id bigint
+  user_agent_id bigint
+  ip_address_id bigint
   created_at timestamptz [not null, default: `now()`]
 }
 
