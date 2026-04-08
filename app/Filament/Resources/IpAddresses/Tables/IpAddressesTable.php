@@ -15,7 +15,8 @@ class IpAddressesTable
     {
         return $table
             ->columns([
-                TextColumn::make('value'),
+                TextColumn::make('value')
+                    ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

@@ -13,15 +13,15 @@ class ClickInfolist
             ->components([
                 TextEntry::make('service.name')
                     ->label('Service'),
+                TextEntry::make('url.value')
+                    ->label('Url'),
                 TextEntry::make('link.title')
                     ->label('Link'),
-                TextEntry::make('url.id')
-                    ->label('Url'),
-                TextEntry::make('referrer.id')
+                TextEntry::make('referrer.value')
                     ->label('Referrer'),
-                TextEntry::make('userAgent.id')
+                TextEntry::make('userAgent.value')
                     ->label('User agent'),
-                TextEntry::make('ipAddress.id')
+                TextEntry::make('ipAddress.value')
                     ->label('Ip address'),
                 TextEntry::make('created_at')
                     ->dateTime(),

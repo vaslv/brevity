@@ -17,15 +17,15 @@ class ClicksTable
             ->columns([
                 TextColumn::make('service.name')
                     ->searchable(),
+                TextColumn::make('url.value')
+                    ->searchable(),
                 TextColumn::make('link.title')
                     ->searchable(),
-                TextColumn::make('url.id')
+                TextColumn::make('referrer.value')
                     ->searchable(),
-                TextColumn::make('referrer.id')
+                TextColumn::make('userAgent.value')
                     ->searchable(),
-                TextColumn::make('userAgent.id')
-                    ->searchable(),
-                TextColumn::make('ipAddress.id')
+                TextColumn::make('ipAddress.value')
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()

@@ -15,6 +15,8 @@ class UserAgentsTable
     {
         return $table
             ->columns([
+                TextColumn::make('value')
+                    ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
