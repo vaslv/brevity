@@ -91,6 +91,21 @@ class ResolveLinkTransitionModeTest extends TestCase
         $this->assertSame(2, Click::query()->count());
     }
 
+    public function test_it_records_forwarded_client_ip_when_request_comes_through_proxy(): void
+    {
+        $targetUrl = 'https://example.com/forwarded-ip';
+        $code = $this->createRuleForCode($targetUrl, null);
+
+        $this->withServerVariables([
+            'REMOTE_ADDR' => '172.18.0.3',
+            'HTTP_X_FORWARDED_FOR' => '203.0.113.77',
+        ])->get('/'.$code)->assertRedirect($targetUrl);
+
+        $this->assertDatabaseHas('ip_addresses', [
+            'value' => '203.0.113.77',
+        ]);
+    }
+
     public function test_it_redirects_using_direct_transition_mode_by_default(): void
     {
         $targetUrl = 'https://example.com/default';
