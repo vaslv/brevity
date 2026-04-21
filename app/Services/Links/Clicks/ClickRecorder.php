@@ -23,14 +23,14 @@ readonly class ClickRecorder
         private DictionaryValueResolver $dictionaryValueResolver
     ) {}
 
-    public function record(Request $request, Link $link, int $urlId): void
+    public function record(Request $request, Link $link, int $urlId): Click
     {
         $referrerValue = $this->normalizeReferrer($request);
         $userAgentValue = $this->normalizeUserAgent($request);
         $ipAddressValue = $this->normalizeIpAddress($request);
 
-        DB::transaction(function () use ($link, $urlId, $referrerValue, $userAgentValue, $ipAddressValue): void {
-            Click::query()->create([
+        return DB::transaction(function () use ($link, $urlId, $referrerValue, $userAgentValue, $ipAddressValue): Click {
+            return Click::query()->create([
                 'service_id' => $link->service_id,
                 'link_id' => $link->id,
                 'url_id' => $urlId,

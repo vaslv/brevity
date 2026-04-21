@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Link;
+use App\Services\Links\Callbacks\CallbackDispatcher;
 use App\Services\Links\Clicks\ClickRecorder;
 use App\Services\Links\Conditions\ConditionContext;
 use App\Services\Links\LinkRuleResolver;
@@ -33,7 +34,8 @@ class ResolveLink extends Controller
         string $code,
         Request $request,
         LinkRuleResolver $resolver,
-        ClickRecorder $clickRecorder
+        ClickRecorder $clickRecorder,
+        CallbackDispatcher $callbackDispatcher
     ): RedirectResponse|Response {
         $link = Link::findByCode($code);
 
@@ -57,7 +59,8 @@ class ResolveLink extends Controller
         $transitionMode = TransitionMode::tryFrom((string) $rule->transition_mode) ?? TransitionMode::Direct;
 
         try {
-            $clickRecorder->record($request, $link, $rule->url_id);
+            $click = $clickRecorder->record($request, $link, $rule->url_id);
+            $callbackDispatcher->dispatchForClick($click);
         } catch (Throwable $e) {
             Log::warning('Failed to record link click.', [
                 'exception' => $e,

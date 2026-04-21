@@ -53,7 +53,7 @@ Creates a short link and transition rules.
 - `domain` (`string|null`, max 255): short-link domain; must exist in the system (`exists:domains,value`).
 - `title` (`string|null`): link title.
 - `forward_query` (`boolean|null`): whether to forward query parameters on direct HTTP redirect.
-- `callback_data` (`object|null`): arbitrary callback payload.
+- `callback_data` (`object|null`): callback payload template (see [Callback System](#6-callback-system)).
 - `rules` (`array`, required, min 1): transition rules in priority order.
 - `rules[].url` (`string`, required, url, max 2048): destination URL.
 - `rules[].condition` (`object|null`): condition for applying the rule.
@@ -140,7 +140,89 @@ Important: validation for `rules[].condition.data` is dynamic and resolved from 
 }
 ```
 
-## 5. SDK Recommendations
+## 5. Callback System
+
+When a service has a `callback_url` configured **and** a link has a non-null `callback_data`, the server sends an HTTP `POST` request to `callback_url` after every click on that link.
+
+### Trigger conditions
+
+Both conditions must be true:
+
+- `Service.callback_url` is set (non-null)
+- `Link.callback_data` is non-null
+
+### Request format
+
+```http
+POST {service.callback_url}
+Content-Type: application/json
+
+{rendered callback_data}
+```
+
+The request body is the rendered `callback_data` object. There are no additional authentication headers.
+
+### Template variables
+
+String values inside `callback_data` may contain template variables in the form `{{variable_name}}`. The server replaces them with real click data before sending.
+
+Available variables:
+
+| Variable | Type | Description |
+|---|---|---|
+| `{{click.id}}` | string | Unique click ID |
+| `{{click.created_at}}` | string | Click timestamp (ISO 8601, UTC) |
+| `{{click.ip}}` | string | Visitor IP address (empty string if unavailable) |
+| `{{click.url}}` | string | Destination URL the visitor was redirected to |
+| `{{click.referrer}}` | string | HTTP Referer header value (empty string if absent) |
+| `{{click.user_agent}}` | string | Visitor User-Agent (empty string if absent) |
+| `{{link.id}}` | string | Short link ID |
+| `{{link.code}}` | string | Short link code (e.g. `AbC12345`) |
+| `{{link.title}}` | string | Short link title (empty string if not set) |
+
+Template variables are only substituted inside **string values**. Keys and non-string values are not processed.
+
+### Example
+
+Link created with:
+
+```json
+{
+  "callback_data": {
+    "campaign_id": "cmp-42",
+    "click_id": "{{click.id}}",
+    "timestamp": "{{click.created_at}}",
+    "source_ip": "{{click.ip}}",
+    "meta": {
+      "referrer": "{{click.referrer}}"
+    }
+  }
+}
+```
+
+Callback payload sent after a click:
+
+```json
+{
+  "campaign_id": "cmp-42",
+  "click_id": "1337",
+  "timestamp": "2026-04-21T14:05:00+00:00",
+  "source_ip": "203.0.113.42",
+  "meta": {
+    "referrer": "https://t.me/channel"
+  }
+}
+```
+
+### Delivery guarantees
+
+- Up to **5 attempts** with exponential backoff: 1 min → 5 min → 15 min → 1 h → 1 h.
+- A response with HTTP 2xx is considered successful.
+- Any other response or a connection error triggers a retry.
+- After all attempts are exhausted, the callback is marked `failed`.
+- The server records `response_code` and `response_body` (truncated to 10 000 characters) for each final attempt.
+
+## 7. SDK Recommendations
 
 Minimum public client contract:
 
@@ -168,7 +250,7 @@ Recommended SDK technical practices:
 - Always send `Accept: application/json`.
 - Do not transform `condition.data` except JSON serialization.
 
-## 6. Ready-to-Use SDK Test Payloads
+## 8. Ready-to-Use SDK Test Payloads
 
 ### Valid `time_before`
 
