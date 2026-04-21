@@ -49,17 +49,16 @@ class LinkController extends Controller
                     $conditionType = $ruleData['condition']['type'];
                     $conditionData = $ruleData['condition']['data'] ?? [];
 
+                    Condition::insertOrIgnore([
+                        'type' => $conditionType,
+                        'data' => json_encode($conditionData),
+                        'created_at' => now(),
+                    ]);
+
                     $condition = Condition::query()
                         ->where('type', $conditionType)
-                        ->whereRaw('"data"::jsonb = ?::jsonb', [
-                            json_encode($conditionData),
-                        ])
+                        ->whereRaw('"data"::jsonb = ?::jsonb', [json_encode($conditionData)])
                         ->first();
-
-                    $condition ??= Condition::create([
-                        'type' => $conditionType,
-                        'data' => $conditionData,
-                    ]);
 
                     $conditionId = $condition->id;
                 }
