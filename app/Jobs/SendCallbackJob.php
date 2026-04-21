@@ -32,6 +32,8 @@ class SendCallbackJob implements ShouldQueue
 
     public function failed(Throwable $e): void
     {
+        report($e);
+
         Callback::where('id', $this->callbackId)->update(['status' => 'failed']);
 
         Log::warning('Callback delivery failed permanently.', [

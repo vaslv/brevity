@@ -26,6 +26,8 @@ class RecordClickJob implements ShouldQueue
 
     public function failed(Throwable $e): void
     {
+        report($e);
+
         Log::warning('Failed to record link click.', [
             'exception' => $e->getMessage(),
             'link_id' => $this->linkId,
