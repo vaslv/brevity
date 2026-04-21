@@ -8,23 +8,14 @@ use Illuminate\Support\ServiceProvider;
 
 class ConditionServiceProvider extends ServiceProvider
 {
-    /**
-     * Bootstrap services.
-     */
-    public function boot(): void
-    {
-        //
-    }
-
-    /**
-     * Register services.
-     */
     public function register(): void
     {
+        $this->app->tag([
+            TimeBeforeConditionHandler::class,
+        ], 'condition.handler');
+
         $this->app->singleton(ConditionRegistry::class, function ($app) {
-            return new ConditionRegistry([
-                $app->make(TimeBeforeConditionHandler::class),
-            ]);
+            return new ConditionRegistry($app->tagged('condition.handler'));
         });
     }
 }
