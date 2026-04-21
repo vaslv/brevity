@@ -31,6 +31,15 @@ readonly class CallbackDataRenderer
         ];
     }
 
+    private function renderString(string $template, array $variables): string
+    {
+        foreach ($variables as $name => $replacement) {
+            $template = str_replace('{{'.$name.'}}', $replacement, $template);
+        }
+
+        return $template;
+    }
+
     private function renderValue(mixed $value, array $variables): mixed
     {
         if (is_string($value)) {
@@ -42,14 +51,5 @@ readonly class CallbackDataRenderer
         }
 
         return $value;
-    }
-
-    private function renderString(string $template, array $variables): string
-    {
-        foreach ($variables as $name => $replacement) {
-            $template = str_replace('{{'.$name.'}}', $replacement, $template);
-        }
-
-        return $template;
     }
 }

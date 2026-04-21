@@ -14,11 +14,13 @@ class SendCallbackJob implements ShouldQueue
 {
     use Queueable;
 
-    private const int MAX_RESPONSE_BODY_LENGTH = 10_000;
-
     private const int HTTP_TIMEOUT_SECONDS = 10;
 
+    private const int MAX_RESPONSE_BODY_LENGTH = 10_000;
+
     public int $tries = 5;
+
+    public function __construct(private readonly int $callbackId) {}
 
     /**
      * @return array<int, int>
@@ -28,7 +30,15 @@ class SendCallbackJob implements ShouldQueue
         return [60, 300, 900, 3600, 3600];
     }
 
-    public function __construct(private readonly int $callbackId) {}
+    public function failed(Throwable $e): void
+    {
+        Callback::where('id', $this->callbackId)->update(['status' => 'failed']);
+
+        Log::warning('Callback delivery failed permanently.', [
+            'callback_id' => $this->callbackId,
+            'exception' => $e->getMessage(),
+        ]);
+    }
 
     public function handle(): void
     {
@@ -55,15 +65,5 @@ class SendCallbackJob implements ShouldQueue
                 "Callback HTTP {$response->status()} for callback_id={$this->callbackId}"
             );
         }
-    }
-
-    public function failed(Throwable $e): void
-    {
-        Callback::where('id', $this->callbackId)->update(['status' => 'failed']);
-
-        Log::warning('Callback delivery failed permanently.', [
-            'callback_id' => $this->callbackId,
-            'exception' => $e->getMessage(),
-        ]);
     }
 }

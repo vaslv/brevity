@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\RecordClickJob;
 use App\Models\Link;
-use App\Services\Links\Callbacks\CallbackDispatcher;
-use App\Services\Links\Clicks\ClickRecorder;
 use App\Services\Links\Conditions\ConditionContext;
 use App\Services\Links\LinkRuleResolver;
 use App\Services\Links\TransitionMode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
-use Throwable;
 
 class ResolveLink extends Controller
 {
@@ -33,9 +30,7 @@ class ResolveLink extends Controller
     public function __invoke(
         string $code,
         Request $request,
-        LinkRuleResolver $resolver,
-        ClickRecorder $clickRecorder,
-        CallbackDispatcher $callbackDispatcher
+        LinkRuleResolver $resolver
     ): RedirectResponse|Response {
         $link = Link::findByCode($code);
 
@@ -58,20 +53,13 @@ class ResolveLink extends Controller
 
         $transitionMode = TransitionMode::tryFrom((string) $rule->transition_mode) ?? TransitionMode::Direct;
 
-        try {
-            $click = $clickRecorder->record($request, $link, $rule->url_id);
-            $callbackDispatcher->dispatchForClick($click);
-        } catch (Throwable $e) {
-            Log::warning('Failed to record link click.', [
-                'exception' => $e,
-                'link_id' => $link->id,
-                'service_id' => $link->service_id,
-                'url_id' => $rule->url_id,
-                'code' => $link->code,
-                'host' => $request->host(),
-                'ip' => $request->ip(),
-            ]);
-        }
+        RecordClickJob::dispatch(
+            $link->id,
+            $rule->url_id,
+            $request->ip(),
+            $request->headers->get('referer'),
+            $request->userAgent(),
+        );
 
         if (! $transitionMode->usesPage()) {
             return redirect()->away($rule->url->value);
