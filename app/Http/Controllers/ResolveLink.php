@@ -15,6 +15,60 @@ class ResolveLink extends Controller
 {
     private const int REDIRECT_COUNTDOWN_SECONDS = 5;
 
+    /**
+     * @param  array<string, int|string>  $parts
+     */
+    private function buildUrl(array $parts): string
+    {
+        $scheme = isset($parts['scheme']) ? $parts['scheme'].'://' : '';
+        $auth = '';
+
+        if (isset($parts['user'])) {
+            $auth = $parts['user'];
+            if (isset($parts['pass'])) {
+                $auth .= ':'.$parts['pass'];
+            }
+            $auth .= '@';
+        }
+
+        $host = $parts['host'] ?? '';
+        $port = isset($parts['port']) ? ':'.$parts['port'] : '';
+        $path = $parts['path'] ?? '';
+        $query = ! empty($parts['query']) ? '?'.$parts['query'] : '';
+        $fragment = isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
+
+        return $scheme.$auth.$host.$port.$path.$query.$fragment;
+    }
+
+    /**
+     * Merge incoming request query params into the target URL.
+     * Target's existing params take precedence for duplicate keys.
+     */
+    private function forwardQueryParams(string $targetUrl, Request $request): string
+    {
+        $incoming = $request->query();
+
+        if (! is_array($incoming) || $incoming === []) {
+            return $targetUrl;
+        }
+
+        $parts = parse_url($targetUrl);
+
+        if ($parts === false) {
+            return $targetUrl;
+        }
+
+        $existing = [];
+
+        if (! empty($parts['query'])) {
+            parse_str($parts['query'], $existing);
+        }
+
+        $parts['query'] = http_build_query($existing + $incoming);
+
+        return $this->buildUrl($parts);
+    }
+
     private function hasDomainMismatch(Link $link, Request $request): bool
     {
         if ($link->domain === null) {
@@ -61,13 +115,17 @@ class ResolveLink extends Controller
             $request->userAgent(),
         );
 
+        $targetUrl = $link->forward_query
+            ? $this->forwardQueryParams($rule->url->value, $request)
+            : $rule->url->value;
+
         if (! $transitionMode->usesPage()) {
-            return redirect()->away($rule->url->value);
+            return redirect()->away($targetUrl);
         }
 
         return response()->view('link.redirect', [
             'transitionMode' => $transitionMode,
-            'targetUrl' => $rule->url->value,
+            'targetUrl' => $targetUrl,
             'countdownSeconds' => self::REDIRECT_COUNTDOWN_SECONDS,
         ]);
     }

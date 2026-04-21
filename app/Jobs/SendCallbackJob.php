@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\Callback;
+use App\Services\Links\Callbacks\CallbackStatus;
+use App\Services\Links\Callbacks\CallbackUrlGuard;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Http;
@@ -34,7 +36,7 @@ class SendCallbackJob implements ShouldQueue
     {
         report($e);
 
-        Callback::where('id', $this->callbackId)->update(['status' => 'failed']);
+        Callback::where('id', $this->callbackId)->update(['status' => CallbackStatus::Failed->value]);
 
         Log::warning('Callback delivery failed permanently.', [
             'callback_id' => $this->callbackId,
@@ -42,11 +44,19 @@ class SendCallbackJob implements ShouldQueue
         ]);
     }
 
-    public function handle(): void
+    public function handle(CallbackUrlGuard $urlGuard): void
     {
         $callback = Callback::with('click.link.service')->findOrFail($this->callbackId);
 
         $callbackUrl = $callback->click->link->service->callback_url;
+
+        if (! $urlGuard->isSafe($callbackUrl)) {
+            $this->fail(new \RuntimeException(
+                "Callback URL is not safe (blocked by SSRF guard) for callback_id={$this->callbackId}"
+            ));
+
+            return;
+        }
 
         $callback->update([
             'attempts' => $callback->attempts + 1,
@@ -56,15 +66,30 @@ class SendCallbackJob implements ShouldQueue
         $response = Http::timeout(self::HTTP_TIMEOUT_SECONDS)
             ->post($callbackUrl, $callback->data);
 
+        $status = $response->status();
+        $isClientError = $status >= 400 && $status < 500;
+        $isSuccess = $response->successful();
+        $isFinal = $isSuccess || $isClientError;
+
         $callback->update([
-            'response_code' => $response->status(),
+            'response_code' => $status,
             'response_body' => Str::limit($response->body(), self::MAX_RESPONSE_BODY_LENGTH, ''),
-            'status' => $response->successful() ? 'sent' : 'failed',
+            'status' => $isSuccess
+                ? CallbackStatus::Sent
+                : ($isFinal ? CallbackStatus::Failed : CallbackStatus::Pending),
         ]);
 
-        if (! $response->successful()) {
+        if ($isClientError) {
+            $this->fail(new \RuntimeException(
+                "Callback HTTP {$status} (client error, not retrying) for callback_id={$this->callbackId}"
+            ));
+
+            return;
+        }
+
+        if (! $isSuccess) {
             throw new \RuntimeException(
-                "Callback HTTP {$response->status()} for callback_id={$this->callbackId}"
+                "Callback HTTP {$status} for callback_id={$this->callbackId}"
             );
         }
     }

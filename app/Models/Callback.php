@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Relations\BelongsToClick;
 use App\Models\Relations\BelongsToLink;
 use App\Models\Relations\BelongsToService;
+use App\Services\Links\Callbacks\CallbackStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -15,7 +16,7 @@ use Illuminate\Support\Carbon;
  * @property array<array-key, mixed> $data
  * @property int|null $response_code
  * @property string|null $response_body
- * @property string $status
+ * @property CallbackStatus $status
  * @property int $attempts
  * @property Carbon|null $last_attempt_at
  * @property Carbon $created_at
@@ -50,6 +51,7 @@ class Callback extends Model
     protected $casts = [
         'data' => 'array',
         'last_attempt_at' => 'datetime',
+        'status' => CallbackStatus::class,
     ];
 
     protected $fillable = [

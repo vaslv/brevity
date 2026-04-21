@@ -3,7 +3,6 @@
 namespace App\Services\Links\Conditions;
 
 use App\Models\Condition;
-use RuntimeException;
 
 class ConditionRegistry
 {
@@ -38,16 +37,5 @@ class ConditionRegistry
         sort($types);
 
         return $types;
-    }
-
-    public function validate(string $type, array $data): array
-    {
-        $handler = $this->getHandler($type);
-
-        if (! $handler) {
-            throw new RuntimeException('Unknown condition type: '.$type);
-        }
-
-        return $handler::validate($data);
     }
 }

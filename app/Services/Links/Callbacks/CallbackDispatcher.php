@@ -32,7 +32,7 @@ readonly class CallbackDispatcher
             'service_id' => $click->service_id,
             'click_id' => $click->id,
             'data' => $rendered,
-            'status' => 'pending',
+            'status' => CallbackStatus::Pending,
             'attempts' => 0,
         ]);
 

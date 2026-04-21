@@ -33,11 +33,11 @@ readonly class CallbackDataRenderer
 
     private function renderString(string $template, array $variables): string
     {
-        foreach ($variables as $name => $replacement) {
-            $template = str_replace('{{'.$name.'}}', $replacement, $template);
-        }
-
-        return $template;
+        return preg_replace_callback(
+            '/\{\{\s*([a-zA-Z][a-zA-Z0-9_.]*)\s*\}\}/',
+            static fn (array $matches): string => $variables[$matches[1]] ?? $matches[0],
+            $template
+        );
     }
 
     private function renderValue(mixed $value, array $variables): mixed
