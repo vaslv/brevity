@@ -15,8 +15,9 @@ class LinkInfolist
             ->components([
                 TextEntry::make('service.name')
                     ->label('Service'),
-                TextEntry::make('domain.id')
-                    ->label('Domain'),
+                TextEntry::make('domain.value')
+                    ->label('Domain')
+                    ->placeholder('-'),
                 TextEntry::make('code')
                     ->placeholder('-'),
                 TextEntry::make('title')
