@@ -73,7 +73,7 @@ class SendCallbackJob implements ShouldQueue
 
         $callback->update([
             'response_code' => $status,
-            'response_body' => Str::limit($response->body(), self::MAX_RESPONSE_BODY_LENGTH, ''),
+            'response_body' => $this->sanitizeResponseBody($response->body()),
             'status' => $isSuccess
                 ? CallbackStatus::Sent
                 : ($isFinal ? CallbackStatus::Failed : CallbackStatus::Pending),
@@ -92,5 +92,13 @@ class SendCallbackJob implements ShouldQueue
                 "Callback HTTP {$status} for callback_id={$this->callbackId}"
             );
         }
+    }
+
+    private function sanitizeResponseBody(string $body): string
+    {
+        $scrubbed = mb_convert_encoding($body, 'UTF-8', 'UTF-8');
+        $scrubbed = str_replace("\0", '', $scrubbed);
+
+        return Str::limit($scrubbed, self::MAX_RESPONSE_BODY_LENGTH, '');
     }
 }
