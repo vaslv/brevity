@@ -11,7 +11,11 @@ class ConditionInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('type'),
+                TextEntry::make('type')
+                    ->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()),
+                TextEntry::make('data')
+                    ->formatStateUsing(fn ($state): string => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))
+                    ->columnSpanFull(),
                 TextEntry::make('created_at')
                     ->dateTime(),
             ]);

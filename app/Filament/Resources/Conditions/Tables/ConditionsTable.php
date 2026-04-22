@@ -16,7 +16,13 @@ class ConditionsTable
         return $table
             ->columns([
                 TextColumn::make('type')
-                    ->searchable(),
+                    ->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString())
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('data')
+                    ->formatStateUsing(fn ($state): string => json_encode($state, JSON_UNESCAPED_UNICODE))
+                    ->limit(80)
+                    ->wrap(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
