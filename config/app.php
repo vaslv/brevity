@@ -17,6 +17,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Version
+    |--------------------------------------------------------------------------
+    |
+    | Pulled from composer.json at config-build time. Run `composer release`
+    | to bump it together with a matching git tag.
+    |
+    */
+
+    'version' => (static function (): string {
+        $path = base_path('composer.json');
+        if (! is_file($path)) {
+            return 'dev';
+        }
+        $data = json_decode((string) file_get_contents($path), true);
+
+        return is_array($data) && isset($data['version']) ? (string) $data['version'] : 'dev';
+    })(),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |
