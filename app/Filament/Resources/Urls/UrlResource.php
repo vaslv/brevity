@@ -15,12 +15,23 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class UrlResource extends Resource
 {
     protected static ?string $model = Url::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static ?string $modelLabel = 'URL';
+
+    protected static string|null|UnitEnum $navigationGroup = 'Dictionaries';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
+
+    protected static ?string $navigationLabel = 'URLs';
+
+    protected static ?int $navigationSort = 1;
+
+    protected static ?string $pluralModelLabel = 'URLs';
 
     public static function form(Schema $schema): Schema
     {

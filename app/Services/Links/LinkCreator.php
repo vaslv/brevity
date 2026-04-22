@@ -49,25 +49,6 @@ class LinkCreator
         });
     }
 
-    private function resolveDomainId(?string $value): ?int
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        return Domain::where('value', $value)->value('id');
-    }
-
-    private function resolveUrlId(string $rawUrl): int
-    {
-        $normalized = Modifier::wrap($rawUrl)
-            ->normalize()
-            ->sortQuery()
-            ->toString();
-
-        return Url::firstOrCreate(['value' => $normalized])->id;
-    }
-
     /**
      * @param  array{type: string, data?: array<string, mixed>}|null  $condition
      */
@@ -91,5 +72,24 @@ class LinkCreator
             ->where('type', $type)
             ->whereRaw('"data"::jsonb = ?::jsonb', [$encoded])
             ->value('id');
+    }
+
+    private function resolveDomainId(?string $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return Domain::where('value', $value)->value('id');
+    }
+
+    private function resolveUrlId(string $rawUrl): int
+    {
+        $normalized = Modifier::wrap($rawUrl)
+            ->normalize()
+            ->sortQuery()
+            ->toString();
+
+        return Url::firstOrCreate(['value' => $normalized])->id;
     }
 }

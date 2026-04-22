@@ -18,28 +18,6 @@ class CallbackDispatchTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_sanitizes_invalid_utf8_and_nul_bytes_in_response_body(): void
-    {
-        $invalidBody = "ok\xC3\x28 \x00 tail";
-
-        Http::fake([
-            'https://93.184.216.34/hook' => Http::response($invalidBody, 200),
-        ]);
-
-        $code = $this->setupLinkWithCallback(
-            callbackUrl: 'https://93.184.216.34/hook',
-            callbackData: ['x' => '{{click.id}}'],
-        );
-
-        $this->get('/'.$code)->assertRedirect();
-
-        $callback = Callback::query()->firstOrFail();
-
-        $this->assertSame(CallbackStatus::Sent, $callback->status);
-        $this->assertStringNotContainsString("\x00", $callback->response_body);
-        $this->assertTrue(mb_check_encoding($callback->response_body, 'UTF-8'));
-    }
-
     public function test_click_recording_dispatches_send_callback_job(): void
     {
         Queue::fake([SendCallbackJob::class]);
@@ -123,6 +101,28 @@ class CallbackDispatchTest extends TestCase
         $this->assertSame(1, $callback->attempts);
         // Only one HTTP call should have been made.
         Http::assertSentCount(1);
+    }
+
+    public function test_it_sanitizes_invalid_utf8_and_nul_bytes_in_response_body(): void
+    {
+        $invalidBody = "ok\xC3\x28 \x00 tail";
+
+        Http::fake([
+            'https://93.184.216.34/hook' => Http::response($invalidBody, 200),
+        ]);
+
+        $code = $this->setupLinkWithCallback(
+            callbackUrl: 'https://93.184.216.34/hook',
+            callbackData: ['x' => '{{click.id}}'],
+        );
+
+        $this->get('/'.$code)->assertRedirect();
+
+        $callback = Callback::query()->firstOrFail();
+
+        $this->assertSame(CallbackStatus::Sent, $callback->status);
+        $this->assertStringNotContainsString("\x00", $callback->response_body);
+        $this->assertTrue(mb_check_encoding($callback->response_body, 'UTF-8'));
     }
 
     public function test_it_sends_callback_with_rendered_template_on_successful_response(): void

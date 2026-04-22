@@ -12,12 +12,17 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class ClickResource extends Resource
 {
     protected static ?string $model = Click::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|null|UnitEnum $navigationGroup = 'Analytics';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCursorArrowRipple;
+
+    protected static ?int $navigationSort = 1;
 
     public static function getPages(): array
     {

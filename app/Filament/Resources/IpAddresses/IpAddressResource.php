@@ -18,9 +18,17 @@ class IpAddressResource extends Resource
 {
     protected static ?string $model = IpAddress::class;
 
+    protected static ?string $modelLabel = 'IP Address';
+
     protected static string|null|UnitEnum $navigationGroup = 'Dictionaries';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedServer;
+
+    protected static ?string $navigationLabel = 'IP Addresses';
+
+    protected static ?int $navigationSort = 3;
+
+    protected static ?string $pluralModelLabel = 'IP Addresses';
 
     public static function getPages(): array
     {

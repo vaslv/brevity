@@ -31,13 +31,14 @@ class RulesRelationManager extends RelationManager
                     ->required(),
                 Select::make('condition_id')
                     ->label('Condition')
-                    ->options(fn () => Condition::query()
-                        ->orderBy('type')
-                        ->get()
-                        ->mapWithKeys(fn (Condition $c) => [
-                            $c->id => sprintf('%s — %s', $c->type, json_encode($c->data, JSON_UNESCAPED_UNICODE)),
-                        ])
-                        ->all()
+                    ->options(
+                        fn () => Condition::query()
+                            ->orderBy('type')
+                            ->get()
+                            ->mapWithKeys(fn (Condition $c) => [
+                                $c->id => sprintf('%s — %s', $c->type, json_encode($c->data, JSON_UNESCAPED_UNICODE)),
+                            ])
+                            ->all()
                     )
                     ->searchable()
                     ->nullable(),
