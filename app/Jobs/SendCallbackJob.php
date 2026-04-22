@@ -40,7 +40,7 @@ class SendCallbackJob implements ShouldQueue
 
         Log::warning('Callback delivery failed permanently.', [
             'callback_id' => $this->callbackId,
-            'exception' => $e->getMessage(),
+            'exception' => $e,
         ]);
     }
 

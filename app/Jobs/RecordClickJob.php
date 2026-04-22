@@ -29,7 +29,7 @@ class RecordClickJob implements ShouldQueue
         report($e);
 
         Log::warning('Failed to record link click.', [
-            'exception' => $e->getMessage(),
+            'exception' => $e,
             'link_id' => $this->linkId,
             'url_id' => $this->urlId,
             'ip' => $this->ip,
