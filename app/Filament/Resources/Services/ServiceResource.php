@@ -24,6 +24,21 @@ class ServiceResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function getNavigationLabel(): string
+    {
+        return __('resources/service.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/service.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/service.plural_label');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ServiceForm::configure($schema);

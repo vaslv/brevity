@@ -12,6 +12,7 @@ class DomainForm
         return $schema
             ->components([
                 TextInput::make('value')
+                    ->label(__('resources/domain.fields.value'))
                     ->required(),
             ]);
     }

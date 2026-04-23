@@ -12,8 +12,10 @@ class ServiceForm
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label(__('resources/service.fields.name'))
                     ->required(),
                 TextInput::make('callback_url')
+                    ->label(__('resources/service.fields.callback_url'))
                     ->url(),
             ]);
     }

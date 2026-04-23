@@ -24,6 +24,21 @@ class DomainResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    public static function getNavigationLabel(): string
+    {
+        return __('resources/domain.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/domain.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/domain.plural_label');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return DomainForm::configure($schema);

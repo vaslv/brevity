@@ -26,6 +26,21 @@ class LinkResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function getNavigationLabel(): string
+    {
+        return __('resources/link.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/link.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/link.plural_label');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return LinkForm::configure($schema);

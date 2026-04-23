@@ -11,8 +11,10 @@ class IpAddressInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('value'),
+                TextEntry::make('value')
+                    ->label(__('resources/ip_address.fields.value')),
                 TextEntry::make('created_at')
+                    ->label(__('resources/ip_address.fields.created_at'))
                     ->dateTime(),
             ]);
     }

@@ -19,13 +19,31 @@ class SettingResource extends Resource
 {
     protected static ?string $model = Setting::class;
 
-    protected static string|null|UnitEnum $navigationGroup = 'System';
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'key';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.system');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('resources/setting.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/setting.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/setting.plural_label');
+    }
 
     public static function form(Schema $schema): Schema
     {

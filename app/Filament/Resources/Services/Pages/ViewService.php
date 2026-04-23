@@ -19,21 +19,21 @@ class ViewService extends ViewRecord
         return [
             EditAction::make(),
             Action::make('createToken')
-                ->label(__('Create API Token'))
+                ->label(__('resources/service.tokens.actions.create'))
                 ->color('success')
                 ->icon('heroicon-o-key')
-                ->modalHeading(__('Create a new API token?'))
-                ->modalDescription(__('The token will be shown once. Store it securely.'))
-                ->modalSubmitActionLabel(__('Create'))
+                ->modalHeading(__('resources/service.tokens.actions.modal_heading'))
+                ->modalDescription(__('resources/service.tokens.actions.modal_description'))
+                ->modalSubmitActionLabel(__('resources/service.tokens.actions.modal_submit'))
                 ->action(function () {
                     /** @var Service $service */
                     $service = $this->getRecord();
                     $plainTextToken = $service->createToken('service-token')->plainTextToken;
 
                     $markdown = implode("\n\n", [
-                        __('**API token created**'),
-                        __('Token: :token', ['token' => $plainTextToken]),
-                        __('Hint: copy and store the token — it will not be shown again.'),
+                        '**'.__('resources/service.tokens.notifications.created_title').'**',
+                        __('resources/service.tokens.notifications.token_line', ['token' => $plainTextToken]),
+                        __('resources/service.tokens.notifications.hint'),
                     ]);
 
                     Notification::make()

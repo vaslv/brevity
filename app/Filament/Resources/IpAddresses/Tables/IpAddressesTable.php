@@ -16,8 +16,10 @@ class IpAddressesTable
         return $table
             ->columns([
                 TextColumn::make('value')
+                    ->label(__('resources/ip_address.fields.value'))
                     ->searchable(),
                 TextColumn::make('created_at')
+                    ->label(__('resources/ip_address.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

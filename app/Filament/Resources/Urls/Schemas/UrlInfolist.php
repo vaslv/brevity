@@ -11,8 +11,10 @@ class UrlInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('value'),
+                TextEntry::make('value')
+                    ->label(__('resources/url.fields.value')),
                 TextEntry::make('created_at')
+                    ->label(__('resources/url.fields.created_at'))
                     ->dateTime(),
             ]);
     }

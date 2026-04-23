@@ -18,11 +18,29 @@ class UserAgentResource extends Resource
 {
     protected static ?string $model = UserAgent::class;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Dictionaries';
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDeviceTablet;
 
     protected static ?int $navigationSort = 5;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.dictionaries');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('resources/user_agent.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/user_agent.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/user_agent.plural_label');
+    }
 
     public static function getPages(): array
     {

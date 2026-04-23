@@ -11,8 +11,10 @@ class DomainInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('value'),
+                TextEntry::make('value')
+                    ->label(__('resources/domain.fields.value')),
                 TextEntry::make('created_at')
+                    ->label(__('resources/domain.fields.created_at'))
                     ->dateTime(),
             ]);
     }

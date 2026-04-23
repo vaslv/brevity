@@ -16,8 +16,10 @@ class UserAgentsTable
         return $table
             ->columns([
                 TextColumn::make('value')
+                    ->label(__('resources/user_agent.fields.value'))
                     ->searchable(),
                 TextColumn::make('created_at')
+                    ->label(__('resources/user_agent.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

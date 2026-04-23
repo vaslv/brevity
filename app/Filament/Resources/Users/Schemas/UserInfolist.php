@@ -11,15 +11,20 @@ class UserInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('name'),
+                TextEntry::make('name')
+                    ->label(__('resources/user.fields.name')),
                 TextEntry::make('email')
+                    ->label(__('resources/user.fields.email'))
                     ->copyable(),
                 TextEntry::make('email_verified_at')
+                    ->label(__('resources/user.fields.email_verified_at'))
                     ->dateTime()
-                    ->placeholder('Not verified'),
+                    ->placeholder(__('resources/user.placeholders.not_verified')),
                 TextEntry::make('created_at')
+                    ->label(__('resources/user.fields.created_at'))
                     ->dateTime(),
                 TextEntry::make('updated_at')
+                    ->label(__('resources/user.fields.updated_at'))
                     ->dateTime(),
             ]);
     }

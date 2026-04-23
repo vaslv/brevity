@@ -18,17 +18,29 @@ class IpAddressResource extends Resource
 {
     protected static ?string $model = IpAddress::class;
 
-    protected static ?string $modelLabel = 'IP Address';
-
-    protected static string|null|UnitEnum $navigationGroup = 'Dictionaries';
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedServer;
-
-    protected static ?string $navigationLabel = 'IP Addresses';
 
     protected static ?int $navigationSort = 3;
 
-    protected static ?string $pluralModelLabel = 'IP Addresses';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.dictionaries');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('resources/ip_address.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/ip_address.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/ip_address.plural_label');
+    }
 
     public static function getPages(): array
     {

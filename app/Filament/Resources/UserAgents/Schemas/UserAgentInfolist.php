@@ -12,8 +12,10 @@ class UserAgentInfolist
         return $schema
             ->components([
                 TextEntry::make('value')
+                    ->label(__('resources/user_agent.fields.value'))
                     ->columnSpanFull(),
                 TextEntry::make('created_at')
+                    ->label(__('resources/user_agent.fields.created_at'))
                     ->dateTime(),
             ]);
     }
