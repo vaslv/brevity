@@ -16,8 +16,10 @@ class DomainsTable
         return $table
             ->columns([
                 TextColumn::make('value')
+                    ->label(__('resources/domain.fields.value'))
                     ->searchable(),
                 TextColumn::make('created_at')
+                    ->label(__('resources/domain.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

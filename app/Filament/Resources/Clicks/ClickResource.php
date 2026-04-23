@@ -18,11 +18,29 @@ class ClickResource extends Resource
 {
     protected static ?string $model = Click::class;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Analytics';
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCursorArrowRipple;
 
     protected static ?int $navigationSort = 1;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.analytics');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('resources/click.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/click.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/click.plural_label');
+    }
 
     public static function getPages(): array
     {

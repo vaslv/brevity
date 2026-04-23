@@ -15,22 +15,29 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class RulesRelationManager extends RelationManager
 {
     protected static string $relationship = 'rules';
+
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('resources/link.rules.title');
+    }
 
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 Select::make('url_id')
+                    ->label(__('resources/link.rules.fields.url_id'))
                     ->relationship('url', 'value')
                     ->searchable()
                     ->preload()
                     ->required(),
                 Select::make('condition_id')
-                    ->label('Condition')
+                    ->label(__('resources/link.rules.fields.condition_id'))
                     ->options(
                         fn () => Condition::query()
                             ->orderBy('type')
@@ -43,11 +50,13 @@ class RulesRelationManager extends RelationManager
                     ->searchable()
                     ->nullable(),
                 Select::make('transition_mode')
+                    ->label(__('resources/link.rules.fields.transition_mode'))
                     ->options(collect(TransitionMode::values())
-                        ->mapWithKeys(fn (string $v) => [$v => ucfirst($v)])
+                        ->mapWithKeys(fn (string $v) => [$v => __('resources/link.transition_modes.'.$v)])
                         ->all())
                     ->nullable(),
                 TextInput::make('priority')
+                    ->label(__('resources/link.rules.fields.priority'))
                     ->required()
                     ->numeric()
                     ->default(1),
@@ -61,16 +70,22 @@ class RulesRelationManager extends RelationManager
             ->defaultSort('priority')
             ->columns([
                 TextColumn::make('priority')
+                    ->label(__('resources/link.rules.fields.priority'))
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('url.value')
+                    ->label(__('resources/link.rules.fields.url'))
                     ->searchable()
                     ->limit(60),
                 TextColumn::make('condition.type')
+                    ->label(__('resources/link.rules.fields.condition'))
                     ->placeholder('-'),
                 TextColumn::make('transition_mode')
+                    ->label(__('resources/link.rules.fields.transition_mode'))
+                    ->formatStateUsing(fn (?string $state) => $state ? __('resources/link.transition_modes.'.$state) : null)
                     ->placeholder('-'),
                 TextColumn::make('created_at')
+                    ->label(__('resources/link.rules.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

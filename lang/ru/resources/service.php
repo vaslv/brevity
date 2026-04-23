@@ -1,0 +1,34 @@
+<?php
+
+return [
+    'label' => 'Сервис',
+    'plural_label' => 'Сервисы',
+    'navigation_label' => 'Сервисы',
+
+    'fields' => [
+        'name' => 'Название',
+        'callback_url' => 'URL колбека',
+        'created_at' => 'Создан',
+    ],
+
+    'tokens' => [
+        'title' => 'API-токены',
+        'fields' => [
+            'name' => 'Название',
+            'abilities' => 'Права',
+            'last_used_at' => 'Последнее использование',
+            'created_at' => 'Создан',
+        ],
+        'actions' => [
+            'create' => 'Создать API-токен',
+            'modal_heading' => 'Создать новый API-токен?',
+            'modal_description' => 'Токен будет показан один раз. Сохраните его в безопасном месте.',
+            'modal_submit' => 'Создать',
+        ],
+        'notifications' => [
+            'created_title' => 'API-токен создан',
+            'token_line' => 'Токен: :token',
+            'hint' => 'Подсказка: скопируйте и сохраните токен — он больше не будет показан.',
+        ],
+    ],
+];

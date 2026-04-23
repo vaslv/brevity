@@ -16,8 +16,10 @@ class ReferrersTable
         return $table
             ->columns([
                 TextColumn::make('value')
+                    ->label(__('resources/referrer.fields.value'))
                     ->searchable(),
                 TextColumn::make('created_at')
+                    ->label(__('resources/referrer.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

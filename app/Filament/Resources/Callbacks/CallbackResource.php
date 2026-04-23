@@ -18,11 +18,29 @@ class CallbackResource extends Resource
 {
     protected static ?string $model = Callback::class;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Analytics';
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBolt;
 
     protected static ?int $navigationSort = 2;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.analytics');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('resources/callback.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/callback.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/callback.plural_label');
+    }
 
     public static function getPages(): array
     {

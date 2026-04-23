@@ -16,8 +16,10 @@ class UrlsTable
         return $table
             ->columns([
                 TextColumn::make('value')
+                    ->label(__('resources/url.fields.value'))
                     ->searchable(),
                 TextColumn::make('created_at')
+                    ->label(__('resources/url.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

@@ -17,23 +17,24 @@ class ConditionForm
 
         $typeOptions = collect($registry->types())
             ->mapWithKeys(fn (string $type) => [
-                $type => str($type)->replace('_', ' ')->title()->toString(),
+                $type => __('resources/condition.types.'.$type),
             ])
             ->all();
 
         return $schema
             ->components([
                 Select::make('type')
+                    ->label(__('resources/condition.fields.type'))
                     ->options($typeOptions)
                     ->required()
                     ->live()
                     ->disabledOn('edit')
-                    ->helperText('Type cannot be changed after creation.'),
+                    ->helperText(__('resources/condition.helpers.type_immutable')),
                 Group::make()
                     ->schema(fn (callable $get): array => match ($get('type')) {
                         'time_before' => [
                             DateTimePicker::make('data.before')
-                                ->label('Match while current time is before')
+                                ->label(__('resources/condition.data_fields.time_before.before'))
                                 ->seconds(true)
                                 ->required()
                                 ->timezone('UTC')

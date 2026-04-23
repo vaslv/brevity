@@ -18,16 +18,19 @@ class UsersTable
             ->defaultSort('name')
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('resources/user.fields.name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('email')
+                    ->label(__('resources/user.fields.email'))
                     ->searchable()
                     ->sortable()
                     ->copyable(),
                 IconColumn::make('email_verified_at')
-                    ->label('Verified')
+                    ->label(__('resources/user.fields.verified'))
                     ->boolean(),
                 TextColumn::make('created_at')
+                    ->label(__('resources/user.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

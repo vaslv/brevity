@@ -15,22 +15,30 @@ class CallbacksTable
         return $table
             ->columns([
                 TextColumn::make('service.name')
+                    ->label(__('resources/callback.fields.service'))
                     ->searchable(),
                 TextColumn::make('click_id')
+                    ->label(__('resources/callback.fields.click_id'))
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('response_code')
+                    ->label(__('resources/callback.fields.response_code'))
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('status')
+                    ->label(__('resources/callback.fields.status'))
+                    ->formatStateUsing(fn (?string $state) => $state ? __('resources/callback.statuses.'.$state) : null)
                     ->searchable(),
                 TextColumn::make('attempts')
+                    ->label(__('resources/callback.fields.attempts'))
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('last_attempt_at')
+                    ->label(__('resources/callback.fields.last_attempt_at'))
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('created_at')
+                    ->label(__('resources/callback.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

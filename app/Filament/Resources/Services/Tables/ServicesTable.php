@@ -16,10 +16,13 @@ class ServicesTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label(__('resources/service.fields.name'))
                     ->searchable(),
                 TextColumn::make('callback_url')
+                    ->label(__('resources/service.fields.callback_url'))
                     ->searchable(),
                 TextColumn::make('created_at')
+                    ->label(__('resources/service.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

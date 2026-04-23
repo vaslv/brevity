@@ -12,18 +12,19 @@ class ClickInfolist
         return $schema
             ->components([
                 TextEntry::make('service.name')
-                    ->label('Service'),
+                    ->label(__('resources/click.fields.service')),
                 TextEntry::make('url.value')
-                    ->label('Url'),
+                    ->label(__('resources/click.fields.url')),
                 TextEntry::make('link.title')
-                    ->label('Link'),
+                    ->label(__('resources/click.fields.link')),
                 TextEntry::make('referrer.value')
-                    ->label('Referrer'),
+                    ->label(__('resources/click.fields.referrer')),
                 TextEntry::make('userAgent.value')
-                    ->label('User agent'),
+                    ->label(__('resources/click.fields.user_agent')),
                 TextEntry::make('ipAddress.value')
-                    ->label('Ip address'),
+                    ->label(__('resources/click.fields.ip_address')),
                 TextEntry::make('created_at')
+                    ->label(__('resources/click.fields.created_at'))
                     ->dateTime(),
             ]);
     }

@@ -11,10 +11,13 @@ class ServiceInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('name'),
+                TextEntry::make('name')
+                    ->label(__('resources/service.fields.name')),
                 TextEntry::make('callback_url')
+                    ->label(__('resources/service.fields.callback_url'))
                     ->placeholder('-'),
                 TextEntry::make('created_at')
+                    ->label(__('resources/service.fields.created_at'))
                     ->dateTime(),
             ]);
     }

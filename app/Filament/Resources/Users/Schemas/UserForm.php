@@ -16,18 +16,21 @@ class UserForm
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label(__('resources/user.fields.name'))
                     ->required()
                     ->maxLength(255),
                 TextInput::make('email')
+                    ->label(__('resources/user.fields.email'))
                     ->email()
                     ->required()
                     ->maxLength(255)
                     ->unique(ignoreRecord: true),
                 DateTimePicker::make('email_verified_at')
-                    ->label('Email verified at')
+                    ->label(__('resources/user.fields.email_verified_at'))
                     ->nullable()
-                    ->helperText('Leave blank to mark email as unverified.'),
+                    ->helperText(__('resources/user.helpers.email_verified_at')),
                 TextInput::make('password')
+                    ->label(__('resources/user.fields.password'))
                     ->password()
                     ->revealable()
                     ->rule(Password::default())
@@ -36,8 +39,9 @@ class UserForm
                     ->dehydrated(fn (?string $state): bool => filled($state))
                     ->helperText(fn ($livewire): string => $livewire instanceof CreateRecord
                         ? ''
-                        : 'Leave blank to keep the current password.'),
+                        : __('resources/user.helpers.password_on_edit')),
                 TextInput::make('password_confirmation')
+                    ->label(__('resources/user.fields.password_confirmation'))
                     ->password()
                     ->revealable()
                     ->required(fn (Get $get): bool => filled($get('password')))

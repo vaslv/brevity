@@ -20,20 +20,27 @@ class LinksTable
         return $table
             ->columns([
                 TextColumn::make('service.name')
+                    ->label(__('resources/link.fields.service'))
                     ->searchable(),
                 TextColumn::make('domain.value')
+                    ->label(__('resources/link.fields.domain'))
                     ->searchable(),
                 TextColumn::make('code')
+                    ->label(__('resources/link.fields.code'))
                     ->searchable(),
                 TextColumn::make('title')
+                    ->label(__('resources/link.fields.title'))
                     ->searchable(),
                 IconColumn::make('forward_query')
+                    ->label(__('resources/link.fields.forward_query'))
                     ->boolean(),
                 TextColumn::make('created_at')
+                    ->label(__('resources/link.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('deleted_at')
+                    ->label(__('resources/link.fields.deleted_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

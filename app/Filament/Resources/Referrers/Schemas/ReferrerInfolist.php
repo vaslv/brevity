@@ -11,8 +11,10 @@ class ReferrerInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('value'),
+                TextEntry::make('value')
+                    ->label(__('resources/referrer.fields.value')),
                 TextEntry::make('created_at')
+                    ->label(__('resources/referrer.fields.created_at'))
                     ->dateTime(),
             ]);
     }

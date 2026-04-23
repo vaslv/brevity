@@ -21,11 +21,29 @@ class ConditionResource extends Resource
 {
     protected static ?string $model = Condition::class;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Dictionaries';
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAdjustmentsHorizontal;
 
     protected static ?int $navigationSort = 2;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.dictionaries');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('resources/condition.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/condition.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/condition.plural_label');
+    }
 
     public static function form(Schema $schema): Schema
     {

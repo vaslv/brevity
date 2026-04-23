@@ -16,14 +16,17 @@ class ConditionsTable
         return $table
             ->columns([
                 TextColumn::make('type')
-                    ->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString())
+                    ->label(__('resources/condition.fields.type'))
+                    ->formatStateUsing(fn (string $state): string => __('resources/condition.types.'.$state))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('data')
+                    ->label(__('resources/condition.fields.data'))
                     ->formatStateUsing(fn ($state): string => json_encode($state, JSON_UNESCAPED_UNICODE))
                     ->limit(80)
                     ->wrap(),
                 TextColumn::make('created_at')
+                    ->label(__('resources/condition.fields.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

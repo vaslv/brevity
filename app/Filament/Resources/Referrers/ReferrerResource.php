@@ -18,11 +18,29 @@ class ReferrerResource extends Resource
 {
     protected static ?string $model = Referrer::class;
 
-    protected static string|null|UnitEnum $navigationGroup = 'Dictionaries';
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUturnLeft;
 
     protected static ?int $navigationSort = 4;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.dictionaries');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('resources/referrer.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/referrer.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/referrer.plural_label');
+    }
 
     public static function getPages(): array
     {

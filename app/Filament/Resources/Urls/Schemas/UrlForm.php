@@ -12,6 +12,7 @@ class UrlForm
         return $schema
             ->components([
                 TextInput::make('value')
+                    ->label(__('resources/url.fields.value'))
                     ->required(),
             ]);
     }
