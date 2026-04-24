@@ -11,6 +11,11 @@ class EditCondition extends EditRecord
 {
     protected static string $resource = ConditionResource::class;
 
+    public function getTitle(): string
+    {
+        return __('resources/condition.pages.edit_title');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

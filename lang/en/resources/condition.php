@@ -25,4 +25,10 @@ return [
             'before_help' => 'Rule matches while the current time is earlier than this moment.',
         ],
     ],
+
+    'pages' => [
+        'create_title' => 'Create condition',
+        'edit_title' => 'Edit condition',
+        'view_title' => 'View condition',
+    ],
 ];

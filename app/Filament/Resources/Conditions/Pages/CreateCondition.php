@@ -8,4 +8,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateCondition extends CreateRecord
 {
     protected static string $resource = ConditionResource::class;
+
+    public function getTitle(): string
+    {
+        return __('resources/condition.pages.create_title');
+    }
 }

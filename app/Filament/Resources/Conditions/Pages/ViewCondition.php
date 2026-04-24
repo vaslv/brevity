@@ -10,6 +10,11 @@ class ViewCondition extends ViewRecord
 {
     protected static string $resource = ConditionResource::class;
 
+    public function getTitle(): string
+    {
+        return __('resources/condition.pages.view_title');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -32,4 +32,10 @@ return [
             'hint' => 'Hint: copy and store the token — it will not be shown again.',
         ],
     ],
+
+    'pages' => [
+        'create_title' => 'Create service',
+        'edit_title' => 'Edit service',
+        'view_title' => 'View service',
+    ],
 ];

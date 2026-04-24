@@ -11,6 +11,11 @@ class EditDomain extends EditRecord
 {
     protected static string $resource = DomainResource::class;
 
+    public function getTitle(): string
+    {
+        return __('resources/domain.pages.edit_title');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

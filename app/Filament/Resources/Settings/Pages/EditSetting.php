@@ -10,6 +10,11 @@ class EditSetting extends EditRecord
 {
     protected static string $resource = SettingResource::class;
 
+    public function getTitle(): string
+    {
+        return __('resources/setting.pages.edit_title');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

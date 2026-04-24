@@ -9,4 +9,8 @@ return [
         'value' => 'Значение',
         'created_at' => 'Создан',
     ],
+
+    'pages' => [
+        'view_title' => 'Просмотр IP-адреса',
+    ],
 ];

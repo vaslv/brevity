@@ -13,4 +13,9 @@ return [
         'created_at' => 'Created at',
         'updated_at' => 'Updated at',
     ],
+
+    'pages' => [
+        'create_title' => 'Create setting',
+        'edit_title' => 'Edit setting',
+    ],
 ];

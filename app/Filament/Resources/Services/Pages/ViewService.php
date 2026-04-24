@@ -14,6 +14,11 @@ class ViewService extends ViewRecord
 {
     protected static string $resource = ServiceResource::class;
 
+    public function getTitle(): string
+    {
+        return __('resources/service.pages.view_title');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

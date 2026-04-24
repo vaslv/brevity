@@ -24,4 +24,10 @@ return [
     'placeholders' => [
         'not_verified' => 'Not verified',
     ],
+
+    'pages' => [
+        'create_title' => 'Create user',
+        'edit_title' => 'Edit user',
+        'view_title' => 'View user',
+    ],
 ];
