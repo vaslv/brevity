@@ -14,4 +14,11 @@ return [
         'ip_address' => 'IP address',
         'created_at' => 'Created at',
     ],
+
+    'filters' => [
+        'service' => 'Service',
+        'link' => 'Link',
+        'created_from' => 'From date',
+        'created_until' => 'Until date',
+    ],
 ];

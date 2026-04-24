@@ -14,4 +14,11 @@ return [
         'ip_address' => 'IP-адрес',
         'created_at' => 'Создан',
     ],
+
+    'filters' => [
+        'service' => 'Сервис',
+        'link' => 'Ссылка',
+        'created_from' => 'С даты',
+        'created_until' => 'По дату',
+    ],
 ];

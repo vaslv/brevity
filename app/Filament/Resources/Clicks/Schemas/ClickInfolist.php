@@ -15,8 +15,9 @@ class ClickInfolist
                     ->label(__('resources/click.fields.service')),
                 TextEntry::make('url.value')
                     ->label(__('resources/click.fields.url')),
-                TextEntry::make('link.title')
-                    ->label(__('resources/click.fields.link')),
+                TextEntry::make('link.code')
+                    ->label(__('resources/click.fields.link'))
+                    ->placeholder('-'),
                 TextEntry::make('referrer.value')
                     ->label(__('resources/click.fields.referrer')),
                 TextEntry::make('userAgent.value')
