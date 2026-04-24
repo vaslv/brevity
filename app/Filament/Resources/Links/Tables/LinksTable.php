@@ -22,18 +22,33 @@ class LinksTable
                 TextColumn::make('service.name')
                     ->label(__('resources/link.fields.service'))
                     ->searchable(),
-                TextColumn::make('domain.value')
-                    ->label(__('resources/link.fields.domain'))
-                    ->searchable(),
-                TextColumn::make('code')
-                    ->label(__('resources/link.fields.code'))
-                    ->searchable(),
-                TextColumn::make('title')
-                    ->label(__('resources/link.fields.title'))
-                    ->searchable(),
+                TextColumn::make('url')
+                    ->label(__('resources/link.fields.short_url'))
+                    ->copyable()
+                    ->copyMessage(__('resources/link.fields.short_url_copied'))
+                    ->searchable(query: fn ($query, string $search) => $query->where('code', 'ilike', "%{$search}%")),
+                TextColumn::make('clicks_count')
+                    ->label(__('resources/link.fields.clicks_count'))
+                    ->counts('clicks')
+                    ->sortable(),
                 IconColumn::make('forward_query')
                     ->label(__('resources/link.fields.forward_query'))
-                    ->boolean(),
+                    ->boolean()
+                    ->tooltip(fn (bool $state): string => $state
+                        ? __('resources/link.fields.forward_query_yes')
+                        : __('resources/link.fields.forward_query_no')),
+                TextColumn::make('domain.value')
+                    ->label(__('resources/link.fields.domain'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('code')
+                    ->label(__('resources/link.fields.code'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('title')
+                    ->label(__('resources/link.fields.title'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label(__('resources/link.fields.created_at'))
                     ->dateTime()
