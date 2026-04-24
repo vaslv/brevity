@@ -37,9 +37,7 @@ class RulesRelationManager extends RelationManager
                         fn () => Condition::query()
                             ->orderBy('type')
                             ->get()
-                            ->mapWithKeys(fn (Condition $c) => [
-                                $c->id => sprintf('%s — %s', $c->type, json_encode($c->data, JSON_UNESCAPED_UNICODE)),
-                            ])
+                            ->mapWithKeys(fn (Condition $c) => [$c->id => $c->describe()])
                             ->all()
                     )
                     ->searchable()
@@ -79,8 +77,9 @@ class RulesRelationManager extends RelationManager
                     ->label(__('resources/link.rules.fields.url'))
                     ->searchable()
                     ->limit(60),
-                TextColumn::make('condition.type')
+                TextColumn::make('condition')
                     ->label(__('resources/link.rules.fields.condition'))
+                    ->state(fn ($record): ?string => $record->condition?->describe())
                     ->placeholder('-'),
                 TextColumn::make('transition_mode')
                     ->label(__('resources/link.rules.fields.transition_mode'))

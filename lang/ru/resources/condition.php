@@ -19,6 +19,10 @@ return [
         'time_before' => 'До указанного времени',
     ],
 
+    'describe' => [
+        'time_before' => 'До :datetime',
+    ],
+
     'data_fields' => [
         'time_before' => [
             'before' => 'Срабатывать, пока текущее время меньше',
