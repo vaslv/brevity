@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Callbacks\Tables;
 
+use App\Services\Links\Callbacks\CallbackStatus;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
@@ -27,7 +28,9 @@ class CallbacksTable
                     ->sortable(),
                 TextColumn::make('status')
                     ->label(__('resources/callback.fields.status'))
-                    ->formatStateUsing(fn (?string $state) => $state ? __('resources/callback.statuses.'.$state) : null)
+                    ->formatStateUsing(fn (CallbackStatus|string|null $state) => $state
+                        ? __('resources/callback.statuses.'.($state instanceof CallbackStatus ? $state->value : $state))
+                        : null)
                     ->searchable(),
                 TextColumn::make('attempts')
                     ->label(__('resources/callback.fields.attempts'))

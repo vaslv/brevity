@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Callbacks\Schemas;
 
+use App\Services\Links\Callbacks\CallbackStatus;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
 
@@ -26,7 +27,9 @@ class CallbackInfolist
                     ->columnSpanFull(),
                 TextEntry::make('status')
                     ->label(__('resources/callback.fields.status'))
-                    ->formatStateUsing(fn (?string $state) => $state ? __('resources/callback.statuses.'.$state) : null),
+                    ->formatStateUsing(fn (CallbackStatus|string|null $state) => $state
+                        ? __('resources/callback.statuses.'.($state instanceof CallbackStatus ? $state->value : $state))
+                        : null),
                 TextEntry::make('attempts')
                     ->label(__('resources/callback.fields.attempts'))
                     ->numeric(),
