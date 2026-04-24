@@ -41,6 +41,11 @@ class LinkResource extends Resource
         return __('resources/link.navigation_label');
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) Link::query()->count();
+    }
+
     public static function getPages(): array
     {
         return [

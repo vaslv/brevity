@@ -7,6 +7,7 @@ use App\Filament\Resources\Callbacks\Pages\ViewCallback;
 use App\Filament\Resources\Callbacks\Schemas\CallbackInfolist;
 use App\Filament\Resources\Callbacks\Tables\CallbacksTable;
 use App\Models\Callback;
+use App\Services\Links\Callbacks\CallbackStatus;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -34,6 +35,23 @@ class CallbackResource extends Resource
     public static function getNavigationLabel(): string
     {
         return __('resources/callback.navigation_label');
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $count = Callback::query()->where('status', CallbackStatus::Failed)->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'danger';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return __('resources/callback.navigation_badge_tooltip');
     }
 
     public static function getPages(): array

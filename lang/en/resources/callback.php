@@ -4,6 +4,7 @@ return [
     'label' => 'Callback',
     'plural_label' => 'Callbacks',
     'navigation_label' => 'Callbacks',
+    'navigation_badge_tooltip' => 'Callbacks in Failed status',
 
     'fields' => [
         'service' => 'Service',

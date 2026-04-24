@@ -4,6 +4,7 @@ return [
     'label' => 'Click',
     'plural_label' => 'Clicks',
     'navigation_label' => 'Clicks',
+    'navigation_badge_tooltip' => 'Clicks today',
 
     'fields' => [
         'service' => 'Service',
