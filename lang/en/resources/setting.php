@@ -18,4 +18,13 @@ return [
         'create_title' => 'Create setting',
         'edit_title' => 'Edit setting',
     ],
+
+    'tabs' => [
+        'all' => 'All',
+        'general' => 'General',
+    ],
+
+    'empty' => [
+        'heading' => 'No settings found',
+    ],
 ];

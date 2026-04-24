@@ -16,9 +16,9 @@ class ListSettings extends ListRecords
     public function getTabs(): array
     {
         $tabs = [
-            'all' => Tab::make('All'),
+            'all' => Tab::make(__('resources/setting.tabs.all')),
 
-            'general' => Tab::make('General')
+            'general' => Tab::make(__('resources/setting.tabs.general'))
                 ->modifyQueryUsing(
                     fn (Builder $query) => $query->whereNull('group')
                 ),
