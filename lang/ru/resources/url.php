@@ -7,6 +7,7 @@ return [
 
     'fields' => [
         'value' => 'Значение',
+        'rules_count' => 'Используется в ссылках',
         'created_at' => 'Создан',
     ],
 ];
