@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Urls;
 
 use App\Filament\Resources\Urls\Pages\CreateUrl;
-use App\Filament\Resources\Urls\Pages\EditUrl;
 use App\Filament\Resources\Urls\Pages\ListUrls;
 use App\Filament\Resources\Urls\Pages\ViewUrl;
 use App\Filament\Resources\Urls\Schemas\UrlForm;
@@ -50,7 +49,6 @@ class UrlResource extends Resource
             'index' => ListUrls::route('/'),
             'create' => CreateUrl::route('/create'),
             'view' => ViewUrl::route('/{record}'),
-            'edit' => EditUrl::route('/{record}/edit'),
         ];
     }
 

@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\UserAgents\Pages;
 
 use App\Filament\Resources\UserAgents\UserAgentResource;
-use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewUserAgent extends ViewRecord
@@ -13,12 +12,5 @@ class ViewUserAgent extends ViewRecord
     public function getTitle(): string
     {
         return __('resources/user_agent.pages.view_title');
-    }
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            EditAction::make(),
-        ];
     }
 }

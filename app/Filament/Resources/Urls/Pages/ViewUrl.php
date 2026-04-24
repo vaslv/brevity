@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Urls\Pages;
 
 use App\Filament\Resources\Urls\UrlResource;
-use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewUrl extends ViewRecord
@@ -13,12 +12,5 @@ class ViewUrl extends ViewRecord
     public function getTitle(): string
     {
         return __('resources/url.pages.view_title');
-    }
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            EditAction::make(),
-        ];
     }
 }

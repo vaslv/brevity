@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Conditions;
 
 use App\Filament\Resources\Conditions\Pages\CreateCondition;
-use App\Filament\Resources\Conditions\Pages\EditCondition;
 use App\Filament\Resources\Conditions\Pages\ListConditions;
 use App\Filament\Resources\Conditions\Pages\ViewCondition;
 use App\Filament\Resources\Conditions\Schemas\ConditionForm;
@@ -50,7 +49,6 @@ class ConditionResource extends Resource
             'index' => ListConditions::route('/'),
             'create' => CreateCondition::route('/create'),
             'view' => ViewCondition::route('/{record}'),
-            'edit' => EditCondition::route('/{record}/edit'),
         ];
     }
 
