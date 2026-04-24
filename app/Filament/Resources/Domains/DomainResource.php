@@ -34,6 +34,11 @@ class DomainResource extends Resource
         return __('resources/domain.label');
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.main');
+    }
+
     public static function getNavigationLabel(): string
     {
         return __('resources/domain.navigation_label');
