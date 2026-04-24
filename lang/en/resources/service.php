@@ -8,6 +8,7 @@ return [
     'fields' => [
         'name' => 'Name',
         'callback_url' => 'Callback URL',
+        'callback_url_help' => 'POST endpoint to notify after each click. Leave empty to disable callbacks for this service.',
         'created_at' => 'Created at',
     ],
 

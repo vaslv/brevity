@@ -22,6 +22,7 @@ return [
     'data_fields' => [
         'time_before' => [
             'before' => 'Match while current time is before',
+            'before_help' => 'Rule matches while the current time is earlier than this moment.',
         ],
     ],
 ];
