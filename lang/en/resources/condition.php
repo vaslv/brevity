@@ -19,6 +19,10 @@ return [
         'time_before' => 'Time before',
     ],
 
+    'describe' => [
+        'time_before' => 'Before :datetime',
+    ],
+
     'data_fields' => [
         'time_before' => [
             'before' => 'Match while current time is before',

@@ -39,4 +39,16 @@ class Condition extends Model
         'type',
         'data',
     ];
+
+    public function describe(): string
+    {
+        return match ($this->type) {
+            'time_before' => __('resources/condition.describe.time_before', [
+                'datetime' => isset($this->data['before'])
+                    ? Carbon::parse($this->data['before'])->isoFormat('D MMM YYYY, HH:mm')
+                    : '—',
+            ]),
+            default => __('resources/condition.types.'.$this->type),
+        };
+    }
 }
