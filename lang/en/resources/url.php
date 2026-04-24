@@ -7,6 +7,7 @@ return [
 
     'fields' => [
         'value' => 'Value',
+        'rules_count' => 'Used in links',
         'created_at' => 'Created at',
     ],
 ];
