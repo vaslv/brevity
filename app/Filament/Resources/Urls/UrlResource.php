@@ -15,7 +15,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class UrlResource extends Resource
 {
@@ -24,6 +23,16 @@ class UrlResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
     protected static ?int $navigationSort = 1;
+
+    public static function form(Schema $schema): Schema
+    {
+        return UrlForm::configure($schema);
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/url.label');
+    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -35,21 +44,6 @@ class UrlResource extends Resource
         return __('resources/url.navigation_label');
     }
 
-    public static function getModelLabel(): string
-    {
-        return __('resources/url.label');
-    }
-
-    public static function getPluralModelLabel(): string
-    {
-        return __('resources/url.plural_label');
-    }
-
-    public static function form(Schema $schema): Schema
-    {
-        return UrlForm::configure($schema);
-    }
-
     public static function getPages(): array
     {
         return [
@@ -58,6 +52,11 @@ class UrlResource extends Resource
             'view' => ViewUrl::route('/{record}'),
             'edit' => EditUrl::route('/{record}/edit'),
         ];
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/url.plural_label');
     }
 
     public static function getRelations(): array

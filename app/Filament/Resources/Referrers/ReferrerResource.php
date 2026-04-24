@@ -12,7 +12,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class ReferrerResource extends Resource
 {
@@ -21,6 +20,11 @@ class ReferrerResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUturnLeft;
 
     protected static ?int $navigationSort = 4;
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/referrer.label');
+    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -32,22 +36,17 @@ class ReferrerResource extends Resource
         return __('resources/referrer.navigation_label');
     }
 
-    public static function getModelLabel(): string
-    {
-        return __('resources/referrer.label');
-    }
-
-    public static function getPluralModelLabel(): string
-    {
-        return __('resources/referrer.plural_label');
-    }
-
     public static function getPages(): array
     {
         return [
             'index' => ListReferrers::route('/'),
             'view' => ViewReferrer::route('/{record}'),
         ];
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/referrer.plural_label');
     }
 
     public static function getRelations(): array

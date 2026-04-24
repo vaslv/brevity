@@ -15,7 +15,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class ConditionResource extends Resource
 {
@@ -24,6 +23,16 @@ class ConditionResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAdjustmentsHorizontal;
 
     protected static ?int $navigationSort = 2;
+
+    public static function form(Schema $schema): Schema
+    {
+        return ConditionForm::configure($schema);
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/condition.label');
+    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -35,21 +44,6 @@ class ConditionResource extends Resource
         return __('resources/condition.navigation_label');
     }
 
-    public static function getModelLabel(): string
-    {
-        return __('resources/condition.label');
-    }
-
-    public static function getPluralModelLabel(): string
-    {
-        return __('resources/condition.plural_label');
-    }
-
-    public static function form(Schema $schema): Schema
-    {
-        return ConditionForm::configure($schema);
-    }
-
     public static function getPages(): array
     {
         return [
@@ -58,6 +52,11 @@ class ConditionResource extends Resource
             'view' => ViewCondition::route('/{record}'),
             'edit' => EditCondition::route('/{record}/edit'),
         ];
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/condition.plural_label');
     }
 
     public static function getRelations(): array

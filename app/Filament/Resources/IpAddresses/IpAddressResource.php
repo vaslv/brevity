@@ -12,7 +12,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class IpAddressResource extends Resource
 {
@@ -21,6 +20,11 @@ class IpAddressResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedServer;
 
     protected static ?int $navigationSort = 3;
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/ip_address.label');
+    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -32,22 +36,17 @@ class IpAddressResource extends Resource
         return __('resources/ip_address.navigation_label');
     }
 
-    public static function getModelLabel(): string
-    {
-        return __('resources/ip_address.label');
-    }
-
-    public static function getPluralModelLabel(): string
-    {
-        return __('resources/ip_address.plural_label');
-    }
-
     public static function getPages(): array
     {
         return [
             'index' => ListIpAddresses::route('/'),
             'view' => ViewIpAddress::route('/{record}'),
         ];
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/ip_address.plural_label');
     }
 
     public static function getRelations(): array

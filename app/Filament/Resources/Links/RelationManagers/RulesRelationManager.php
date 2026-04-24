@@ -21,11 +21,6 @@ class RulesRelationManager extends RelationManager
 {
     protected static string $relationship = 'rules';
 
-    public static function getTitle(Model $ownerRecord, string $pageClass): string
-    {
-        return __('resources/link.rules.title');
-    }
-
     public function form(Schema $schema): Schema
     {
         return $schema
@@ -63,6 +58,11 @@ class RulesRelationManager extends RelationManager
                     ->numeric()
                     ->default(1),
             ]);
+    }
+
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('resources/link.rules.title');
     }
 
     public function table(Table $table): Table

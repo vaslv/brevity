@@ -12,7 +12,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class UserAgentResource extends Resource
 {
@@ -21,6 +20,11 @@ class UserAgentResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDeviceTablet;
 
     protected static ?int $navigationSort = 5;
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/user_agent.label');
+    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -32,22 +36,17 @@ class UserAgentResource extends Resource
         return __('resources/user_agent.navigation_label');
     }
 
-    public static function getModelLabel(): string
-    {
-        return __('resources/user_agent.label');
-    }
-
-    public static function getPluralModelLabel(): string
-    {
-        return __('resources/user_agent.plural_label');
-    }
-
     public static function getPages(): array
     {
         return [
             'index' => ListUserAgents::route('/'),
             'view' => ViewUserAgent::route('/{record}'),
         ];
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/user_agent.plural_label');
     }
 
     public static function getRelations(): array

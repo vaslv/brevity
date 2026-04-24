@@ -26,9 +26,9 @@ class LinkResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    public static function getNavigationLabel(): string
+    public static function form(Schema $schema): Schema
     {
-        return __('resources/link.navigation_label');
+        return LinkForm::configure($schema);
     }
 
     public static function getModelLabel(): string
@@ -36,14 +36,9 @@ class LinkResource extends Resource
         return __('resources/link.label');
     }
 
-    public static function getPluralModelLabel(): string
+    public static function getNavigationLabel(): string
     {
-        return __('resources/link.plural_label');
-    }
-
-    public static function form(Schema $schema): Schema
-    {
-        return LinkForm::configure($schema);
+        return __('resources/link.navigation_label');
     }
 
     public static function getPages(): array
@@ -54,6 +49,11 @@ class LinkResource extends Resource
             'view' => ViewLink::route('/{record}'),
             'edit' => EditLink::route('/{record}/edit'),
         ];
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/link.plural_label');
     }
 
     public static function getRecordRouteBindingEloquentQuery(): Builder

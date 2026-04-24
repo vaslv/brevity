@@ -12,7 +12,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class ClickResource extends Resource
 {
@@ -21,6 +20,11 @@ class ClickResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCursorArrowRipple;
 
     protected static ?int $navigationSort = 1;
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/click.label');
+    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -32,22 +36,17 @@ class ClickResource extends Resource
         return __('resources/click.navigation_label');
     }
 
-    public static function getModelLabel(): string
-    {
-        return __('resources/click.label');
-    }
-
-    public static function getPluralModelLabel(): string
-    {
-        return __('resources/click.plural_label');
-    }
-
     public static function getPages(): array
     {
         return [
             'index' => ListClicks::route('/'),
             'view' => ViewClick::route('/{record}'),
         ];
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/click.plural_label');
     }
 
     public static function getRelations(): array
