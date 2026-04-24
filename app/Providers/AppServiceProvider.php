@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -18,6 +19,14 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('production')) {
             URL::forceScheme('https');
         }
+
+        FilamentTimezone::set(function (): ?string {
+            $tz = request()->cookie('tz');
+
+            return is_string($tz) && in_array($tz, timezone_identifiers_list(), true)
+                ? $tz
+                : null;
+        });
 
         RateLimiter::for('link-resolve', function (Request $request) {
             return [

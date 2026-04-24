@@ -30,10 +30,12 @@ class LinkForm
                     ->columnSpan(2),
                 Toggle::make('forward_query')
                     ->label(__('resources/link.fields.forward_query'))
+                    ->helperText(__('resources/link.fields.forward_query_help'))
                     ->required()
                     ->columnSpan(2),
                 KeyValue::make('callback_data')
                     ->label(__('resources/link.fields.callback_data'))
+                    ->helperText(__('resources/link.fields.callback_data_help'))
                     ->reorderable()
                     ->keyLabel(__('resources/link.fields.callback_data_key'))
                     ->valueLabel(__('resources/link.fields.callback_data_value'))

@@ -8,6 +8,7 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Schema;
+use Filament\Support\Facades\FilamentTimezone;
 
 class ConditionForm
 {
@@ -35,17 +36,12 @@ class ConditionForm
                         'time_before' => [
                             DateTimePicker::make('data.before')
                                 ->label(__('resources/condition.data_fields.time_before.before'))
+                                ->helperText(__('resources/condition.data_fields.time_before.before_help'))
                                 ->seconds(true)
                                 ->required()
-                                ->timezone('UTC')
-                                ->formatStateUsing(
-                                    fn ($state) => $state
-                                        ? CarbonImmutable::parse($state)->utc()->format('Y-m-d H:i:s')
-                                        : null,
-                                )
                                 ->dehydrateStateUsing(
                                     fn ($state) => $state
-                                        ? CarbonImmutable::parse($state, 'UTC')->format('Y-m-d\TH:i:sP')
+                                        ? CarbonImmutable::parse($state, FilamentTimezone::get())->format('Y-m-d\TH:i:sP')
                                         : null,
                                 ),
                         ],

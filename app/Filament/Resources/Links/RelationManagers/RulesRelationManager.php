@@ -51,12 +51,14 @@ class RulesRelationManager extends RelationManager
                     ->nullable(),
                 Select::make('transition_mode')
                     ->label(__('resources/link.rules.fields.transition_mode'))
+                    ->helperText(__('resources/link.rules.fields.transition_mode_help'))
                     ->options(collect(TransitionMode::values())
                         ->mapWithKeys(fn (string $v) => [$v => __('resources/link.transition_modes.'.$v)])
                         ->all())
                     ->nullable(),
                 TextInput::make('priority')
                     ->label(__('resources/link.rules.fields.priority'))
+                    ->helperText(__('resources/link.rules.fields.priority_help'))
                     ->required()
                     ->numeric()
                     ->default(1),

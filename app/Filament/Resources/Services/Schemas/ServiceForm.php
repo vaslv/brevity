@@ -16,6 +16,7 @@ class ServiceForm
                     ->required(),
                 TextInput::make('callback_url')
                     ->label(__('resources/service.fields.callback_url'))
+                    ->helperText(__('resources/service.fields.callback_url_help'))
                     ->url(),
             ]);
     }

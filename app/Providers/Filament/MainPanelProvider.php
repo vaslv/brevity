@@ -42,6 +42,10 @@ class MainPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::TOPBAR_LOGO_AFTER,
                 fn (): string => view('filament.version-chip')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): string => view('filament.browser-timezone')->render(),
             );
     }
 }
