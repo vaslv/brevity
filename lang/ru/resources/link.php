@@ -30,6 +30,12 @@ return [
 
     'rules' => [
         'title' => 'Правила',
+        'actions' => [
+            'create_label' => 'Создать правило',
+            'create_heading' => 'Создать правило',
+            'edit_heading' => 'Редактирование правила',
+            'delete_heading' => 'Удалить правило?',
+        ],
         'fields' => [
             'url_id' => 'URL',
             'url' => 'URL',

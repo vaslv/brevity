@@ -96,11 +96,15 @@ class RulesRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->label(__('resources/link.rules.actions.create_label'))
+                    ->modalHeading(__('resources/link.rules.actions.create_heading')),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->modalHeading(__('resources/link.rules.actions.edit_heading')),
+                DeleteAction::make()
+                    ->modalHeading(__('resources/link.rules.actions.delete_heading')),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
