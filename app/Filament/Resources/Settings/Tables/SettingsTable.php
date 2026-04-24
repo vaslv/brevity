@@ -15,6 +15,7 @@ class SettingsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->emptyStateHeading(__('resources/setting.empty.heading'))
             ->columns([
                 TextColumn::make('key')
                     ->label(__('resources/setting.fields.key'))
