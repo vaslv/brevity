@@ -34,6 +34,11 @@ class ServiceResource extends Resource
         return __('resources/service.label');
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.main');
+    }
+
     public static function getNavigationLabel(): string
     {
         return __('resources/service.navigation_label');

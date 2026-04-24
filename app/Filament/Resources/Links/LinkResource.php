@@ -36,6 +36,11 @@ class LinkResource extends Resource
         return __('resources/link.label');
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.main');
+    }
+
     public static function getNavigationLabel(): string
     {
         return __('resources/link.navigation_label');
