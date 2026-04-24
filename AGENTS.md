@@ -51,6 +51,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 ## Replies
 
 - Be concise in your explanations - focus on what's important rather than explaining obvious details.
+- After completing any assigned task, always provide one well-formed commit title suggestion.
 
 === boost rules ===
 
@@ -175,7 +176,7 @@ $this->app->singleton(Service::class, fn () => new Service(fn () => request()));
 
 # Laravel Pint Code Formatter
 
-- If you have modified any PHP files, you must run `vendor/bin/sail bin pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
+- After completing any task, you must run `vendor/bin/sail bin pint --format agent` before finalizing changes to ensure the project's styling is always brought to the standard.
 - Do not run `vendor/bin/sail bin pint --test --format agent`, simply run `vendor/bin/sail bin pint --format agent` to fix any formatting issues.
 
 === phpunit/core rules ===
