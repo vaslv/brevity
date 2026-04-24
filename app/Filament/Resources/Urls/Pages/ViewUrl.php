@@ -10,6 +10,11 @@ class ViewUrl extends ViewRecord
 {
     protected static string $resource = UrlResource::class;
 
+    public function getTitle(): string
+    {
+        return __('resources/url.pages.view_title');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

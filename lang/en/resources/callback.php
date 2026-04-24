@@ -22,4 +22,8 @@ return [
         'sent' => 'Sent',
         'failed' => 'Failed',
     ],
+
+    'pages' => [
+        'view_title' => 'View callback',
+    ],
 ];

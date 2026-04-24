@@ -8,4 +8,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateUrl extends CreateRecord
 {
     protected static string $resource = UrlResource::class;
+
+    public function getTitle(): string
+    {
+        return __('resources/url.pages.create_title');
+    }
 }

@@ -10,6 +10,11 @@ class ViewLink extends ViewRecord
 {
     protected static string $resource = LinkResource::class;
 
+    public function getTitle(): string
+    {
+        return __('resources/link.pages.view_title');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

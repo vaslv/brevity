@@ -10,4 +10,10 @@ return [
         'rules_count' => 'Используется в ссылках',
         'created_at' => 'Создан',
     ],
+
+    'pages' => [
+        'create_title' => 'Создать URL',
+        'edit_title' => 'Редактирование URL',
+        'view_title' => 'Просмотр URL',
+    ],
 ];

@@ -9,4 +9,10 @@ return [
         'value' => 'Value',
         'created_at' => 'Created at',
     ],
+
+    'pages' => [
+        'create_title' => 'Create domain',
+        'edit_title' => 'Edit domain',
+        'view_title' => 'View domain',
+    ],
 ];

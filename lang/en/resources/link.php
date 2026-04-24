@@ -58,4 +58,10 @@ return [
         'modal_heading' => 'Permanently delete link :code?',
         'modal_description' => 'Link :code will be removed for good. This cannot be undone.',
     ],
+
+    'pages' => [
+        'create_title' => 'Create link',
+        'edit_title' => 'Edit link',
+        'view_title' => 'View link',
+    ],
 ];

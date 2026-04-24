@@ -11,6 +11,11 @@ class EditUrl extends EditRecord
 {
     protected static string $resource = UrlResource::class;
 
+    public function getTitle(): string
+    {
+        return __('resources/url.pages.edit_title');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

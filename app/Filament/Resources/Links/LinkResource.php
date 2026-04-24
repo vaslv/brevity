@@ -36,6 +36,11 @@ class LinkResource extends Resource
         return __('resources/link.label');
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) Link::query()->count();
+    }
+
     public static function getNavigationGroup(): ?string
     {
         return __('navigation.groups.main');
@@ -44,11 +49,6 @@ class LinkResource extends Resource
     public static function getNavigationLabel(): string
     {
         return __('resources/link.navigation_label');
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        return (string) Link::query()->count();
     }
 
     public static function getPages(): array

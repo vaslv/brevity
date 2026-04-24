@@ -22,4 +22,8 @@ return [
         'created_from' => 'From date',
         'created_until' => 'Until date',
     ],
+
+    'pages' => [
+        'view_title' => 'View click',
+    ],
 ];

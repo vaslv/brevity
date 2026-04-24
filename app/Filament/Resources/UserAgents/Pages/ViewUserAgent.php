@@ -10,6 +10,11 @@ class ViewUserAgent extends ViewRecord
 {
     protected static string $resource = UserAgentResource::class;
 
+    public function getTitle(): string
+    {
+        return __('resources/user_agent.pages.view_title');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -9,4 +9,8 @@ return [
         'value' => 'Value',
         'created_at' => 'Created at',
     ],
+
+    'pages' => [
+        'view_title' => 'View IP address',
+    ],
 ];

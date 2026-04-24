@@ -27,16 +27,6 @@ class CallbackResource extends Resource
         return __('resources/callback.label');
     }
 
-    public static function getNavigationGroup(): ?string
-    {
-        return __('navigation.groups.analytics');
-    }
-
-    public static function getNavigationLabel(): string
-    {
-        return __('resources/callback.navigation_label');
-    }
-
     public static function getNavigationBadge(): ?string
     {
         $count = Callback::query()->where('status', CallbackStatus::Failed)->count();
@@ -52,6 +42,16 @@ class CallbackResource extends Resource
     public static function getNavigationBadgeTooltip(): ?string
     {
         return __('resources/callback.navigation_badge_tooltip');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.analytics');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('resources/callback.navigation_label');
     }
 
     public static function getPages(): array

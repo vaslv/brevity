@@ -22,4 +22,8 @@ return [
         'created_from' => 'С даты',
         'created_until' => 'По дату',
     ],
+
+    'pages' => [
+        'view_title' => 'Просмотр клика',
+    ],
 ];

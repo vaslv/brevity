@@ -14,6 +14,11 @@ class EditLink extends EditRecord
 {
     protected static string $resource = LinkResource::class;
 
+    public function getTitle(): string
+    {
+        return __('resources/link.pages.edit_title');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

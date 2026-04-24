@@ -26,16 +26,6 @@ class ClickResource extends Resource
         return __('resources/click.label');
     }
 
-    public static function getNavigationGroup(): ?string
-    {
-        return __('navigation.groups.analytics');
-    }
-
-    public static function getNavigationLabel(): string
-    {
-        return __('resources/click.navigation_label');
-    }
-
     public static function getNavigationBadge(): ?string
     {
         return (string) Click::query()->whereDate('created_at', today())->count();
@@ -44,6 +34,16 @@ class ClickResource extends Resource
     public static function getNavigationBadgeTooltip(): ?string
     {
         return __('resources/click.navigation_badge_tooltip');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __('navigation.groups.analytics');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('resources/click.navigation_label');
     }
 
     public static function getPages(): array

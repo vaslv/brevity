@@ -8,4 +8,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateService extends CreateRecord
 {
     protected static string $resource = ServiceResource::class;
+
+    public function getTitle(): string
+    {
+        return __('resources/service.pages.create_title');
+    }
 }
