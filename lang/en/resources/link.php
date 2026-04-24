@@ -30,6 +30,12 @@ return [
 
     'rules' => [
         'title' => 'Rules',
+        'actions' => [
+            'create_label' => 'Create rule',
+            'create_heading' => 'Create rule',
+            'edit_heading' => 'Edit rule',
+            'delete_heading' => 'Delete rule?',
+        ],
         'fields' => [
             'url_id' => 'URL',
             'url' => 'URL',
