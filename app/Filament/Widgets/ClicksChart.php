@@ -8,11 +8,11 @@ use Illuminate\Support\Carbon;
 
 class ClicksChart extends ChartWidget
 {
-    protected static ?int $sort = 2;
-
     protected int|string|array $columnSpan = 'full';
 
     protected ?string $maxHeight = '240px';
+
+    protected static ?int $sort = 2;
 
     public function getHeading(): ?string
     {

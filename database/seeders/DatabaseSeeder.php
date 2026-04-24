@@ -40,171 +40,52 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * @return array<int, User>
+     * @param  array<int, array<string, mixed>>  $clicks
+     * @param  array<int, Link>  $links
      */
-    private function users(): array
+    private function callbacks(array $clicks, array $links): void
     {
-        return [
-            User::firstOrCreate(
-                ['email' => 'admin@example.com'],
-                ['name' => 'Admin', 'password' => Hash::make('password')],
-            ),
-            User::firstOrCreate(
-                ['email' => 'editor@example.com'],
-                ['name' => 'Editor', 'password' => Hash::make('password')],
-            ),
-        ];
-    }
+        $linksById = collect($links)->keyBy('id');
+        $statuses = ['pending', 'sent', 'sent', 'sent', 'failed'];
+        $sample = array_slice($clicks, 0, (int) (count($clicks) * 0.25));
+        $rows = [];
 
-    /**
-     * @return array<string, Service>
-     */
-    private function services(): array
-    {
-        $rows = [
-            'marketing' => ['name' => 'Marketing', 'callback_url' => 'https://hooks.example.com/marketing'],
-            'sales' => ['name' => 'Sales', 'callback_url' => 'https://hooks.example.com/sales'],
-            'support' => ['name' => 'Support', 'callback_url' => null],
-        ];
+        foreach ($sample as $click) {
+            $link = $linksById[$click['link_id']] ?? null;
+            if ($link === null || $link->callback_data === null) {
+                continue;
+            }
 
-        return collect($rows)
-            ->mapWithKeys(fn (array $attrs, string $key) => [
-                $key => Service::firstOrCreate(['name' => $attrs['name']], $attrs),
-            ])
-            ->all();
-    }
+            $status = $statuses[array_rand($statuses)];
+            $createdAt = CarbonImmutable::parse($click['created_at']);
 
-    /**
-     * @return array<string, Domain>
-     */
-    private function domains(): array
-    {
-        $values = ['go.example', 'brv.example', 'lnk.example'];
-
-        return collect($values)
-            ->mapWithKeys(fn (string $value) => [
-                $value => Domain::firstOrCreate(['value' => $value]),
-            ])
-            ->all();
-    }
-
-    /**
-     * @return array<int, Url>
-     */
-    private function urls(): array
-    {
-        $values = [
-            'https://example.com/products',
-            'https://example.com/pricing',
-            'https://example.com/blog/launch-announcement',
-            'https://example.com/cases/acme',
-            'https://example.com/webinar/2026-spring',
-            'https://example.com/contact',
-            'https://example.com/docs/getting-started',
-            'https://example.com/download',
-            'https://example.com/careers',
-        ];
-
-        return collect($values)
-            ->map(fn (string $value) => Url::firstOrCreate(['value' => $value]))
-            ->all();
-    }
-
-    /**
-     * @return array<string, Condition>
-     */
-    private function conditions(): array
-    {
-        $now = CarbonImmutable::now();
-
-        $rows = [
-            'past' => $now->subDays(7),
-            'soon' => $now->addDays(3),
-            'far' => $now->addDays(30),
-        ];
-
-        return collect($rows)
-            ->mapWithKeys(fn (CarbonImmutable $at, string $key) => [
-                $key => Condition::create([
-                    'type' => 'time_before',
-                    'data' => ['before' => $at->format('Y-m-d\TH:i:sP')],
-                ]),
-            ])
-            ->all();
-    }
-
-    /**
-     * @param  array<string, Service>  $services
-     * @param  array<string, Domain>  $domains
-     * @return array<int, Link>
-     */
-    private function links(array $services, array $domains): array
-    {
-        $rows = [
-            ['marketing', 'go.example', 'Spring campaign', true,  ['source' => 'marketing', 'click_id' => '{{click.id}}']],
-            ['marketing', 'go.example', 'Webinar invite',  true,  ['source' => 'webinar',  'link_id'  => '{{link.id}}']],
-            ['marketing', 'brv.example', 'Press kit',       false, null],
-            ['marketing', 'brv.example', 'Holiday promo',   true,  null],
-            ['marketing', 'lnk.example', null,              false, null],
-            ['sales',     'go.example', 'Demo booking',    true,  ['lead' => 'demo']],
-            ['sales',     'brv.example', 'Proposal — Acme', false, null],
-            ['sales',     'brv.example', 'Proposal — Globex', false, null],
-            ['sales',     'lnk.example', 'Q2 pricing',      false, null],
-            ['sales',     'lnk.example', null,              true,  null],
-            ['support',   'go.example', 'Onboarding docs', false, null],
-            ['support',   'go.example', 'Status page',     false, null],
-            ['support',   'brv.example', 'Download',        true,  null],
-            ['support',   'lnk.example', 'Contact form',    false, null],
-            ['support',   'lnk.example', null,              false, null],
-        ];
-
-        $links = [];
-
-        foreach ($rows as [$serviceKey, $domainKey, $title, $forward, $callbackData]) {
-            $links[] = Link::create([
-                'service_id' => $services[$serviceKey]->id,
-                'domain_id' => $domains[$domainKey]->id,
-                'title' => $title,
-                'forward_query' => $forward,
-                'callback_data' => $callbackData,
-            ]);
+            $rows[] = [
+                'service_id' => $click['service_id'],
+                'click_id' => $click['id'],
+                'data' => json_encode($link->callback_data),
+                'status' => $status,
+                'attempts' => match ($status) {
+                    'pending' => 0,
+                    'sent' => 1,
+                    'failed' => 5,
+                },
+                'response_code' => match ($status) {
+                    'sent' => 200,
+                    'failed' => 500,
+                    default => null,
+                },
+                'response_body' => match ($status) {
+                    'sent' => '{"ok":true}',
+                    'failed' => 'Internal Server Error',
+                    default => null,
+                },
+                'last_attempt_at' => $status === 'pending' ? null : $createdAt->addMinute(),
+                'created_at' => $createdAt,
+            ];
         }
 
-        return $links;
-    }
-
-    /**
-     * @param  array<int, Link>  $links
-     * @param  array<int, Url>  $urls
-     * @param  array<string, Condition>  $conditions
-     */
-    private function rules(array $links, array $urls, array $conditions): void
-    {
-        $modes = ['direct', 'delayed', 'manual'];
-
-        foreach ($links as $index => $link) {
-            $primaryUrl = $urls[$index % count($urls)];
-
-            Rule::create([
-                'link_id' => $link->id,
-                'url_id' => $primaryUrl->id,
-                'condition_id' => null,
-                'transition_mode' => $modes[$index % 3],
-                'priority' => 10,
-            ]);
-
-            if ($index % 3 === 0) {
-                $fallback = $urls[($index + 1) % count($urls)];
-                $condition = $conditions[['past', 'soon', 'far'][$index % 3]];
-
-                Rule::create([
-                    'link_id' => $link->id,
-                    'url_id' => $fallback->id,
-                    'condition_id' => $condition->id,
-                    'transition_mode' => 'direct',
-                    'priority' => 1,
-                ]);
-            }
+        foreach (array_chunk($rows, 500) as $chunk) {
+            DB::table('callbacks')->insert($chunk);
         }
     }
 
@@ -282,52 +163,171 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $clicks
-     * @param  array<int, Link>  $links
+     * @return array<string, Condition>
      */
-    private function callbacks(array $clicks, array $links): void
+    private function conditions(): array
     {
-        $linksById = collect($links)->keyBy('id');
-        $statuses = ['pending', 'sent', 'sent', 'sent', 'failed'];
-        $sample = array_slice($clicks, 0, (int) (count($clicks) * 0.25));
-        $rows = [];
+        $now = CarbonImmutable::now();
 
-        foreach ($sample as $click) {
-            $link = $linksById[$click['link_id']] ?? null;
-            if ($link === null || $link->callback_data === null) {
-                continue;
+        $rows = [
+            'past' => $now->subDays(7),
+            'soon' => $now->addDays(3),
+            'far' => $now->addDays(30),
+        ];
+
+        return collect($rows)
+            ->mapWithKeys(fn (CarbonImmutable $at, string $key) => [
+                $key => Condition::create([
+                    'type' => 'time_before',
+                    'data' => ['before' => $at->format('Y-m-d\TH:i:sP')],
+                ]),
+            ])
+            ->all();
+    }
+
+    /**
+     * @return array<string, Domain>
+     */
+    private function domains(): array
+    {
+        $values = ['go.example', 'brv.example', 'lnk.example'];
+
+        return collect($values)
+            ->mapWithKeys(fn (string $value) => [
+                $value => Domain::firstOrCreate(['value' => $value]),
+            ])
+            ->all();
+    }
+
+    /**
+     * @param  array<string, Service>  $services
+     * @param  array<string, Domain>  $domains
+     * @return array<int, Link>
+     */
+    private function links(array $services, array $domains): array
+    {
+        $rows = [
+            ['marketing', 'go.example', 'Spring campaign', true,  ['source' => 'marketing', 'click_id' => '{{click.id}}']],
+            ['marketing', 'go.example', 'Webinar invite',  true,  ['source' => 'webinar',  'link_id' => '{{link.id}}']],
+            ['marketing', 'brv.example', 'Press kit',       false, null],
+            ['marketing', 'brv.example', 'Holiday promo',   true,  null],
+            ['marketing', 'lnk.example', null,              false, null],
+            ['sales',     'go.example', 'Demo booking',    true,  ['lead' => 'demo']],
+            ['sales',     'brv.example', 'Proposal — Acme', false, null],
+            ['sales',     'brv.example', 'Proposal — Globex', false, null],
+            ['sales',     'lnk.example', 'Q2 pricing',      false, null],
+            ['sales',     'lnk.example', null,              true,  null],
+            ['support',   'go.example', 'Onboarding docs', false, null],
+            ['support',   'go.example', 'Status page',     false, null],
+            ['support',   'brv.example', 'Download',        true,  null],
+            ['support',   'lnk.example', 'Contact form',    false, null],
+            ['support',   'lnk.example', null,              false, null],
+        ];
+
+        $links = [];
+
+        foreach ($rows as [$serviceKey, $domainKey, $title, $forward, $callbackData]) {
+            $links[] = Link::create([
+                'service_id' => $services[$serviceKey]->id,
+                'domain_id' => $domains[$domainKey]->id,
+                'title' => $title,
+                'forward_query' => $forward,
+                'callback_data' => $callbackData,
+            ]);
+        }
+
+        return $links;
+    }
+
+    /**
+     * @param  array<int, Link>  $links
+     * @param  array<int, Url>  $urls
+     * @param  array<string, Condition>  $conditions
+     */
+    private function rules(array $links, array $urls, array $conditions): void
+    {
+        $modes = ['direct', 'delayed', 'manual'];
+
+        foreach ($links as $index => $link) {
+            $primaryUrl = $urls[$index % count($urls)];
+
+            Rule::create([
+                'link_id' => $link->id,
+                'url_id' => $primaryUrl->id,
+                'condition_id' => null,
+                'transition_mode' => $modes[$index % 3],
+                'priority' => 10,
+            ]);
+
+            if ($index % 3 === 0) {
+                $fallback = $urls[($index + 1) % count($urls)];
+                $condition = $conditions[['past', 'soon', 'far'][$index % 3]];
+
+                Rule::create([
+                    'link_id' => $link->id,
+                    'url_id' => $fallback->id,
+                    'condition_id' => $condition->id,
+                    'transition_mode' => 'direct',
+                    'priority' => 1,
+                ]);
             }
-
-            $status = $statuses[array_rand($statuses)];
-            $createdAt = CarbonImmutable::parse($click['created_at']);
-
-            $rows[] = [
-                'service_id' => $click['service_id'],
-                'click_id' => $click['id'],
-                'data' => json_encode($link->callback_data),
-                'status' => $status,
-                'attempts' => match ($status) {
-                    'pending' => 0,
-                    'sent' => 1,
-                    'failed' => 5,
-                },
-                'response_code' => match ($status) {
-                    'sent' => 200,
-                    'failed' => 500,
-                    default => null,
-                },
-                'response_body' => match ($status) {
-                    'sent' => '{"ok":true}',
-                    'failed' => 'Internal Server Error',
-                    default => null,
-                },
-                'last_attempt_at' => $status === 'pending' ? null : $createdAt->addMinute(),
-                'created_at' => $createdAt,
-            ];
         }
+    }
 
-        foreach (array_chunk($rows, 500) as $chunk) {
-            DB::table('callbacks')->insert($chunk);
-        }
+    /**
+     * @return array<string, Service>
+     */
+    private function services(): array
+    {
+        $rows = [
+            'marketing' => ['name' => 'Marketing', 'callback_url' => 'https://hooks.example.com/marketing'],
+            'sales' => ['name' => 'Sales', 'callback_url' => 'https://hooks.example.com/sales'],
+            'support' => ['name' => 'Support', 'callback_url' => null],
+        ];
+
+        return collect($rows)
+            ->mapWithKeys(fn (array $attrs, string $key) => [
+                $key => Service::firstOrCreate(['name' => $attrs['name']], $attrs),
+            ])
+            ->all();
+    }
+
+    /**
+     * @return array<int, Url>
+     */
+    private function urls(): array
+    {
+        $values = [
+            'https://example.com/products',
+            'https://example.com/pricing',
+            'https://example.com/blog/launch-announcement',
+            'https://example.com/cases/acme',
+            'https://example.com/webinar/2026-spring',
+            'https://example.com/contact',
+            'https://example.com/docs/getting-started',
+            'https://example.com/download',
+            'https://example.com/careers',
+        ];
+
+        return collect($values)
+            ->map(fn (string $value) => Url::firstOrCreate(['value' => $value]))
+            ->all();
+    }
+
+    /**
+     * @return array<int, User>
+     */
+    private function users(): array
+    {
+        return [
+            User::firstOrCreate(
+                ['email' => 'admin@example.com'],
+                ['name' => 'Admin', 'password' => Hash::make('password')],
+            ),
+            User::firstOrCreate(
+                ['email' => 'editor@example.com'],
+                ['name' => 'Editor', 'password' => Hash::make('password')],
+            ),
+        ];
     }
 }

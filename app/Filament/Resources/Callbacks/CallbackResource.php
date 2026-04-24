@@ -12,7 +12,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class CallbackResource extends Resource
 {
@@ -21,6 +20,11 @@ class CallbackResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBolt;
 
     protected static ?int $navigationSort = 2;
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/callback.label');
+    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -32,22 +36,17 @@ class CallbackResource extends Resource
         return __('resources/callback.navigation_label');
     }
 
-    public static function getModelLabel(): string
-    {
-        return __('resources/callback.label');
-    }
-
-    public static function getPluralModelLabel(): string
-    {
-        return __('resources/callback.plural_label');
-    }
-
     public static function getPages(): array
     {
         return [
             'index' => ListCallbacks::route('/'),
             'view' => ViewCallback::route('/{record}'),
         ];
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/callback.plural_label');
     }
 
     public static function getRelations(): array

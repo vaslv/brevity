@@ -24,9 +24,9 @@ class ServiceResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    public static function getNavigationLabel(): string
+    public static function form(Schema $schema): Schema
     {
-        return __('resources/service.navigation_label');
+        return ServiceForm::configure($schema);
     }
 
     public static function getModelLabel(): string
@@ -34,14 +34,9 @@ class ServiceResource extends Resource
         return __('resources/service.label');
     }
 
-    public static function getPluralModelLabel(): string
+    public static function getNavigationLabel(): string
     {
-        return __('resources/service.plural_label');
-    }
-
-    public static function form(Schema $schema): Schema
-    {
-        return ServiceForm::configure($schema);
+        return __('resources/service.navigation_label');
     }
 
     public static function getPages(): array
@@ -52,6 +47,11 @@ class ServiceResource extends Resource
             'view' => ViewService::route('/{record}'),
             'edit' => EditService::route('/{record}/edit'),
         ];
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/service.plural_label');
     }
 
     public static function getRelations(): array

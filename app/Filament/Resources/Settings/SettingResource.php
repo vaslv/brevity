@@ -12,7 +12,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 use Vaslv\LaravelSettings\Models\Setting;
 
 class SettingResource extends Resource
@@ -25,6 +24,16 @@ class SettingResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'key';
 
+    public static function form(Schema $schema): Schema
+    {
+        return SettingForm::configure($schema);
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('resources/setting.label');
+    }
+
     public static function getNavigationGroup(): ?string
     {
         return __('navigation.groups.system');
@@ -35,21 +44,6 @@ class SettingResource extends Resource
         return __('resources/setting.navigation_label');
     }
 
-    public static function getModelLabel(): string
-    {
-        return __('resources/setting.label');
-    }
-
-    public static function getPluralModelLabel(): string
-    {
-        return __('resources/setting.plural_label');
-    }
-
-    public static function form(Schema $schema): Schema
-    {
-        return SettingForm::configure($schema);
-    }
-
     public static function getPages(): array
     {
         return [
@@ -57,6 +51,11 @@ class SettingResource extends Resource
             'create' => CreateSetting::route('/create'),
             'edit' => EditSetting::route('/{record}/edit'),
         ];
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/setting.plural_label');
     }
 
     public static function table(Table $table): Table

@@ -24,9 +24,9 @@ class DomainResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
-    public static function getNavigationLabel(): string
+    public static function form(Schema $schema): Schema
     {
-        return __('resources/domain.navigation_label');
+        return DomainForm::configure($schema);
     }
 
     public static function getModelLabel(): string
@@ -34,14 +34,9 @@ class DomainResource extends Resource
         return __('resources/domain.label');
     }
 
-    public static function getPluralModelLabel(): string
+    public static function getNavigationLabel(): string
     {
-        return __('resources/domain.plural_label');
-    }
-
-    public static function form(Schema $schema): Schema
-    {
-        return DomainForm::configure($schema);
+        return __('resources/domain.navigation_label');
     }
 
     public static function getPages(): array
@@ -52,6 +47,11 @@ class DomainResource extends Resource
             'view' => ViewDomain::route('/{record}'),
             'edit' => EditDomain::route('/{record}/edit'),
         ];
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('resources/domain.plural_label');
     }
 
     public static function getRelations(): array
