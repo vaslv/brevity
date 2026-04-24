@@ -56,6 +56,16 @@ class UserAgentResource extends Resource
         ];
     }
 
+    public static function getTitleCaseModelLabel(): string
+    {
+        return static::getModelLabel();
+    }
+
+    public static function getTitleCasePluralModelLabel(): string
+    {
+        return static::getPluralModelLabel();
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return UserAgentInfolist::configure($schema);
