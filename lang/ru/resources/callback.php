@@ -4,6 +4,7 @@ return [
     'label' => 'Колбек',
     'plural_label' => 'Колбеки',
     'navigation_label' => 'Колбеки',
+    'navigation_badge_tooltip' => 'Колбеков в статусе «Ошибка»',
 
     'fields' => [
         'service' => 'Сервис',

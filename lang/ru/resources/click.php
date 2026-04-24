@@ -4,6 +4,7 @@ return [
     'label' => 'Клик',
     'plural_label' => 'Клики',
     'navigation_label' => 'Клики',
+    'navigation_badge_tooltip' => 'Кликов за сегодня',
 
     'fields' => [
         'service' => 'Сервис',
