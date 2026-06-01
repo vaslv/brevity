@@ -25,11 +25,13 @@ class SendCallbackJob implements ShouldQueue
     public function __construct(private readonly int $callbackId) {}
 
     /**
+     * Delays between the 5 attempts (4 gaps): 1m, 5m, 15m, 1h.
+     *
      * @return array<int, int>
      */
     public function backoff(): array
     {
-        return [60, 300, 900, 3600, 3600];
+        return [60, 300, 900, 3600];
     }
 
     public function failed(Throwable $e): void
