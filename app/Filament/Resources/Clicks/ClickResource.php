@@ -28,7 +28,8 @@ class ClickResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) Click::query()->whereDate('created_at', today())->count();
+        // Range filter (not whereDate) so the clicks_created_at index is usable.
+        return (string) Click::query()->where('created_at', '>=', today())->count();
     }
 
     public static function getNavigationBadgeTooltip(): ?string
