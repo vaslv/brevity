@@ -24,6 +24,9 @@ class ClicksChart extends ChartWidget
         $days = 14;
         $start = Carbon::today()->subDays($days - 1);
 
+        // Grouped by calendar day in the DB session timezone, which matches the
+        // app timezone (UTC) — so chart days line up with the labels below.
+        // Revisit `date(created_at)` if a per-user timezone is ever introduced.
         $rows = Click::query()
             ->selectRaw('date(created_at) as day, count(*) as total')
             ->where('created_at', '>=', $start)
