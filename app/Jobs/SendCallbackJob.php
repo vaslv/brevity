@@ -63,25 +63,30 @@ class SendCallbackJob implements ShouldQueue
             'last_attempt_at' => now(),
         ]);
 
+        // Do not follow redirects: the send-time SSRF guard validated only the
+        // configured callback_url. A 3xx response could point Guzzle at an
+        // internal host (e.g. 169.254.169.254) that was never checked.
         $response = Http::timeout(self::HTTP_TIMEOUT_SECONDS)
+            ->withOptions(['allow_redirects' => false])
             ->post($callbackUrl, $callback->data);
 
         $status = $response->status();
-        $isClientError = $status >= 400 && $status < 500;
         $isSuccess = $response->successful();
-        $isFinal = $isSuccess || $isClientError;
+        // 3xx (unfollowed) and 4xx are permanent, non-retryable failures; only
+        // 5xx / network errors are retried.
+        $isPermanentFailure = $status >= 300 && $status < 500;
 
         $callback->update([
             'response_code' => $status,
             'response_body' => $this->sanitizeResponseBody($response->body()),
             'status' => $isSuccess
                 ? CallbackStatus::Sent
-                : ($isFinal ? CallbackStatus::Failed : CallbackStatus::Pending),
+                : ($isPermanentFailure ? CallbackStatus::Failed : CallbackStatus::Pending),
         ]);
 
-        if ($isClientError) {
+        if ($isPermanentFailure) {
             $this->fail(new \RuntimeException(
-                "Callback HTTP {$status} (client error, not retrying) for callback_id={$this->callbackId}"
+                "Callback HTTP {$status} (permanent, not retrying) for callback_id={$this->callbackId}"
             ));
 
             return;

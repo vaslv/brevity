@@ -150,6 +150,34 @@ class CallbackDispatchTest extends TestCase
             && $request['code'] === $code);
     }
 
+    public function test_it_treats_a_redirect_response_as_a_permanent_failure_without_following(): void
+    {
+        // SSRF hardening (CODE_REVIEW M3): redirects are not followed
+        // (allow_redirects => false), and a 3xx is a permanent, non-retryable
+        // failure — a callback endpoint must never bounce us to another host
+        // (e.g. 169.254.169.254) the send-time guard never validated.
+        Http::fake([
+            'https://93.184.216.34/hook' => Http::response('', 302, [
+                'Location' => 'http://169.254.169.254/latest/meta-data/',
+            ]),
+        ]);
+
+        $code = $this->setupLinkWithCallback(
+            callbackUrl: 'https://93.184.216.34/hook',
+            callbackData: ['x' => '{{click.id}}'],
+        );
+
+        $this->get('/'.$code)->assertRedirect();
+
+        $callback = Callback::query()->firstOrFail();
+
+        $this->assertSame(CallbackStatus::Failed, $callback->status);
+        $this->assertSame(302, $callback->response_code);
+        // Permanent: exactly one attempt, no follow to the redirect target.
+        $this->assertSame(1, $callback->attempts);
+        Http::assertSentCount(1);
+    }
+
     private function setupLinkWithCallback(?string $callbackUrl, ?array $callbackData): string
     {
         $service = Service::query()->create([
