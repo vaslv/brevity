@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Models\Relations\BelongsToClick;
-use App\Models\Relations\BelongsToLink;
 use App\Models\Relations\BelongsToService;
 use App\Services\Links\Callbacks\CallbackStatus;
 use Illuminate\Database\Eloquent\Model;
@@ -21,7 +20,6 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $last_attempt_at
  * @property Carbon $created_at
  * @property-read Click $click
- * @property-read Link|null $link
  * @property-read Service $service
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Callback newModelQuery()
@@ -43,7 +41,6 @@ use Illuminate\Support\Carbon;
 class Callback extends Model
 {
     use BelongsToClick;
-    use BelongsToLink;
     use BelongsToService;
 
     public const UPDATED_AT = null;
