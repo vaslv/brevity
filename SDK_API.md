@@ -119,6 +119,9 @@ Important: validation for `rules[].condition.data` is dynamic and resolved from 
 }
 ```
 
+For a rule created without a condition, `rules[].condition` is `null` in the
+response (and `transition_mode` is `null` when not supplied, meaning `direct`).
+
 ### 401 Unauthorized
 
 ```json
@@ -216,9 +219,10 @@ Callback payload sent after a click:
 
 ### Delivery guarantees
 
-- Up to **5 attempts** with exponential backoff: 1 min → 5 min → 15 min → 1 h → 1 h.
+- Up to **5 attempts** with backoff between them: 1 min → 5 min → 15 min → 1 h.
 - A response with HTTP 2xx is considered successful.
-- Any other response or a connection error triggers a retry.
+- Redirects are **not** followed; a 3xx or 4xx response is a permanent failure (no retry).
+- A 5xx response or a connection/timeout error triggers a retry.
 - After all attempts are exhausted, the callback is marked `failed`.
 - The server records `response_code` and `response_body` (truncated to 10 000 characters) for each final attempt.
 

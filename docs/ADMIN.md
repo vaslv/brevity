@@ -115,11 +115,12 @@ lang/
   на странице Link. Переводы в `resources/link.rules.*`.
 - **Condition** — форма реактивна по типу: выбор типа подставляет
   нужное поле `data.*`. Ключи в
-  `resources/condition.data_fields.<type>.*`.
+  `resources/condition.data_fields.<type>.*`. Справочник read-only (есть
+  Create, но без Edit).
 - **Callback / Click** — только исторические записи. В таблицах есть
   только `ViewAction`, без Edit. Удаление разрешено, но редкая операция.
-- **Справочники (IpAddress, Referrer, UserAgent)** — нет `EditPage`;
-  в их таблицах остался устаревший `EditAction` (висит на зачистку).
+- **Справочники (URL, Условия, IpAddress, Referrer, UserAgent)** — read-only:
+  в таблицах только `ViewAction` (+ удаление), `EditAction`/`EditPage` нет.
 
 ## Чип версии
 

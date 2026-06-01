@@ -24,9 +24,11 @@ Rate-limited через `throttle:link-resolve` (per-link + per-IP).
 2. Пройти `rules` в порядке приоритета, спросить каждое `Condition`,
    матчится ли оно, через `ConditionRegistry`.
 3. Первый матч побеждает → резолвим `Url`.
-4. Асинхронно записываем `Click` (`RecordClickJob`).
-5. Если у `Service.callback_url` задан URL **и** `Link.callback_data`
-   не null → ставим `SendCallbackJob` в очередь.
+4. Асинхронно записываем `Click` (`RecordClickJob`) — джоб несёт `uuid`,
+   сгенерированный на этом резолве, поэтому повторное выполнение идемпотентно.
+5. **Внутри `RecordClickJob`** (после записи клика) `CallbackDispatcher`:
+   если `Service.callback_url` задан **и** `Link.callback_data` не null →
+   создаёт `Callback` и ставит `SendCallbackJob` в очередь (нужен `click.id`).
 6. Рендерим ответ по `Rule.transition_mode`:
    - `direct` → 302
    - `delayed` → Blade-страница с обратным отсчётом
@@ -55,7 +57,7 @@ Rate-limited через `throttle:link-resolve` (per-link + per-IP).
 
 - `ConditionRegistry` — список хендлеров по ключу `type`.
 - Интерфейс `ConditionHandler`: `matches(Condition $c, ConditionContext $ctx): bool`,
-  `rules(): array`, `type(): string`.
+  `rules(): array`, `type(): string`, `validate(array $data): array`.
 - `AbstractConditionHandler` — общая обвязка.
 - `TimeBeforeConditionHandler` — единственный текущий тип.
 
@@ -77,9 +79,11 @@ Rate-limited через `throttle:link-resolve` (per-link + per-IP).
   переменные в строковые значения payload'а колбека.
 - `CallbackUrlGuard` — блокирует приватные/внутренние IP и невалидные
   схемы на момент отправки.
-- `CallbackDispatcher` — HTTP POST + запись попытки.
-- `SendCallbackJob` — расписание ретраев: 1м → 5м → 15м → 1ч → 1ч
-  (максимум 5 попыток).
+- `CallbackDispatcher` — создаёт `Callback` (идемпотентно по `click_id`) и
+  ставит `SendCallbackJob`.
+- `SendCallbackJob` — HTTP POST **без следования редиректам**
+  (`allow_redirects = false`; 3xx/4xx — постоянная ошибка). Расписание ретраев:
+  1м → 5м → 15м → 1ч (5 попыток, 4 интервала).
 - Response body хранится обрезанным (10_000 символов) и санитизированным:
   `mb_convert_encoding($body, 'UTF-8', 'UTF-8')` + стрип NUL-байтов
   (text-колонки Postgres не принимают NUL).
@@ -116,8 +120,10 @@ per-link + per-IP. Защищает от скрейпа и подбора код
 - `clicks(service_id, created_at)`, `clicks(link_id, created_at)` —
   композитные индексы для аналитики в админке.
 - `callbacks(service_id, created_at)` — то же.
-- `links` — soft deletes (trashed ссылки всё равно резолвятся в
-  route binding'е `ResolveLink`).
+- `links` — soft deletes. **Trashed-ссылка считается отключённой:**
+  `Link::findByCode` применяет глобальный scope SoftDeletes, поэтому публичный
+  резолв удалённой ссылки даёт 404. (Админ всё ещё видит trashed —
+  `LinkResource::getRecordRouteBindingEloquentQuery` снимает scope.)
 
 ## Раскладка каталогов
 
