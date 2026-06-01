@@ -121,6 +121,16 @@ class StoreLinkRequestTest extends TestCase
             ->assertJsonValidationErrors(['rules.0.condition.data.before']);
     }
 
+    public function test_it_rejects_more_than_the_maximum_number_of_rules(): void
+    {
+        // Hardening (CODE_REVIEW m3): cap the number of rules per request.
+        $rules = array_fill(0, 51, ['url' => 'https://example.com/x']);
+
+        $this->postLink(['rules' => $rules])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['rules']);
+    }
+
     public function test_it_rejects_non_http_scheme_urls(): void
     {
         // Hardening (CODE_REVIEW m2): only http/https targets are accepted, so a
@@ -134,6 +144,32 @@ class StoreLinkRequestTest extends TestCase
         $response
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['rules.0.url']);
+    }
+
+    public function test_it_strips_unknown_condition_data_keys(): void
+    {
+        // Hardening (CODE_REVIEW m3): only handler-known fields are persisted,
+        // so stray keys don't fragment the (type, data) dedup index.
+        $response = $this->postLink([
+            'rules' => [
+                [
+                    'url' => 'https://example.com/redirect',
+                    'condition' => [
+                        'type' => 'time_before',
+                        'data' => [
+                            'before' => '2026-03-05T10:00:00+00:00',
+                            'junk' => 'should-be-dropped',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response
+            ->assertCreated()
+            ->assertJsonPath('data.rules.0.condition.data', [
+                'before' => '2026-03-05T10:00:00+00:00',
+            ]);
     }
 
     /**
