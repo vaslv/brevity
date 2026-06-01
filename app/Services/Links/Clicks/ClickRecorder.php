@@ -22,21 +22,26 @@ readonly class ClickRecorder
         private DictionaryValueResolver $dictionaryValueResolver
     ) {}
 
-    public function record(Link $link, int $urlId, ?string $ip, ?string $referrer, ?string $userAgent): Click
+    public function record(Link $link, string $uuid, int $urlId, ?string $ip, ?string $referrer, ?string $userAgent): Click
     {
         $ipValue = $this->normalizeIp($ip);
         $referrerValue = $this->normalizeString($referrer ?? '', self::MAX_REFERRER_LENGTH);
         $userAgentValue = $this->normalizeString($userAgent ?? '', self::MAX_USER_AGENT_LENGTH);
 
-        return DB::transaction(function () use ($link, $urlId, $ipValue, $referrerValue, $userAgentValue): Click {
-            return Click::query()->create([
-                'service_id' => $link->service_id,
-                'link_id' => $link->id,
-                'url_id' => $urlId,
-                'referrer_id' => $this->dictionaryValueResolver->resolveId(Referrer::class, $referrerValue),
-                'user_agent_id' => $this->dictionaryValueResolver->resolveId(UserAgent::class, $userAgentValue),
-                'ip_address_id' => $this->dictionaryValueResolver->resolveId(IpAddress::class, $ipValue),
-            ]);
+        return DB::transaction(function () use ($link, $uuid, $urlId, $ipValue, $referrerValue, $userAgentValue): Click {
+            // Idempotent on `uuid`: a retried RecordClickJob reuses the existing
+            // click instead of recording a duplicate visit.
+            return Click::query()->firstOrCreate(
+                ['uuid' => $uuid],
+                [
+                    'service_id' => $link->service_id,
+                    'link_id' => $link->id,
+                    'url_id' => $urlId,
+                    'referrer_id' => $this->dictionaryValueResolver->resolveId(Referrer::class, $referrerValue),
+                    'user_agent_id' => $this->dictionaryValueResolver->resolveId(UserAgent::class, $userAgentValue),
+                    'ip_address_id' => $this->dictionaryValueResolver->resolveId(IpAddress::class, $ipValue),
+                ]
+            );
         });
     }
 

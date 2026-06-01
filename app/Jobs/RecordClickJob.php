@@ -17,6 +17,7 @@ class RecordClickJob implements ShouldQueue
     public int $tries = 3;
 
     public function __construct(
+        private readonly string $clickUuid,
         private readonly int $linkId,
         private readonly int $urlId,
         private readonly ?string $ip,
@@ -40,7 +41,7 @@ class RecordClickJob implements ShouldQueue
     {
         $link = Link::findOrFail($this->linkId);
 
-        $click = $clickRecorder->record($link, $this->urlId, $this->ip, $this->referrer, $this->userAgent);
+        $click = $clickRecorder->record($link, $this->clickUuid, $this->urlId, $this->ip, $this->referrer, $this->userAgent);
 
         $callbackDispatcher->dispatchForClick($click);
     }

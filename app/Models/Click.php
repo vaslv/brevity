@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property string|null $uuid
  * @property int $service_id
  * @property int $link_id
  * @property int $url_id
@@ -58,6 +59,7 @@ class Click extends Model
     public const UPDATED_AT = null;
 
     protected $fillable = [
+        'uuid',
         'service_id',
         'link_id',
         'url_id',
