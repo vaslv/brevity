@@ -13,7 +13,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        // Trust only the proxy / load-balancer subnets that actually front the
+        // app — never '*'. Trusting every client lets anyone spoof
+        // X-Forwarded-For, forging the recorded click IP (and {{click.ip}} sent
+        // to callbacks) and bypassing the per-IP link-resolve rate limiter.
+        // Narrow these CIDRs to your real reverse-proxy range in production.
+        $middleware->trustProxies(at: [
+            '10.0.0.0/8',
+            '172.16.0.0/12',
+            '192.168.0.0/16',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
