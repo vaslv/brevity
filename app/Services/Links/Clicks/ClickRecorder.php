@@ -7,7 +7,6 @@ use App\Models\IpAddress;
 use App\Models\Link;
 use App\Models\Referrer;
 use App\Models\UserAgent;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 readonly class ClickRecorder
@@ -28,21 +27,21 @@ readonly class ClickRecorder
         $referrerValue = $this->normalizeString($referrer ?? '', self::MAX_REFERRER_LENGTH);
         $userAgentValue = $this->normalizeString($userAgent ?? '', self::MAX_USER_AGENT_LENGTH);
 
-        return DB::transaction(function () use ($link, $uuid, $urlId, $ipValue, $referrerValue, $userAgentValue): Click {
-            // Idempotent on `uuid`: a retried RecordClickJob reuses the existing
-            // click instead of recording a duplicate visit.
-            return Click::query()->firstOrCreate(
-                ['uuid' => $uuid],
-                [
-                    'service_id' => $link->service_id,
-                    'link_id' => $link->id,
-                    'url_id' => $urlId,
-                    'referrer_id' => $this->dictionaryValueResolver->resolveId(Referrer::class, $referrerValue),
-                    'user_agent_id' => $this->dictionaryValueResolver->resolveId(UserAgent::class, $userAgentValue),
-                    'ip_address_id' => $this->dictionaryValueResolver->resolveId(IpAddress::class, $ipValue),
-                ]
-            );
-        });
+        // Idempotent on `uuid`: a retried RecordClickJob reuses the existing
+        // click instead of recording a duplicate visit. No wrapping transaction
+        // is needed — firstOrCreate is race-safe on its own (savepoint + retry),
+        // as are the insertOrIgnore-based dictionary resolvers.
+        return Click::query()->firstOrCreate(
+            ['uuid' => $uuid],
+            [
+                'service_id' => $link->service_id,
+                'link_id' => $link->id,
+                'url_id' => $urlId,
+                'referrer_id' => $this->dictionaryValueResolver->resolveId(Referrer::class, $referrerValue),
+                'user_agent_id' => $this->dictionaryValueResolver->resolveId(UserAgent::class, $userAgentValue),
+                'ip_address_id' => $this->dictionaryValueResolver->resolveId(IpAddress::class, $ipValue),
+            ]
+        );
     }
 
     private function normalizeIp(?string $value): ?string

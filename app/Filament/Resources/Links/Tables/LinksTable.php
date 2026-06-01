@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Links\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
@@ -69,8 +68,9 @@ class LinksTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    // No ForceDelete: clicks (restrictOnDelete) must outlive the
+                    // link; soft delete is the disable mechanism, Restore the undo.
                     DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),
             ]);

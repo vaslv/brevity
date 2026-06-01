@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Clicks\Tables;
 
-use App\Models\Link;
 use App\Models\Service;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -59,7 +58,8 @@ class ClicksTable
                     ->searchable(),
                 SelectFilter::make('link_id')
                     ->label(__('resources/click.filters.link'))
-                    ->options(fn () => Link::query()->orderBy('code')->pluck('code', 'id'))
+                    // Lazy server-side search instead of loading every link.
+                    ->relationship('link', 'code')
                     ->searchable(),
                 Filter::make('created_at')
                     ->schema([
