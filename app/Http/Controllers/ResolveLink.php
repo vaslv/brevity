@@ -10,6 +10,7 @@ use App\Services\Links\TransitionMode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 
 class ResolveLink extends Controller
 {
@@ -108,6 +109,7 @@ class ResolveLink extends Controller
         $transitionMode = TransitionMode::tryFrom((string) $rule->transition_mode) ?? TransitionMode::Direct;
 
         RecordClickJob::dispatch(
+            (string) Str::uuid(),
             $link->id,
             $rule->url_id,
             $request->ip(),

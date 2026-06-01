@@ -28,14 +28,20 @@ readonly class CallbackDispatcher
 
         $rendered = $this->renderer->render($link->callback_data, $click);
 
-        $callback = Callback::create([
-            'service_id' => $click->service_id,
-            'click_id' => $click->id,
-            'data' => $rendered,
-            'status' => CallbackStatus::Pending,
-            'attempts' => 0,
-        ]);
+        // One callback per click: a retried RecordClickJob (same click) must not
+        // create a second callback or enqueue a second delivery.
+        $callback = Callback::firstOrCreate(
+            ['click_id' => $click->id],
+            [
+                'service_id' => $click->service_id,
+                'data' => $rendered,
+                'status' => CallbackStatus::Pending,
+                'attempts' => 0,
+            ]
+        );
 
-        SendCallbackJob::dispatch($callback->id);
+        if ($callback->wasRecentlyCreated) {
+            SendCallbackJob::dispatch($callback->id);
+        }
     }
 }
