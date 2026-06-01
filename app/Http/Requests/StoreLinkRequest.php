@@ -34,7 +34,7 @@ class StoreLinkRequest extends FormRequest
             'forward_query' => ['nullable', 'boolean'],
             'callback_data' => ['nullable', 'array'],
             'rules' => ['required', 'array', 'min:1'],
-            'rules.*.url' => ['required', 'url', 'max:2048'],
+            'rules.*.url' => ['required', 'url:http,https', 'max:2048'],
             'rules.*.condition' => ['nullable', 'array'],
             'rules.*.condition.type' => [
                 'required_with:rules.*.condition',

@@ -121,6 +121,21 @@ class StoreLinkRequestTest extends TestCase
             ->assertJsonValidationErrors(['rules.0.condition.data.before']);
     }
 
+    public function test_it_rejects_non_http_scheme_urls(): void
+    {
+        // Hardening (CODE_REVIEW m2): only http/https targets are accepted, so a
+        // non-web scheme can never be stored as a redirect target.
+        $response = $this->postLink([
+            'rules' => [
+                ['url' => 'ftp://example.com/file'],
+            ],
+        ]);
+
+        $response
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['rules.0.url']);
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */
