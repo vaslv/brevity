@@ -6,11 +6,14 @@ use App\Models\Condition;
 use App\Models\Domain;
 use App\Models\Link;
 use App\Models\Url;
+use App\Services\Links\Conditions\ConditionRegistry;
 use Illuminate\Support\Facades\DB;
 use League\Uri\Modifier;
 
 class LinkCreator
 {
+    public function __construct(private readonly ConditionRegistry $registry) {}
+
     /**
      * @param  array{
      *     service_id: int,
@@ -60,6 +63,13 @@ class LinkCreator
 
         $type = $condition['type'];
         $data = $condition['data'] ?? [];
+
+        // Persist only handler-known fields so stray keys don't fragment the
+        // (type, data) dedup index with near-duplicate rows.
+        if ($handler = $this->registry->getHandler($type)) {
+            $data = $handler::validate($data);
+        }
+
         $encoded = json_encode($data);
 
         Condition::insertOrIgnore([
