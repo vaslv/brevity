@@ -33,7 +33,8 @@ class ViewService extends ViewRecord
                 ->action(function () {
                     /** @var Service $service */
                     $service = $this->getRecord();
-                    $plainTextToken = $service->createToken('service-token')->plainTextToken;
+                    // Least-privilege: scope to the only ability the API needs.
+                    $plainTextToken = $service->createToken('service-token', ['links:create'])->plainTextToken;
 
                     $markdown = implode("\n\n", [
                         '**'.__('resources/service.tokens.notifications.created_title').'**',
