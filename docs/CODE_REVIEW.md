@@ -80,12 +80,12 @@ Major**:
 **Счёт (исходный):** Critical — 1, Major — 5, Minor — 14, Documentation mismatches — 6,
 Missing tests — 10. *(Major было 7: M1 и M4 сняты как ложноположительные.)*
 **Статус сейчас:** C1 ✅, M2 ✅, M3 ✅ (follow-redirect; IP-pinning опц. открыт),
-M5 ✅ (проверено + constraint + guard-тест) → остаётся **0 Critical, 2 Major**
-(M6, M7).
+M5 ✅ (проверено + constraint + guard-тест), M7 ✅ (индекс + range-бейдж) →
+остаётся **0 Critical, 1 Major** — **M6** (needs decision).
 
-**С чего начать (остаток):** (1) **M6** — ролевая модель (needs decision: вводим
-роли или фиксируем «единственный доверенный админ»?); (2) **M7** — индекс
-`clicks(created_at)` + бейдж через range.
+**Остаток:** **M6** — ролевая модель: ввести минимальный флаг `is_admin` (гейт на
+панель + Horizon) **или** зафиксировать инвариант «единственный доверенный админ».
+Это решение за владельцем. Далее — Minor-пункты и Documentation mismatches (D1–D6).
 
 ---
 
@@ -271,6 +271,10 @@ M5 ✅ (проверено + constraint + guard-тест) → остаётся *
 - **Нужен тест:** при введении ролей — да.
 
 ### M7. Аналитика по `clicks.created_at` без поддерживающего индекса + неэффективные бейджи на каждой странице
+> **✅ ИСПРАВЛЕНО.** Добавлен индекс `clicks_created_at_index` (миграция); бейдж
+> `ClickResource::getNavigationBadge()` переведён с `whereDate()` на range-фильтр
+> `where('created_at', '>=', today())` (sargable). `StatsOverview`/`ClicksChart` уже
+> были на range — теперь опираются на индекс. Guard-тест `ClickNavigationBadgeTest`.
 - **Где:** `app/Filament/Widgets/StatsOverview.php`, `app/Filament/Widgets/ClicksChart.php`, бейджи `ClickResource::getNavigationBadge()` (`whereDate('created_at', today())->count()`), `CallbackResource` (по `status` — индекс есть), миграции `clicks`.
 - **Что не так:** на `clicks` есть только композитные `(service_id, created_at)` и
   `(link_id, created_at)`; **отдельного `clicks(created_at)` нет**. Дашборд и бейджи
