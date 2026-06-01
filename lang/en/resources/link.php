@@ -5,6 +5,9 @@ return [
     'plural_label' => 'Links',
     'navigation_label' => 'Links',
 
+    'no_rules_warning_title' => 'This link has no rules yet',
+    'no_rules_warning_body' => 'Add at least one rule below — until then the link resolves to a 404.',
+
     'fields' => [
         'service_id' => 'Service',
         'service' => 'Service',
@@ -20,7 +23,7 @@ return [
         'forward_query_yes' => 'Query parameters are forwarded',
         'forward_query_no' => 'Query parameters are not forwarded',
         'callback_data' => 'Callback data',
-        'callback_data_help' => 'Key-value pairs sent in the callback payload. String values support placeholders: {{click.*}} and {{link.*}}. Leave empty to skip the callback for this link.',
+        'callback_data_help' => 'JSON object sent as the callback payload (nesting allowed). String values support placeholders: {{click.*}} and {{link.*}}. Leave empty to skip the callback for this link.',
         'callback_data_key' => 'Key',
         'callback_data_value' => 'Value',
         'callback_data_add' => 'Add',
