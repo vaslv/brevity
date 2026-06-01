@@ -16,6 +16,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\Rules\Unique;
 
 class RulesRelationManager extends RelationManager
 {
@@ -54,7 +55,14 @@ class RulesRelationManager extends RelationManager
                     ->helperText(__('resources/link.rules.fields.priority_help'))
                     ->required()
                     ->numeric()
-                    ->default(1),
+                    ->default(1)
+                    // (link_id, priority) is unique in the DB; validate per-link
+                    // so a duplicate shows a form error instead of a 500.
+                    ->unique(
+                        ignoreRecord: true,
+                        modifyRuleUsing: fn (Unique $rule, RelationManager $livewire): Unique => $rule
+                            ->where('link_id', $livewire->getOwnerRecord()->getKey()),
+                    ),
             ]);
     }
 
