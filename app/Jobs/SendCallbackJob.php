@@ -50,7 +50,19 @@ class SendCallbackJob implements ShouldQueue
     {
         $callback = Callback::with('click.link.service')->findOrFail($this->callbackId);
 
-        $callbackUrl = $callback->click->link->service->callback_url;
+        // The link relation includes trashed links (BelongsToLink::withTrashed), so
+        // a soft-deleted link still resolves here. Guard the chain anyway so a
+        // genuinely missing link/service fails with a clear reason instead of a
+        // null-property TypeError that burns every retry.
+        $callbackUrl = $callback->click?->link?->service?->callback_url;
+
+        if ($callbackUrl === null) {
+            $this->fail(new \RuntimeException(
+                "Callback source link/service unavailable for callback_id={$this->callbackId}"
+            ));
+
+            return;
+        }
 
         if (! $urlGuard->isSafe($callbackUrl)) {
             $this->fail(new \RuntimeException(
