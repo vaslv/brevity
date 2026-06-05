@@ -8,5 +8,5 @@ use Illuminate\Support\Facades\Route;
 // resolver and burning the per-IP rate-limit budget. Filament/Horizon/health
 // routes are registered earlier and still take precedence for their own paths.
 Route::get('/{code}', ResolveLink::class)
-    ->where('code', '[A-Za-z0-9]{5,8}')
+    ->where('code', '[A-Za-z0-9]{5,16}')
     ->middleware('throttle:link-resolve');
