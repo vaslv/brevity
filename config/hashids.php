@@ -6,11 +6,14 @@ return [
     | Salt
     |--------------------------------------------------------------------------
     |
-    | Use APP_KEY for consistency. If needed, it can be overridden
-    | via .env (HASHIDS_SALT).
+    | Dedicated secret (HASHIDS_SALT), independent of APP_KEY. It must NOT fall
+    | back to app.key: doing so coupled short-code stability to the encryption
+    | key (rotating APP_KEY would change every id<->code mapping) and let anyone
+    | who knows APP_KEY decode codes back to sequential link ids. Set
+    | HASHIDS_SALT to the value the existing codes were generated with.
     |
     */
-    'salt' => env('HASHIDS_SALT', config('app.key')),
+    'salt' => env('HASHIDS_SALT'),
 
     /*
     |--------------------------------------------------------------------------
