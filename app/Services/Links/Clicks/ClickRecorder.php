@@ -27,9 +27,11 @@ readonly class ClickRecorder
         $userAgentValue = $this->normalizeString($userAgent ?? '', self::MAX_USER_AGENT_BYTES);
 
         // Idempotent on `uuid`: a retried RecordClickJob reuses the existing
-        // click instead of recording a duplicate visit. No wrapping transaction
-        // is needed — firstOrCreate is race-safe on its own (savepoint + retry),
-        // as are the insertOrIgnore-based dictionary resolvers.
+        // click instead of recording a duplicate visit. Race-safety comes from
+        // the UNIQUE index on clicks.uuid (a concurrent duplicate INSERT violates
+        // it and firstOrCreate re-selects the winning row), not from firstOrCreate
+        // itself; the insertOrIgnore-based dictionary resolvers are likewise
+        // index-backed.
         return Click::query()->firstOrCreate(
             ['uuid' => $uuid],
             [
