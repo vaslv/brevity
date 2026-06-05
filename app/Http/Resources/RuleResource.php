@@ -20,7 +20,12 @@ class RuleResource extends JsonResource
     {
         return [
             'url' => $this->resource->url->value,
-            'condition' => ConditionResource::make($this->resource->condition),
+            // Guard against a null condition: a nested JsonResource::make(null)
+            // does NOT collapse to null, it serializes as {"type":null,"data":null}.
+            // SDK_API.md guarantees `condition` is null for an unconditional rule.
+            'condition' => $this->resource->condition
+                ? ConditionResource::make($this->resource->condition)
+                : null,
             'transition_mode' => $this->resource->transition_mode,
         ];
     }
