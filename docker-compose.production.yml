@@ -41,9 +41,23 @@ services:
     networks:
       - proxy
 
+  migrate:
+    <<: *laravel
+    container_name: laravel-migrate
+    # One-shot: apply pending migrations before web/horizon/scheduler start.
+    # restart:no so it runs once per deploy; dependents wait for it to exit 0,
+    # and a failed migration blocks the new app from starting (stays on old code).
+    restart: "no"
+    command: php artisan migrate --force --no-interaction
+
   web:
     <<: *laravel
     container_name: laravel-web
+    depends_on:
+      redis:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
     environment:
       VIRTUAL_HOST: ${APP_HOST}
       VIRTUAL_PORT: 8000
@@ -57,6 +71,11 @@ services:
   scheduler:
     <<: *laravel
     container_name: laravel-scheduler
+    depends_on:
+      redis:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: [ "CMD-SHELL", "test -f /tmp/healthy && find /tmp/healthy -mmin -1" ]
       interval: 30s
@@ -70,6 +89,11 @@ services:
   horizon:
     <<: *laravel
     container_name: laravel-horizon
+    depends_on:
+      redis:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: [ "CMD-SHELL", "php artisan horizon:status | grep running" ]
       interval: 30s
