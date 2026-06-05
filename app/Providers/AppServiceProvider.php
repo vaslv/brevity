@@ -36,6 +36,17 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute(8)->by($request->ip().':'.$request->route('code')),
             ];
         });
+
+        // Storage-amplification protection for the authenticated create-link API:
+        // each call can persist a link plus up to 50 rules and condition/url rows,
+        // so cap it per owning service (the token's tokenable).
+        RateLimiter::for('api-links', function (Request $request) {
+            $service = $request->user();
+
+            return Limit::perMinute(120)->by(
+                $service ? 'service:'.$service->id : 'ip:'.$request->ip()
+            );
+        });
     }
 
     /**
