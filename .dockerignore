@@ -1,0 +1,65 @@
+# Keep secrets, history, dev tooling and build artifacts out of the image layers.
+# `COPY . /app` would otherwise bake .git and any working-tree .env* (real
+# DB_PASSWORD / APP_KEY) into the image. The runtime .env is mounted at deploy.
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Environment & secrets (provided at runtime via the mounted .env)
+.env
+.env.*
+auth.json
+
+# Dependencies (installed inside the image by `composer install`)
+/vendor
+/node_modules
+
+# Build artifacts, compiled assets and runtime caches
+/public/build
+/public/hot
+/public/storage
+/storage/logs/*.log
+/storage/*.key
+/storage/pail
+.phpunit.result.cache
+/.phpunit.cache
+
+# IDE / editor & generated helpers
+_ide_helper.php
+.phpstorm.meta.php
+.phpactor.json
+/.idea
+/.vscode
+/.zed
+/.fleet
+/.nova
+
+# AI agent tooling
+/.agents
+/.claude
+/.cursor
+/.gemini
+/.codex
+.mcp.json
+boost.json
+
+# Tests, docs and config not needed at runtime
+/tests
+/docs
+*.md
+phpunit.xml
+pint.json
+
+# CI / compose / container build files
+.gitlab-ci.yml
+compose.yaml
+docker-compose*.yml
+Dockerfile
+.dockerignore
+.editorconfig
+
+# OS junk
+.DS_Store
+Thumbs.db

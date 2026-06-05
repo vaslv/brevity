@@ -1,4 +1,7 @@
-FROM dunglas/frankenphp
+# Pin the base image to the PHP 8.4 tag + manifest-list digest for reproducible,
+# multi-arch builds (was an untagged `latest`, which could silently change the
+# bundled PHP version). Bump the tag and digest together when updating.
+FROM dunglas/frankenphp:php8.4@sha256:b153e1d6d869d26986e3091738a006f9fde2ee9fb66f7e8b8cfc5a75ec640984
 
 WORKDIR /app
 
