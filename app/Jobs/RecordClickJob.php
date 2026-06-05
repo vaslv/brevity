@@ -39,7 +39,10 @@ class RecordClickJob implements ShouldQueue
 
     public function handle(ClickRecorder $clickRecorder, CallbackDispatcher $callbackDispatcher): void
     {
-        $link = Link::findOrFail($this->linkId);
+        // withTrashed: the resolve already happened against a live link; if it was
+        // soft-deleted before this job ran, the click is still a real historical
+        // visit and must be recorded (and its callback delivered).
+        $link = Link::withTrashed()->findOrFail($this->linkId);
 
         $click = $clickRecorder->record($link, $this->clickUuid, $this->urlId, $this->ip, $this->referrer, $this->userAgent);
 
