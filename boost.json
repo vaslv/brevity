@@ -1,11 +1,22 @@
 {
     "agents": [
-        "codex"
+        "codex",
+        "claude_code",
+        "cursor",
+        "gemini"
     ],
     "cloud": false,
     "guidelines": true,
-    "herd_mcp": false,
     "mcp": true,
-    "nightwatch_mcp": false,
-    "sail": true
+    "nightwatch": false,
+    "packages": [
+        "filament/filament",
+        "barryvdh/laravel-debugbar"
+    ],
+    "sail": true,
+    "skills": [
+        "laravel-best-practices",
+        "configuring-horizon",
+        "debug-using-debugbar"
+    ]
 }
