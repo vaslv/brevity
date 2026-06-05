@@ -12,6 +12,13 @@ use Illuminate\Validation\Rule;
 class StoreLinkRequest extends FormRequest
 {
     /**
+     * Max byte length for a destination URL. `urls.value` carries a UNIQUE btree
+     * index (~2704-byte key limit); an over-long URL is rejected (422) rather
+     * than truncated, since truncating a redirect target would corrupt it.
+     */
+    private const MAX_URL_BYTES = 2000;
+
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
@@ -34,7 +41,16 @@ class StoreLinkRequest extends FormRequest
             'forward_query' => ['nullable', 'boolean'],
             'callback_data' => ['nullable', 'array', 'max:50'],
             'rules' => ['required', 'array', 'min:1', 'max:50'],
-            'rules.*.url' => ['required', 'url:http,https', 'max:2048'],
+            'rules.*.url' => [
+                'required',
+                'url:http,https',
+                'max:2048',
+                static function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (is_string($value) && strlen($value) > self::MAX_URL_BYTES) {
+                        $fail('The destination URL must not exceed '.self::MAX_URL_BYTES.' bytes.');
+                    }
+                },
+            ],
             'rules.*.condition' => ['nullable', 'array'],
             'rules.*.condition.type' => [
                 'required_with:rules.*.condition',
