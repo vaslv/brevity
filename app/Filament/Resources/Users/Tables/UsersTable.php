@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
@@ -14,6 +12,9 @@ class UsersTable
 {
     public static function configure(Table $table): Table
     {
+        // No delete/bulk-delete: users are never deletable from the panel, so an
+        // admin can't lock everyone out. Removal, if ever needed, is done via the
+        // console (e.g. php artisan tinker).
         return $table
             ->defaultSort('name')
             ->columns([
@@ -41,11 +42,6 @@ class UsersTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
             ]);
     }
 }
