@@ -13,7 +13,9 @@ return [
     |
     */
 
-    'default' => env('QUEUE_CONNECTION', 'database'),
+    // Default to redis: Horizon only processes the redis queue, so a forgotten
+    // QUEUE_CONNECTION must not silently route jobs to an undrained database queue.
+    'default' => env('QUEUE_CONNECTION', 'redis'),
 
     /*
     |--------------------------------------------------------------------------

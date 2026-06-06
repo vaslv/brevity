@@ -18,6 +18,15 @@ class AppServiceProvider extends ServiceProvider
     {
         if (app()->environment('production')) {
             URL::forceScheme('https');
+
+            // Fail fast on a misconfigured queue: Horizon only drains the redis
+            // queue, so any other connection silently loses clicks and callbacks.
+            if (config('queue.default') !== 'redis') {
+                throw new \RuntimeException(
+                    'In production QUEUE_CONNECTION must be "redis"; Horizon does not process the "'
+                    .config('queue.default').'" queue.'
+                );
+            }
         }
 
         FilamentTimezone::set(function (): ?string {
