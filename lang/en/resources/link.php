@@ -63,11 +63,6 @@ return [
         'modal_description' => 'Link :code will be soft-deleted. Its clicks and callbacks remain in history. You can restore it afterwards.',
     ],
 
-    'force_delete' => [
-        'modal_heading' => 'Permanently delete link :code?',
-        'modal_description' => 'Link :code will be removed for good. This cannot be undone.',
-    ],
-
     'pages' => [
         'create_title' => 'Create link',
         'edit_title' => 'Edit link',
