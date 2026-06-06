@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Horizon\HorizonApplicationServiceProvider;
 
@@ -26,8 +28,12 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
      */
     protected function gate(): void
     {
-        Gate::define('viewHorizon', function ($user = null) {
-            return $user !== null;
+        // Delegate to the same access rule as the admin panel so Horizon (which
+        // exposes queue payloads and failed-job traces) stays in lock-step with
+        // panel access. Today every User can access the panel; if a future
+        // users.is_admin flag gates canAccessPanel(), it gates Horizon too.
+        Gate::define('viewHorizon', function (?User $user = null): bool {
+            return $user?->canAccessPanel(Filament::getPanel('main')) ?? false;
         });
     }
 }
