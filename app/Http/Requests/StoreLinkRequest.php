@@ -37,7 +37,7 @@ class StoreLinkRequest extends FormRequest
 
         return [
             'domain' => ['nullable', 'string', 'max:255', 'exists:domains,value'],
-            'title' => ['nullable', 'string', 'max:255'],
+            'title' => ['nullable', 'string', 'max:64'],
             'forward_query' => ['nullable', 'boolean'],
             'callback_data' => ['nullable', 'array', 'max:50'],
             'rules' => ['required', 'array', 'min:1', 'max:50'],

@@ -81,6 +81,19 @@ class StoreLinkRequestTest extends TestCase
             ->assertJsonMissingValidationErrors(['rules.0.condition.data.before']);
     }
 
+    public function test_it_rejects_a_title_longer_than_the_column_width(): void
+    {
+        // AUDIT M1: title validation must match the links.title varchar(64)
+        // column — a 65-255 char title would otherwise 500 on insert (SQLSTATE
+        // 22001) instead of returning a clean 422.
+        $this->postLink([
+            'title' => str_repeat('a', 65),
+            'rules' => [['url' => 'https://example.com/redirect']],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['title']);
+    }
+
     public function test_it_rejects_invalid_before_date_format_in_time_before_condition(): void
     {
         $response = $this->postLink([
