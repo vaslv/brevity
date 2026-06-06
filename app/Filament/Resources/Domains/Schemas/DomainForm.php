@@ -13,7 +13,8 @@ class DomainForm
             ->components([
                 TextInput::make('value')
                     ->label(__('resources/domain.fields.value'))
-                    ->required(),
+                    ->required()
+                    ->unique(ignoreRecord: true),
             ]);
     }
 }
