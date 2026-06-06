@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\RedispatchStaleCallbacks;
 use Illuminate\Support\Facades\Schedule;
 use Laravel\Horizon\Console\SnapshotCommand;
 
@@ -8,3 +9,5 @@ Schedule::call(function () {
 })->everyTenSeconds();
 
 Schedule::command(SnapshotCommand::class)->everyFiveMinutes();
+
+Schedule::command(RedispatchStaleCallbacks::class)->everyThirtyMinutes();
