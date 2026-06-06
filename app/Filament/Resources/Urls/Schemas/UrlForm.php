@@ -13,7 +13,8 @@ class UrlForm
             ->components([
                 TextInput::make('value')
                     ->label(__('resources/url.fields.value'))
-                    ->required(),
+                    ->required()
+                    ->unique(ignoreRecord: true),
             ]);
     }
 }

@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Conditions\Tables;
 
+use App\Filament\Support\RestrictedDeleteBulkAction;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -38,7 +38,7 @@ class ConditionsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    RestrictedDeleteBulkAction::make(),
                 ]),
             ]);
     }
