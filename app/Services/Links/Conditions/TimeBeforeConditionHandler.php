@@ -4,23 +4,29 @@ namespace App\Services\Links\Conditions;
 
 use App\Models\Condition;
 use Carbon\CarbonImmutable;
-use Illuminate\Validation\ValidationException;
+use Throwable;
 
 final class TimeBeforeConditionHandler extends AbstractConditionHandler
 {
     public function matches(Condition $condition, ConditionContext $context): bool
     {
-        try {
-            $data = self::validate($condition->data);
-        } catch (ValidationException $exception) {
-            report($exception);
+        // Read the stored value directly — it was validated at write time
+        // (LinkCreator/StoreLinkRequest via self::validate). Re-validating on
+        // every resolve added Validator overhead to the hot path and, on
+        // corrupted data, reported to Sentry on every visit. Fail closed instead.
+        $before = $condition->data['before'] ?? null;
 
+        if (! is_string($before)) {
             return false;
         }
 
-        $before = CarbonImmutable::parse($data['before']);
+        try {
+            $beforeTime = CarbonImmutable::parse($before);
+        } catch (Throwable) {
+            return false;
+        }
 
-        return $context->now->lessThan($before);
+        return $context->now->lessThan($beforeTime);
     }
 
     public static function rules(): array
