@@ -6,6 +6,7 @@ use App\Filament\Resources\Services\ServiceResource;
 use App\Models\Service;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Str;
@@ -30,11 +31,29 @@ class ViewService extends ViewRecord
                 ->modalHeading(__('resources/service.tokens.actions.modal_heading'))
                 ->modalDescription(__('resources/service.tokens.actions.modal_description'))
                 ->modalSubmitActionLabel(__('resources/service.tokens.actions.modal_submit'))
-                ->action(function () {
+                ->schema([
+                    Select::make('expires_in_days')
+                        ->label(__('resources/service.tokens.fields.expires_in'))
+                        ->helperText(__('resources/service.tokens.fields.expires_in_help'))
+                        ->placeholder(__('resources/service.tokens.expiry_options.none'))
+                        ->options([
+                            30 => __('resources/service.tokens.expiry_options.30'),
+                            90 => __('resources/service.tokens.expiry_options.90'),
+                            365 => __('resources/service.tokens.expiry_options.365'),
+                        ])
+                        ->native(false),
+                ])
+                ->action(function (array $data) {
                     /** @var Service $service */
                     $service = $this->getRecord();
+
+                    $days = $data['expires_in_days'] ?? null;
+                    $expiresAt = filled($days) ? now()->addDays((int) $days) : null;
+
                     // Least-privilege: scope to the only ability the API needs.
-                    $plainTextToken = $service->createToken('service-token', ['links:create'])->plainTextToken;
+                    $plainTextToken = $service
+                        ->createToken('service-token', ['links:create'], $expiresAt)
+                        ->plainTextToken;
 
                     $markdown = implode("\n\n", [
                         '**'.__('resources/service.tokens.notifications.created_title').'**',

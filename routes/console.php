@@ -11,3 +11,5 @@ Schedule::call(function () {
 Schedule::command(SnapshotCommand::class)->everyFiveMinutes();
 
 Schedule::command(RedispatchStaleCallbacks::class)->everyThirtyMinutes();
+
+Schedule::command('sanctum:prune-expired --hours=24')->daily();
