@@ -14,6 +14,7 @@ class UrlForm
                 TextInput::make('value')
                     ->label(__('resources/url.fields.value'))
                     ->required()
+                    ->rules(['url:http,https'])
                     ->unique(ignoreRecord: true),
             ]);
     }

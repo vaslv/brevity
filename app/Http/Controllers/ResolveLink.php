@@ -70,6 +70,13 @@ class ResolveLink extends Controller
         return $this->buildUrl($parts);
     }
 
+    private function hasAllowedScheme(string $url): bool
+    {
+        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+
+        return in_array($scheme, ['http', 'https'], true);
+    }
+
     private function hasDomainMismatch(Link $link, Request $request): bool
     {
         if ($link->domain === null) {
@@ -103,6 +110,14 @@ class ResolveLink extends Controller
         $rule = $resolver->resolve($link, $context);
 
         if (! $rule) {
+            abort(404);
+        }
+
+        // Re-validate the stored target scheme at read time. The API enforces
+        // http/https on write, but seeders/raw SQL/admin edits could bypass that;
+        // never emit a non-web scheme (e.g. javascript:) into a Location header or
+        // a clickable href.
+        if (! $this->hasAllowedScheme($rule->url->value)) {
             abort(404);
         }
 
