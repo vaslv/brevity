@@ -22,7 +22,12 @@ class SendCallbackJob implements ShouldQueue
 
     public int $tries = 5;
 
-    public function __construct(private readonly int $callbackId) {}
+    public function __construct(private readonly int $callbackId)
+    {
+        // Dedicated queue: outbound callback delivery (up to 5 tries, ~1h backoff,
+        // slow endpoints) must not starve click recording on the default queue.
+        $this->onQueue('callbacks');
+    }
 
     /**
      * Delays between the 5 attempts (4 gaps): 1m, 5m, 15m, 1h.
