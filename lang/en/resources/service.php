@@ -19,6 +19,14 @@ return [
             'abilities' => 'Abilities',
             'last_used_at' => 'Last used at',
             'created_at' => 'Created at',
+            'expires_in' => 'Expiry',
+            'expires_in_help' => 'Optional. Leave empty for a non-expiring token.',
+        ],
+        'expiry_options' => [
+            'none' => 'No expiry',
+            '30' => '30 days',
+            '90' => '90 days',
+            '365' => '1 year',
         ],
         'actions' => [
             'create' => 'Create API token',
