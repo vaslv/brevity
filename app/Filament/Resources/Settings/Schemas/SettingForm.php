@@ -33,7 +33,7 @@ class SettingForm
                         array_column(SettingType::cases(), 'value'),
                     ))
                     ->required()
-                    ->reactive()
+                    ->live()
                     ->columnSpan(2),
                 Group::make()
                     ->schema(fn (callable $get) => match ($get('type')) {
