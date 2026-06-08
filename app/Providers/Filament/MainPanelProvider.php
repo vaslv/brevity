@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\Login;
+use App\Http\Middleware\EnsureTechnicalHost;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
@@ -31,6 +32,9 @@ class MainPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->middleware([
                 'web',
+                // Admin panel is reachable on the technical host only; every
+                // other short-link domain 404s before authentication.
+                EnsureTechnicalHost::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

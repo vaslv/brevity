@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureTechnicalHost;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -25,6 +26,12 @@ return Application::configure(basePath: dirname(__DIR__))
             '172.16.0.0/12',
             '192.168.0.0/16',
         ]);
+
+        // The API lives on the technical host only; reject other short-link
+        // hosts before auth/throttle so a wrong-host call never burns the
+        // per-token rate-limit budget. Filament and Horizon are guarded by the
+        // same middleware in their own route registrations.
+        $middleware->prependToGroup('api', EnsureTechnicalHost::class);
 
         // Sanctum token-ability gates for API routes.
         $middleware->alias([

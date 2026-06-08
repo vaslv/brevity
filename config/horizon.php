@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureTechnicalHost;
 use Illuminate\Support\Str;
 
 return [
@@ -83,7 +84,9 @@ return [
     |
     */
 
-    'middleware' => ['web'],
+    // EnsureTechnicalHost keeps the queue dashboard on the technical host only,
+    // in lock-step with the admin panel and API (see config/app.php technical_host).
+    'middleware' => ['web', EnsureTechnicalHost::class],
 
     /*
     |--------------------------------------------------------------------------
