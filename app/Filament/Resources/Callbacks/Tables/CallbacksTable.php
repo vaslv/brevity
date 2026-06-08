@@ -8,6 +8,8 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 class CallbacksTable
 {
@@ -31,7 +33,12 @@ class CallbacksTable
                     ->formatStateUsing(fn (CallbackStatus|string|null $state) => $state
                         ? __('resources/callback.statuses.'.($state instanceof CallbackStatus ? $state->value : $state))
                         : null)
-                    ->searchable(),
+                    // Search by the translated label the user sees, not the raw
+                    // enum value stored in the column.
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $query->whereIn(
+                        'status',
+                        self::statusValuesMatching($search),
+                    )),
                 TextColumn::make('attempts')
                     ->label(__('resources/callback.fields.attempts'))
                     ->numeric()
@@ -57,5 +64,25 @@ class CallbacksTable
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * Backing values of CallbackStatus whose translated label contains the
+     * search term, so the status column searches by its visible label.
+     *
+     * @return list<string>
+     */
+    private static function statusValuesMatching(string $search): array
+    {
+        $needle = Str::lower($search);
+
+        return collect(CallbackStatus::cases())
+            ->filter(fn (CallbackStatus $status): bool => str_contains(
+                Str::lower(__('resources/callback.statuses.'.$status->value)),
+                $needle,
+            ))
+            ->map(fn (CallbackStatus $status): string => $status->value)
+            ->values()
+            ->all();
     }
 }
