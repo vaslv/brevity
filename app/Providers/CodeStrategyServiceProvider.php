@@ -16,14 +16,9 @@ class CodeStrategyServiceProvider extends ServiceProvider implements DeferrableP
 
     public function register(): void
     {
-        $this->app->singleton(CodeGenerator::class, function ($app) {
-            $strategy = config('link.code_strategy', 'hashid');
-
-            /** @noinspection PhpDuplicateMatchArmBodyInspection */
-            return match ($strategy) {
-                'hashid' => $app->make(HashidCodeGenerator::class),
-                default => $app->make(HashidCodeGenerator::class),
-            };
-        });
+        // Only one strategy exists today. The CodeGenerator interface is the
+        // extension seam — bind a different implementation here (optionally
+        // branching on config('link.code_strategy')) to add another.
+        $this->app->singleton(CodeGenerator::class, fn ($app) => $app->make(HashidCodeGenerator::class));
     }
 }
