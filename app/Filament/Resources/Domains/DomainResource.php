@@ -57,13 +57,6 @@ class DomainResource extends Resource
         return __('resources/domain.plural_label');
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            // TODO: add Links relation manager if needed
-        ];
-    }
-
     public static function infolist(Schema $schema): Schema
     {
         return DomainInfolist::configure($schema);
