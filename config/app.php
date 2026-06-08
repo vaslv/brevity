@@ -76,6 +76,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Technical Host
+    |--------------------------------------------------------------------------
+    |
+    | The single hostname that serves the admin panel, API and Horizon. Every
+    | other host in APP_HOST is a short-link domain only — those subsystems 404
+    | there (see App\Http\Middleware\EnsureTechnicalHost). Defaults to the host
+    | of APP_URL; override with APP_TECHNICAL_HOST only if they should differ.
+    |
+    */
+
+    'technical_host' => env('APP_TECHNICAL_HOST', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
