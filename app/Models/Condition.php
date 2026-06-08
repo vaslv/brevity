@@ -31,6 +31,8 @@ class Condition extends Model
 
     public const UPDATED_AT = null;
 
+    public $timestamps = false;
+
     protected $casts = [
         'data' => 'array',
     ];
