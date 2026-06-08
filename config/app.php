@@ -90,6 +90,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Hosts
+    |--------------------------------------------------------------------------
+    |
+    | Every hostname served by the app (the technical host plus the short-link
+    | domains), parsed from the comma-separated APP_HOST. The `domains:sync`
+    | command seeds the short-link hosts (all but technical_host) into the DB.
+    |
+    */
+
+    'hosts' => array_values(array_filter(
+        array_map('trim', explode(',', (string) env('APP_HOST', ''))),
+        static fn (string $host): bool => $host !== '',
+    )),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
