@@ -44,11 +44,14 @@ services:
   migrate:
     <<: *laravel
     container_name: laravel-migrate
-    # One-shot: apply pending migrations before web/horizon/scheduler start.
-    # restart:no so it runs once per deploy; dependents wait for it to exit 0,
-    # and a failed migration blocks the new app from starting (stays on old code).
+    # One-shot: apply pending migrations, then seed the short-link domains from
+    # APP_HOST, before web/horizon/scheduler start. restart:no so it runs once
+    # per deploy; dependents wait for it to exit 0, and a failure here blocks the
+    # new app from starting (stays on old code). domains:sync is idempotent.
     restart: "no"
-    command: php artisan migrate --force --no-interaction
+    command: >
+      sh -c "php artisan migrate --force --no-interaction &&
+      php artisan domains:sync --no-interaction"
 
   web:
     <<: *laravel
