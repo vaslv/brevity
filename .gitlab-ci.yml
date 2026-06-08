@@ -18,18 +18,37 @@ build:
 
 deploy:
   stage: deploy
+  # Further hardening still needs server-side coordination (docs/AUDIT_2026-06.md
+  # — Low / CI), kept as recommendations only:
+  #   - deploy as a non-root user with docker access instead of root@SERVER_IP;
+  #   - post-deploy smoke test against the /up health route (e.g. via a
+  #     HEALTHCHECK_URL variable) so a broken image fails the job;
+  #   - a manual rollback job backed by retained image tags.
   before_script:
     - eval $(ssh-agent -s)
     - mkdir -p ~/.ssh
     - cp $SSH_PRIVATE_KEY_PATH ~/.ssh/id_rsa
     - chmod 700 ~/.ssh
     - chmod 600 ~/.ssh/id_rsa
+    # Pin the host key instead of StrictHostKeyChecking=no. Provide the server's
+    # public key out-of-band via the SSH_KNOWN_HOSTS CI variable; if it is unset,
+    # fall back to a weaker trust-on-first-use keyscan so the deploy keeps working.
+    - |
+      if [ -n "$SSH_KNOWN_HOSTS" ]; then
+        printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      else
+        echo "WARNING: SSH_KNOWN_HOSTS is not set; falling back to ssh-keyscan (trust on first use)."
+        ssh-keyscan -H "$SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null
+      fi
+    - chmod 600 ~/.ssh/known_hosts
   script:
-    - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "ls -lh"
-    - scp -o StrictHostKeyChecking=no $DOT_ENV_PATH root@$SERVER_IP:./.env
-    - scp -o StrictHostKeyChecking=no docker-compose.production.yml root@$SERVER_IP:./docker-compose.production.yml
-    - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "echo $HARBOR_PASSWORD | docker login -u $HARBOR_USERNAME --password-stdin $HARBOR_HOST"
-    - ssh -o StrictHostKeyChecking=no root@$SERVER_IP "
+    - ssh root@$SERVER_IP "ls -lh"
+    - scp $DOT_ENV_PATH root@$SERVER_IP:./.env
+    - scp docker-compose.production.yml root@$SERVER_IP:./docker-compose.production.yml
+    # Pipe the registry password over ssh stdin so it never appears in a command
+    # string or process arguments (mirrors the build stage's --password-stdin).
+    - echo "$HARBOR_PASSWORD" | ssh root@$SERVER_IP "docker login -u $HARBOR_USERNAME --password-stdin $HARBOR_HOST"
+    - ssh root@$SERVER_IP "
       export LARAVEL_IMAGE=\"$HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}\" &&
       docker pull \"\$LARAVEL_IMAGE\" &&
       docker compose --env-file .env -f docker-compose.production.yml up -d --remove-orphans
