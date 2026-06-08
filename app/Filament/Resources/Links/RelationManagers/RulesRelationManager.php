@@ -29,8 +29,9 @@ class RulesRelationManager extends RelationManager
                 Select::make('url_id')
                     ->label(__('resources/link.rules.fields.url_id'))
                     ->relationship('url', 'value')
+                    // No preload: the urls dictionary grows with every distinct
+                    // destination, so search lazily instead of loading them all.
                     ->searchable()
-                    ->preload()
                     ->required(),
                 Select::make('condition_id')
                     ->label(__('resources/link.rules.fields.condition_id'))
