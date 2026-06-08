@@ -12,6 +12,7 @@
 - Laravel Sail (Docker dev-окружение)
 - `vaslv/laravel-settings` (key/value настройки приложения)
 - `hashids/hashids` (короткие коды для `Link.code`)
+- `sentry/sentry-laravel` (репортинг ошибок; подключён в `bootstrap/app.php`)
 
 ## Потоки запросов
 
@@ -56,8 +57,9 @@ Rate-limited через `throttle:link-resolve` (per-link + per-IP).
 `App\Services\Links\Conditions\`
 
 - `ConditionRegistry` — список хендлеров по ключу `type`.
-- Интерфейс `ConditionHandler`: `matches(Condition $c, ConditionContext $ctx): bool`,
-  `rules(): array`, `type(): string`, `validate(array $data): array`.
+- Интерфейс `ConditionHandler`: инстанс-метод `matches(Condition $c, ConditionContext $ctx): bool`
+  плюс **статические** `rules(): array`, `type(): string`, `validate(array $data): array`
+  (вызываются как `$handler::rules()` / `::validate()`).
 - `AbstractConditionHandler` — общая обвязка.
 - `TimeBeforeConditionHandler` — единственный текущий тип.
 
