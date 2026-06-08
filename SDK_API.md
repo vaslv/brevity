@@ -7,7 +7,8 @@ This document describes the current public API contract required to build a clie
 - Base URL: `https://<your-host>`
 - Data format: `application/json`
 - API versioning: none (current path: `/api/...`)
-- Authentication: `Bearer` token (Laravel Sanctum personal access token)
+- Authentication: `Bearer` token (Laravel Sanctum personal access token). The token must carry the `links:create` ability, otherwise the request is rejected with `403 Forbidden`.
+- Rate limiting: link creation is throttled per service (`429 Too Many Requests` on exceed).
 
 Recommended SDK headers:
 
@@ -51,15 +52,15 @@ Creates a short link and transition rules.
 #### Request fields
 
 - `domain` (`string|null`, max 255): short-link domain; must exist in the system (`exists:domains,value`).
-- `title` (`string|null`): link title.
+- `title` (`string|null`, max 64): link title.
 - `forward_query` (`boolean|null`): whether to forward query parameters on direct HTTP redirect.
-- `callback_data` (`object|null`): callback payload template (see [Callback System](#6-callback-system)).
-- `rules` (`array`, required, min 1): transition rules in priority order.
-- `rules[].url` (`string`, required, url, max 2048): destination URL.
+- `callback_data` (`object|null`, max 50 entries): callback payload template (see [Callback System](#5-callback-system)).
+- `rules` (`array`, required, min 1, max 50): transition rules in priority order.
+- `rules[].url` (`string`, required): destination URL, must be an `http`/`https` URL, max 2000 bytes.
 - `rules[].condition` (`object|null`): condition for applying the rule.
-- `rules[].condition.type` (`string`, required if `condition` is present): condition type.
+- `rules[].condition.type` (`string`, required if `condition` is present, max 32): condition type.
 - `rules[].condition.data` (`object|null`): condition payload.
-- `rules[].transition_mode` (`string|null`): transition mode (`direct`, `delayed`, `manual`).
+- `rules[].transition_mode` (`string|null`, max 16): transition mode (`direct`, `delayed`, `manual`).
 
 #### Supported condition types
 
@@ -130,11 +131,24 @@ response (and `transition_mode` is `null` when not supplied, meaning `direct`).
 }
 ```
 
-### 422 Unprocessable Entity (validation error)
+### 403 Forbidden
+
+Returned when the token lacks the `links:create` ability.
 
 ```json
 {
-  "message": "The given data was invalid.",
+  "message": "Invalid ability provided."
+}
+```
+
+### 422 Unprocessable Entity (validation error)
+
+`message` is the first validation error (not a fixed string); `errors` maps each
+field to its messages.
+
+```json
+{
+  "message": "The rules field is required.",
   "errors": {
     "rules.0.condition.data.before": [
       "The rules.0.condition.data.before field is required."
@@ -142,6 +156,10 @@ response (and `transition_mode` is `null` when not supplied, meaning `direct`).
   }
 }
 ```
+
+### 429 Too Many Requests
+
+Returned when the per-service link-creation rate limit is exceeded.
 
 ## 5. Callback System
 
