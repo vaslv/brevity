@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Domains\Tables;
 use App\Filament\Support\RestrictedDeleteBulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -17,6 +18,9 @@ class DomainsTable
                 TextColumn::make('value')
                     ->label(__('resources/domain.fields.value'))
                     ->searchable(),
+                IconColumn::make('is_default')
+                    ->label(__('resources/domain.fields.is_default'))
+                    ->boolean(),
                 TextColumn::make('created_at')
                     ->label(__('resources/domain.fields.created_at'))
                     ->dateTime()

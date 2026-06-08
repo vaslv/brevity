@@ -86,8 +86,10 @@ class LinkCreator
 
     private function resolveDomainId(?string $value): ?int
     {
+        // No explicit domain falls back to the default one (if any is marked);
+        // otherwise the link stays domain-less and resolves via config('app.url').
         if ($value === null || $value === '') {
-            return null;
+            return Domain::where('is_default', true)->value('id');
         }
 
         return Domain::where('value', $value)->value('id');
