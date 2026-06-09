@@ -6,6 +6,34 @@ stages:
 
 variables:
   DOCKER_HOST: "unix:///var/run/docker.sock"
+  # SSH login on the deploy server. Defaults to root so existing setups keep
+  # working; set DEPLOY_USER to a non-root user with docker access once the
+  # server has one (docs/AUDIT_2026-06.md — Low / CI, block B).
+  DEPLOY_USER: "root"
+
+# Reusable shell snippet, referenced from deploy/rollback via *smoke_test.
+# Post-deploy health check against the /up route so a broken image fails the
+# pipeline. Skipped (with a warning) until HEALTHCHECK_URL is set, mirroring the
+# SSH_KNOWN_HOSTS fallback below.
+.scripts:
+  smoke_test: &smoke_test |
+    if [ -z "$HEALTHCHECK_URL" ]; then
+      echo "WARNING: HEALTHCHECK_URL is not set; skipping post-deploy smoke test."
+    else
+      command -v curl >/dev/null 2>&1 || apk add --no-cache curl >/dev/null
+      echo "Smoke test: GET $HEALTHCHECK_URL"
+      ok=0
+      for i in $(seq 1 12); do
+        code=$(curl -sS -m 10 -o /dev/null -w '%{http_code}' "$HEALTHCHECK_URL" || true)
+        if [ "$code" = "200" ]; then echo "Health OK (HTTP 200) on attempt $i."; ok=1; break; fi
+        echo "Attempt $i/12: HTTP ${code:-000}; retrying in 5s..."
+        sleep 5
+      done
+      if [ "$ok" -ne 1 ]; then
+        echo "Smoke test FAILED: $HEALTHCHECK_URL never returned HTTP 200."
+        exit 1
+      fi
+    fi
 
 build:
   stage: build
@@ -18,14 +46,9 @@ build:
   only:
     - tags
 
-deploy:
+# Shared SSH bootstrap for the deploy and rollback jobs.
+.deploy_base:
   stage: deploy
-  # Further hardening still needs server-side coordination (docs/AUDIT_2026-06.md
-  # — Low / CI), kept as recommendations only:
-  #   - deploy as a non-root user with docker access instead of root@SERVER_IP;
-  #   - post-deploy smoke test against the /up health route (e.g. via a
-  #     HEALTHCHECK_URL variable) so a broken image fails the job;
-  #   - a manual rollback job backed by retained image tags.
   before_script:
     - eval $(ssh-agent -s)
     - mkdir -p ~/.ssh
@@ -43,17 +66,47 @@ deploy:
         ssh-keyscan -H "$SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null
       fi
     - chmod 600 ~/.ssh/known_hosts
+  only:
+    - tags
+
+deploy:
+  extends: .deploy_base
+  # Remaining server-side prerequisites to fully activate block B
+  # (docs/AUDIT_2026-06.md — Low / CI):
+  #   - create a non-root user with docker access on the server and set the
+  #     DEPLOY_USER CI variable to it (defaults to root until then);
+  #   - set HEALTHCHECK_URL (e.g. https://<APP_HOST>/up) to enable the smoke test;
+  #   - keep old image tags in the registry (Harbor retention policy) so the
+  #     manual `rollback` job has a known-good tag to roll back to.
   script:
-    - ssh root@$SERVER_IP "ls -lh"
-    - scp $DOT_ENV_PATH root@$SERVER_IP:./.env
-    - scp docker-compose.production.yml root@$SERVER_IP:./docker-compose.production.yml
+    - ssh $DEPLOY_USER@$SERVER_IP "ls -lh"
+    - scp $DOT_ENV_PATH $DEPLOY_USER@$SERVER_IP:./.env
+    - scp docker-compose.production.yml $DEPLOY_USER@$SERVER_IP:./docker-compose.production.yml
     # Pipe the registry password over ssh stdin so it never appears in a command
     # string or process arguments (mirrors the build stage's --password-stdin).
-    - echo "$HARBOR_PASSWORD" | ssh root@$SERVER_IP "docker login -u $HARBOR_USERNAME --password-stdin $HARBOR_HOST"
-    - ssh root@$SERVER_IP "
+    - echo "$HARBOR_PASSWORD" | ssh $DEPLOY_USER@$SERVER_IP "docker login -u $HARBOR_USERNAME --password-stdin $HARBOR_HOST"
+    - ssh $DEPLOY_USER@$SERVER_IP "
       export LARAVEL_IMAGE=\"$HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}\" &&
       docker pull \"\$LARAVEL_IMAGE\" &&
       docker compose --env-file .env -f docker-compose.production.yml up -d --remove-orphans
       "
-  only:
-    - tags
+    - *smoke_test
+
+# Manual rollback: re-deploy a known-good image tag. Trigger from the pipeline
+# UI with the ROLLBACK_TAG variable set to a previously built tag (e.g. an older
+# git tag), which must still exist in the registry.
+rollback:
+  extends: .deploy_base
+  when: manual
+  script:
+    - test -n "$ROLLBACK_TAG" || { echo "ROLLBACK_TAG is required (set it to a known-good image tag to roll back to)."; exit 1; }
+    - echo "Rolling back to image tag: $ROLLBACK_TAG"
+    - scp $DOT_ENV_PATH $DEPLOY_USER@$SERVER_IP:./.env
+    - scp docker-compose.production.yml $DEPLOY_USER@$SERVER_IP:./docker-compose.production.yml
+    - echo "$HARBOR_PASSWORD" | ssh $DEPLOY_USER@$SERVER_IP "docker login -u $HARBOR_USERNAME --password-stdin $HARBOR_HOST"
+    - ssh $DEPLOY_USER@$SERVER_IP "
+      export LARAVEL_IMAGE=\"$HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:$ROLLBACK_TAG\" &&
+      docker pull \"\$LARAVEL_IMAGE\" &&
+      docker compose --env-file .env -f docker-compose.production.yml up -d --remove-orphans
+      "
+    - *smoke_test
