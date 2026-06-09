@@ -6,6 +6,7 @@ use App\Models\Relations\HasManyCallbacks;
 use App\Models\Relations\HasManyClicks;
 use App\Models\Relations\HasManyLinks;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -37,6 +38,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 class Service extends Model
 {
     use HasApiTokens;
+    use HasFactory;
     use HasManyCallbacks;
     use HasManyClicks;
     use HasManyLinks;

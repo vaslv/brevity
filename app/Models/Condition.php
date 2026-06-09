@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Relations\HasManyRules;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -27,6 +28,7 @@ use Illuminate\Support\Carbon;
  */
 class Condition extends Model
 {
+    use HasFactory;
     use HasManyRules;
 
     public const UPDATED_AT = null;

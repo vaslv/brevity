@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Relations\HasManyLinks;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use League\Uri\Uri;
@@ -29,6 +30,7 @@ use League\Uri\Uri;
  */
 class Domain extends Model
 {
+    use HasFactory;
     use HasManyLinks;
 
     public const UPDATED_AT = null;
