@@ -8,6 +8,7 @@ use App\Models\Relations\HasManyClicks;
 use App\Models\Relations\HasManyRules;
 use App\Services\Links\CodeStrategy\CodeGenerator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -53,6 +54,7 @@ class Link extends Model
 {
     use BelongsToDomain;
     use BelongsToService;
+    use HasFactory;
     use HasManyClicks;
     use HasManyRules;
     use SoftDeletes;

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Relations\HasManyClicks;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -25,6 +26,7 @@ use Illuminate\Support\Carbon;
  */
 class IpAddress extends Model
 {
+    use HasFactory;
     use HasManyClicks;
 
     public const UPDATED_AT = null;

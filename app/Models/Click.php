@@ -10,6 +10,7 @@ use App\Models\Relations\BelongsToUrl;
 use App\Models\Relations\BelongsToUserAgent;
 use App\Models\Relations\HasManyCallbacks;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -54,6 +55,7 @@ class Click extends Model
     use BelongsToService;
     use BelongsToUrl;
     use BelongsToUserAgent;
+    use HasFactory;
     use HasManyCallbacks;
 
     public const UPDATED_AT = null;

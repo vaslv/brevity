@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Relations\HasManyClicks;
 use App\Models\Relations\HasManyRules;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -27,6 +28,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Url extends Model
 {
+    use HasFactory;
     use HasManyClicks;
     use HasManyRules;
 

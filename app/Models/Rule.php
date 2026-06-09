@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Relations\BelongsToCondition;
 use App\Models\Relations\BelongsToLink;
 use App\Models\Relations\BelongsToUrl;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -38,6 +39,7 @@ class Rule extends Model
     use BelongsToCondition;
     use BelongsToLink;
     use BelongsToUrl;
+    use HasFactory;
 
     public const UPDATED_AT = null;
 
