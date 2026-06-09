@@ -71,6 +71,19 @@ class ResolveLinkResolutionTest extends TestCase
         ]);
     }
 
+    public function test_a_soft_deleted_link_returns_404(): void
+    {
+        $link = Link::factory()->create();
+        Rule::factory()->for($link)->create();
+        $code = $link->code;
+
+        // findByCode applies the SoftDeletes scope, so a trashed link is treated
+        // as disabled (see docs/ARCHITECTURE.md — Модель данных).
+        $link->delete();
+
+        $this->get('/'.$code)->assertNotFound();
+    }
+
     public function test_an_unknown_code_returns_404(): void
     {
         $this->get('/abcdef')->assertNotFound();
