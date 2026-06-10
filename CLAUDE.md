@@ -34,7 +34,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
 - Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
 - Check for existing components to reuse before writing a new one.
-- **Eloquent relationships MUST each live in their own single-relation trait** under `app/Models/Relations/` (e.g. `BelongsToService`, `HasManyClicks`), composed into models via `use`. Never declare a relationship method inline in a model — even a one-liner, and even when only one model uses the trait. This keeps models thin and makes a model's full set of relationships readable at a glance from its `use` block. Do NOT inline "trivial" relation traits.
 
 ## Verification Scripts
 
@@ -165,21 +164,15 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 === octane/core rules ===
 
-# Octane
+# Laravel Octane
 
-- Octane boots the application once and reuses it across requests, so singletons persist between requests.
-- The Laravel container's `scoped` method may be used as a safe alternative to `singleton`.
-- Never inject the container, request, or config repository into a singleton's constructor; use a resolver closure or `bind()` instead:
+This application uses Laravel Octane, a long-running PHP server. The application bootstraps once and handles many requests within the same process.
 
-```php
-// Bad
-$this->app->singleton(Service::class, fn (Application $app) => new Service($app['request']));
+- Never store request-specific state in singletons or static properties, because it can leak across requests.
+- Use `config('octane.server')` to detect the active driver (`swoole`, `roadrunner`, or `frankenphp`).
+- Prefer scoped bindings (`$this->app->scoped()`) over singletons for per-request services.
 
-// Good
-$this->app->singleton(Service::class, fn () => new Service(fn () => request()));
-```
-
-- Never append to static properties, as they accumulate in memory across requests.
+When working on Octane-specific features (concurrency, shared tables, memory, driver configuration, testing), invoke `octane-development` for detailed rules.
 
 === pint/core rules ===
 
