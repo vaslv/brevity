@@ -63,16 +63,20 @@ vendor/bin/sail bin pint --dirty --format agent
 Источник истины: поле `version` в `composer.json` плюс соответствующий
 git-тег.
 
-Используй интерактивный релиз-скрипт **с хоста**, не из Sail (нужен
-git + SSH-ключи):
+Интерактивную команду релиза даёт dev-пакет
+[`example/release`](https://git.example.com/example/release) (composer-плагин,
+подключён через VCS-репозиторий `https://git.example.com/release.git`;
+общий для проектов Example, локального скрипта в репо больше нет):
 
 ```bash
 composer release
-# или
-bash scripts/release.sh
 ```
 
-Он:
+Запускать там, где есть git + SSH-ключи для пуша; из Sail можно
+создать коммит и тег, но на вопрос о пуше ответить `n` и запушить
+с хоста (`git push origin main && git push origin <тег>`).
+
+Команда:
 1. Проверит, что дерево чистое на ожидаемой ветке.
 2. Покажет текущий тег и предложит patch / minor / major / custom.
 3. Обновит версию в `composer.json` (через `composer config version`).

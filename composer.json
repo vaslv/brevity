@@ -29,7 +29,8 @@
         "laravel/sail": "^1.46",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
-        "phpunit/phpunit": "^12.0"
+        "phpunit/phpunit": "^12.0",
+        "example/release": "^0.1.0"
     },
     "autoload": {
         "psr-4": {
@@ -70,8 +71,7 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
-        ],
-        "release": "bash scripts/release.sh"
+        ]
     },
     "extra": {
         "laravel": {
@@ -84,10 +84,16 @@
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "example/release": true
         }
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
-    "version": "1.8.4"
+    "version": "1.8.4",
+    "repositories": [{
+        "name": "example-release",
+        "type": "vcs",
+        "url": "https://git.example.com/release.git"
+    }]
 }
