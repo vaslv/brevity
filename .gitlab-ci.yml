@@ -100,7 +100,7 @@ rollback:
   when: manual
   script:
     - test -n "$ROLLBACK_TAG" || { echo "ROLLBACK_TAG is required (set it to a known-good image tag to roll back to)."; exit 1; }
-    - echo "Rolling back to image tag: $ROLLBACK_TAG"
+    - 'echo "Rolling back to image tag: $ROLLBACK_TAG"'
     - scp $DOT_ENV_PATH $DEPLOY_USER@$SERVER_IP:./.env
     - scp docker-compose.production.yml $DEPLOY_USER@$SERVER_IP:./docker-compose.production.yml
     - echo "$HARBOR_PASSWORD" | ssh $DEPLOY_USER@$SERVER_IP "docker login -u $HARBOR_USERNAME --password-stdin $HARBOR_HOST"
