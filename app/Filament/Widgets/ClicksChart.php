@@ -8,6 +8,12 @@ use Illuminate\Support\Carbon;
 
 class ClicksChart extends ChartWidget
 {
+    /**
+     * Follow the panel palette instead of hardcoding a hex pair, so a theme
+     * change (e.g. the primary color) restyles the chart automatically.
+     */
+    protected string $color = 'primary';
+
     protected int|string|array $columnSpan = 'full';
 
     protected ?string $maxHeight = '240px';
@@ -48,8 +54,6 @@ class ClicksChart extends ChartWidget
                 [
                     'label' => __('widgets.clicks_chart.dataset'),
                     'data' => $values,
-                    'borderColor' => '#f59e0b',
-                    'backgroundColor' => 'rgba(245, 158, 11, 0.2)',
                     'fill' => true,
                     'tension' => 0.3,
                 ],
