@@ -27,7 +27,7 @@ class CallbackDispatchTest extends TestCase
             callbackData: ['x' => '{{click.id}}'],
         );
 
-        $this->get('/'.$code)->assertRedirect();
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect();
 
         Queue::assertPushed(SendCallbackJob::class, 1);
     }
@@ -41,7 +41,7 @@ class CallbackDispatchTest extends TestCase
             callbackData: ['x' => '{{click.id}}'],
         );
 
-        $this->get('/'.$code)->assertRedirect();
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect();
 
         $callback = Callback::query()->firstOrFail();
 
@@ -59,7 +59,7 @@ class CallbackDispatchTest extends TestCase
             callbackData: null,
         );
 
-        $this->get('/'.$code)->assertRedirect();
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect();
 
         $this->assertSame(0, Callback::query()->count());
         Http::assertNothingSent();
@@ -74,7 +74,7 @@ class CallbackDispatchTest extends TestCase
             callbackData: ['x' => '{{click.id}}'],
         );
 
-        $this->get('/'.$code)->assertRedirect();
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect();
 
         $this->assertSame(0, Callback::query()->count());
         Http::assertNothingSent();
@@ -91,7 +91,7 @@ class CallbackDispatchTest extends TestCase
             callbackData: ['x' => '{{click.id}}'],
         );
 
-        $this->get('/'.$code)->assertRedirect();
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect();
 
         $callback = Callback::query()->firstOrFail();
 
@@ -116,7 +116,7 @@ class CallbackDispatchTest extends TestCase
             callbackData: ['x' => '{{click.id}}'],
         );
 
-        $this->get('/'.$code)->assertRedirect();
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect();
 
         $callback = Callback::query()->firstOrFail();
 
@@ -136,7 +136,7 @@ class CallbackDispatchTest extends TestCase
             callbackData: ['click_id' => '{{click.id}}', 'code' => '{{link.code}}'],
         );
 
-        $this->get('/'.$code)->assertRedirect();
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect();
 
         $callback = Callback::query()->firstOrFail();
 
@@ -167,7 +167,7 @@ class CallbackDispatchTest extends TestCase
             callbackData: ['x' => '{{click.id}}'],
         );
 
-        $this->get('/'.$code)->assertRedirect();
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect();
 
         $callback = Callback::query()->firstOrFail();
 

@@ -42,7 +42,7 @@ class RecordClickJobIdempotencyTest extends TestCase
 
         $code = $this->setupLinkWithCallback();
 
-        $this->get('/'.$code)->assertRedirect();
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect();
 
         $captured = null;
         Queue::assertPushed(RecordClickJob::class, function (RecordClickJob $job) use (&$captured): bool {

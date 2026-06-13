@@ -42,7 +42,7 @@ class ResolveLinkTransitionModeTest extends TestCase
         ];
 
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.11'])
-            ->get('/'.$code, $headers)
+            ->get(static::SHORT_LINK_HOST.'/'.$code, $headers)
             ->assertRedirect($targetUrl);
 
         $click = Click::query()->firstOrFail();
@@ -66,11 +66,11 @@ class ResolveLinkTransitionModeTest extends TestCase
         ];
 
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.10'])
-            ->get('/'.$code, $headers)
+            ->get(static::SHORT_LINK_HOST.'/'.$code, $headers)
             ->assertRedirect($targetUrl);
 
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.10'])
-            ->get('/'.$code, $headers)
+            ->get(static::SHORT_LINK_HOST.'/'.$code, $headers)
             ->assertRedirect($targetUrl);
 
         $this->assertDatabaseHas('referrers', [
@@ -99,7 +99,7 @@ class ResolveLinkTransitionModeTest extends TestCase
         $this->withServerVariables([
             'REMOTE_ADDR' => '172.18.0.3',
             'HTTP_X_FORWARDED_FOR' => '203.0.113.77',
-        ])->get('/'.$code)->assertRedirect($targetUrl);
+        ])->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect($targetUrl);
 
         $this->assertDatabaseHas('ip_addresses', [
             'value' => '203.0.113.77',
@@ -111,7 +111,7 @@ class ResolveLinkTransitionModeTest extends TestCase
         $targetUrl = 'https://example.com/default';
         $code = $this->createRuleForCode($targetUrl, null);
 
-        $this->get('/'.$code)
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)
             ->assertRedirect($targetUrl);
     }
 
@@ -120,7 +120,7 @@ class ResolveLinkTransitionModeTest extends TestCase
         $targetUrl = 'https://example.com/button';
         $code = $this->createRuleForCode($targetUrl, 'manual');
 
-        $this->get('/'.$code)
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)
             ->assertOk()
             ->assertSee($targetUrl)
             ->assertSee('Continue');
@@ -131,7 +131,7 @@ class ResolveLinkTransitionModeTest extends TestCase
         $targetUrl = 'https://example.com/countdown';
         $code = $this->createRuleForCode($targetUrl, 'delayed');
 
-        $this->get('/'.$code)
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)
             ->assertOk()
             ->assertSee($targetUrl)
             ->assertSee('id="countdown"', false);

@@ -15,8 +15,11 @@ use Tests\TestCase;
  * The root catch-all `GET /{code}` shares the root namespace with the Filament
  * panel (path '') and the `/up` health check. This test locks in that the
  * catch-all does NOT shadow those reserved paths (Filament/health routes are
- * registered first and win), while real short codes still resolve. It also
- * pins the code constraint so junk paths 404 at the router.
+ * registered first and win), while real short codes still resolve on a
+ * short-link host. It also pins the code constraint so junk paths 404 at the
+ * router. The catch-all is host-scoped to short-link domains
+ * (see EnsureShortLinkHost), so the panel/health checks run on the technical
+ * host without ever colliding with the resolver.
  */
 class RootRoutePrecedenceTest extends TestCase
 {
@@ -27,7 +30,7 @@ class RootRoutePrecedenceTest extends TestCase
         $target = 'https://example.com/landing';
         $code = $this->createLink($target);
 
-        $this->get('/'.$code)->assertRedirect($target);
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect($target);
     }
 
     public function test_filament_login_is_not_shadowed_by_the_code_resolver(): void
@@ -43,9 +46,10 @@ class RootRoutePrecedenceTest extends TestCase
     public function test_junk_single_segment_paths_404_at_the_router(): void
     {
         // Dotted / wrong-length paths don't match the code constraint, so they
-        // never reach the resolver or the rate limiter.
-        $this->get('/favicon.ico')->assertNotFound();
-        $this->get('/ab')->assertNotFound();
+        // never reach the resolver or the rate limiter — checked on a short-link
+        // host where the resolver route actually exists.
+        $this->get(static::SHORT_LINK_HOST.'/favicon.ico')->assertNotFound();
+        $this->get(static::SHORT_LINK_HOST.'/ab')->assertNotFound();
     }
 
     private function createLink(string $targetUrl): string
