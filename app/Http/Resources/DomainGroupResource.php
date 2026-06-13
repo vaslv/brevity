@@ -19,7 +19,7 @@ class DomainGroupResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->resource->id,
+            'code' => $this->resource->code,
             'name' => $this->resource->name,
             'domains_count' => $this->whenCounted('domains'),
         ];

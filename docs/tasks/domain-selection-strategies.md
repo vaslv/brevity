@@ -24,15 +24,15 @@
 |---|---|---|
 | `domain` | string\|null | Явный домен (как раньше). Взаимоисключим со стратегией. |
 | `domain_strategy` | string\|null | `random` / `round_robin` / `coldest`. |
-| `domain_group_id` | int\|null | Ограничить выбор группой. Требует `domain_strategy`. |
+| `domain_group` | string\|null | Код группы — ограничить выбор. Требует `domain_strategy`. |
 
 Правила валидации:
 
-- `domain` **prohibits** `domain_strategy` и `domain_group_id` — явный домен
+- `domain` **prohibits** `domain_strategy` и `domain_group` — явный домен
   и автоподбор нельзя смешивать (иначе `422`).
 - `domain_strategy` ∈ `{random, round_robin, coldest}`; **required_with**
-  `domain_group_id` (группа без стратегии бессмысленна → `422`).
-- `domain_group_id` — `exists:domain_groups,id`.
+  `domain_group` (группа без стратегии бессмысленна → `422`).
+- `domain_group` — `exists:domain_groups,code`.
 
 Порядок разрешения домена в `LinkCreator`:
 
@@ -42,7 +42,7 @@
 4. иначе → без домена (резолв через `APP_URL`).
 
 Если стратегия задана, но пул пуст (нет доменов / в группе нет доменов) —
-`422` (ошибка на `domain_strategy` или `domain_group_id`), а не молчаливый
+`422` (ошибка на `domain_strategy` или `domain_group`), а не молчаливый
 фолбэк на домен по умолчанию.
 
 Ответ не меняется по форме: фактически выбранный домен виден в
@@ -50,7 +50,7 @@
 
 ## Семантика стратегий
 
-Пул = домены группы (`domain_group_id`) либо все домены. Дальше:
+Пул = домены группы (`domain_group`) либо все домены. Дальше:
 
 - **random** — `inRandomOrder()->first()`.
 - **round_robin** — наименее недавно назначенный домен: сортировка по
@@ -102,8 +102,8 @@
   самокорректируется на следующем запросе. Если нужна строгая гарантия —
   отдельная таблица-курсор + `lockForUpdate`.
 - **Период coldest — конфиг**, не настройка в админке и не параметр запроса.
-- **`domain_group_id`** ссылается на id (как фильтр `GET /api/domains?group_id=`),
-  не на имя.
+- **`domain_group`** ссылается на код группы (`code`, как фильтр
+  `GET /api/domains?group=`), не на id/имя.
 
 ## Не входит в этот этап
 

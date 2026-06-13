@@ -45,7 +45,7 @@ Rate-limited через `throttle:link-resolve` (per-link + per-IP).
    всё в транзакцию:
    - `resolveDomainId` — явный домен (lookup), либо автоподбор по
      `domain_strategy` через `DomainSelector` (опц. в рамках
-     `domain_group_id`), либо домен по умолчанию. Пустой пул при заданной
+     `domain_group` — код группы), либо домен по умолчанию. Пустой пул при заданной
      стратегии → `ValidationException` (422).
    - `resolveUrlId` — insertOrIgnore + SELECT (race-safe).
    - `resolveConditionId` — тот же паттерн, ключ `(type, data)`.
@@ -124,7 +124,7 @@ insertOrIgnore + SELECT на каждый справочник (`Referrer`, `Use
   курсора); coldest — наименьший счётчик за окно
   `config('domains.coldest_period_days')`.
 - `DomainStrategyRegistry` — мапа `strategy → handler` из tagged-сервисов.
-- `DomainSelector` — строит пул (группа через `domain_group_id` либо все
+- `DomainSelector` — строит пул (группа по коду `domain_group` либо все
   домены) и делегирует хендлеру; `null` при пустом пуле.
 - Подключение: `DomainStrategyServiceProvider` (тег `domain.strategy`),
   вызывается из `LinkCreator::resolveDomainId`.

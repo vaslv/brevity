@@ -15,12 +15,12 @@ class DomainIndexTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_an_unknown_group_id_is_rejected(): void
+    public function test_an_unknown_group_is_rejected(): void
     {
         $this->withToken($this->serviceToken())
-            ->getJson('/api/domains?group_id=999999')
+            ->getJson('/api/domains?group=no-such-group')
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['group_id']);
+            ->assertJsonValidationErrors(['group']);
     }
 
     public function test_it_404s_on_a_short_link_host(): void
@@ -53,7 +53,7 @@ class DomainIndexTest extends TestCase
         $group->domains()->attach($inGroup);
 
         $this->withToken($this->serviceToken())
-            ->getJson('/api/domains?group_id='.$group->id)
+            ->getJson('/api/domains?group='.$group->code)
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.domain', 'in.example.com');

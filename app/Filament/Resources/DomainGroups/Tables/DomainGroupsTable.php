@@ -18,6 +18,11 @@ class DomainGroupsTable
                 TextColumn::make('name')
                     ->label(__('resources/domain-group.fields.name'))
                     ->searchable(),
+                TextColumn::make('code')
+                    ->label(__('resources/domain-group.fields.code'))
+                    ->badge()
+                    ->color('gray')
+                    ->searchable(),
                 TextColumn::make('domains_count')
                     ->label(__('resources/domain-group.fields.domains_count'))
                     ->counts('domains')

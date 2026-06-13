@@ -13,6 +13,10 @@ class DomainGroupInfolist
             ->components([
                 TextEntry::make('name')
                     ->label(__('resources/domain-group.fields.name')),
+                TextEntry::make('code')
+                    ->label(__('resources/domain-group.fields.code'))
+                    ->badge()
+                    ->color('gray'),
                 TextEntry::make('domains.value')
                     ->label(__('resources/domain-group.fields.domains'))
                     ->badge()

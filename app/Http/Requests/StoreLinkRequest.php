@@ -38,11 +38,11 @@ class StoreLinkRequest extends FormRequest
 
         return [
             // An explicit domain is mutually exclusive with automatic selection.
-            'domain' => ['nullable', 'string', 'max:255', 'exists:domains,value', 'prohibits:domain_strategy,domain_group_id'],
+            'domain' => ['nullable', 'string', 'max:255', 'exists:domains,value', 'prohibits:domain_strategy,domain_group'],
             // Auto-select a domain by strategy; required when a group scopes it.
-            'domain_strategy' => ['nullable', 'string', 'required_with:domain_group_id', Rule::in(DomainSelectionStrategy::values())],
-            // Optional scope for the strategy; without it selection spans all domains.
-            'domain_group_id' => ['nullable', 'integer', 'exists:domain_groups,id'],
+            'domain_strategy' => ['nullable', 'string', 'required_with:domain_group', Rule::in(DomainSelectionStrategy::values())],
+            // Optional scope for the strategy (group code); without it selection spans all domains.
+            'domain_group' => ['nullable', 'string', 'exists:domain_groups,code'],
             'title' => ['nullable', 'string', 'max:64'],
             'forward_query' => ['nullable', 'boolean'],
             'callback_data' => ['nullable', 'array', 'max:50'],

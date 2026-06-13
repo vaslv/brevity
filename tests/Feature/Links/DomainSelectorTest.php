@@ -54,7 +54,7 @@ class DomainSelectorTest extends TestCase
 
         $this->assertSame(
             $inQuiet->id,
-            $this->selector()->select(DomainSelectionStrategy::Coldest, $group->id)?->id,
+            $this->selector()->select(DomainSelectionStrategy::Coldest, $group->code)?->id,
         );
     }
 
@@ -80,7 +80,7 @@ class DomainSelectorTest extends TestCase
         $emptyGroup = DomainGroup::factory()->create();
         Domain::factory()->count(2)->create(); // exist, but not in the group
 
-        $this->assertNull($this->selector()->select(DomainSelectionStrategy::Random, $emptyGroup->id));
+        $this->assertNull($this->selector()->select(DomainSelectionStrategy::Random, $emptyGroup->code));
     }
 
     public function test_random_is_scoped_to_the_given_group(): void
@@ -91,7 +91,7 @@ class DomainSelectorTest extends TestCase
         $group->domains()->attach($inGroup);
 
         for ($i = 0; $i < 12; $i++) {
-            $selected = $this->selector()->select(DomainSelectionStrategy::Random, $group->id);
+            $selected = $this->selector()->select(DomainSelectionStrategy::Random, $group->code);
 
             $this->assertTrue($inGroup->pluck('id')->contains($selected->id));
         }

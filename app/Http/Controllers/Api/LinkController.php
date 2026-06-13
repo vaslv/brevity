@@ -22,7 +22,7 @@ class LinkController extends Controller
             'callback_data',
             'domain',
             'domain_strategy',
-            'domain_group_id',
+            'domain_group',
             'rules',
         ]);
 

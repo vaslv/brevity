@@ -17,6 +17,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -200,7 +201,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($groups as $name => $domainKeys) {
-            $group = DomainGroup::firstOrCreate(['name' => $name]);
+            $group = DomainGroup::firstOrCreate(['name' => $name], ['code' => Str::slug($name)]);
 
             $ids = collect($domainKeys)
                 ->map(fn (string $key): int => $domains[$key]->id)
