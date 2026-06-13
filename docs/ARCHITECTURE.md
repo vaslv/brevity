@@ -51,7 +51,7 @@ Rate-limited через `throttle:link-resolve` (per-link + per-IP).
    - `resolveConditionId` — тот же паттерн, ключ `(type, data)`.
    - Вставка `Link`, его `Rule` по порядку.
 3. Возвращает 201 с payload'ом созданного (точная форма — см.
-   `SDK_API.md`).
+   `docs/API.md`).
 
 ## Ключевые подсистемы
 
@@ -74,7 +74,7 @@ Rate-limited через `throttle:link-resolve` (per-link + per-IP).
 3. Добавить ветку рендера в схему `ConditionForm`.
 4. Перевести `types.<new_type>` и `data_fields.<new_type>.*` в
    `lang/{en,ru}/resources/condition.php`.
-5. Обновить `SDK_API.md` и `docs/GLOSSARY.md`.
+5. Обновить `docs/API.md` и `docs/GLOSSARY.md`.
 
 ### Колбеки (Callbacks)
 
@@ -136,7 +136,7 @@ soft-deleted ссылок.
 1. Реализовать `DomainSelectionStrategyHandler`.
 2. Добавить значение в enum `DomainSelectionStrategy`.
 3. Затегировать класс в `DomainStrategyServiceProvider` (`domain.strategy`).
-4. Обновить `SDK_API.md`, `docs/API.md`, `docs/GLOSSARY.md`.
+4. Обновить `docs/API.md`, `docs/GLOSSARY.md`.
 
 ### Rate limiting
 
@@ -200,6 +200,6 @@ tests/                      Feature + unit тесты
 
 ## Внешние контракты
 
-- **Публичный API** → `SDK_API.md` в корне репо.
-- **Payload'ы колбеков** → тоже `SDK_API.md`.
+- **Публичный API** → `docs/API.md`.
+- **Payload'ы колбеков** → тоже `docs/API.md` (§10).
 - **Админка Filament** → только внутреннее.

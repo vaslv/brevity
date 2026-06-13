@@ -3,10 +3,9 @@
 Практическое руководство для тех, кто интегрирует свою систему с Brevity:
 как получить API-токен, аутентифицироваться и создавать короткие ссылки.
 
-> Полный формальный контракт (все поля, точные правила валидации, готовые
-> тестовые payload'ы для авторов SDK) — в [../SDK_API.md](../SDK_API.md).
-> Этот файл — про то, *как начать работать*, а не исчерпывающий справочник
-> полей. Терминология — в [GLOSSARY.md](./GLOSSARY.md).
+> Единый источник по HTTP API: как начать работать, полный список полей,
+> правила валидации, колбеки и готовые тестовые payload'ы для авторов SDK.
+> Терминология — в [GLOSSARY.md](./GLOSSARY.md).
 
 ---
 
@@ -146,8 +145,6 @@ curl -sS -X POST https://brevity.example.com/api/links \
 | `rules[].condition.data` | object\|null | нет | Данные условия; валидируются по типу. |
 | `rules[].transition_mode` | string\|null | нет | Режим перехода: `direct` / `delayed` / `manual`. |
 
-> Полное описание каждого поля и крайних случаев — в [../SDK_API.md](../SDK_API.md).
-
 ### Как сервер обрабатывает запрос
 
 - **Приоритет правил** определяется порядком в массиве `rules`: первый
@@ -196,7 +193,7 @@ curl -sS -X POST https://brevity.example.com/api/links \
 
 Список типов расширяемый (через `ConditionHandler` в `ConditionRegistry`).
 Актуальный перечень и форму `data` для каждого типа см. в
-[GLOSSARY.md](./GLOSSARY.md) и [../SDK_API.md](../SDK_API.md).
+[GLOSSARY.md](./GLOSSARY.md).
 
 ---
 
@@ -338,15 +335,67 @@ curl -sS https://brevity.example.com/api/domain-groups \
 
 Если у сервиса задан `callback_url` **и** у ссылки непустой
 `callback_data`, то после **каждого** клика сервер шлёт `POST` на
-`callback_url` с телом из отрендеренного `callback_data`.
+`callback_url` с телом из отрендеренного `callback_data`. Дополнительных
+заголовков аутентификации нет.
 
-Внутри строковых значений `callback_data` можно использовать плейсхолдеры
-`{{click.id}}`, `{{click.created_at}}`, `{{click.ip}}`, `{{link.code}}` и
-другие — сервер подставит реальные данные клика.
+Условия срабатывания (оба обязательны):
 
-Полное описание (все плейсхолдеры, гарантии доставки, ретраи 1м→5м→15м→1ч,
-обработка кодов ответа) — в разделе **Callback System** файла
-[../SDK_API.md](../SDK_API.md).
+- у сервиса задан `Service.callback_url` (не `null`);
+- у ссылки непустой `Link.callback_data`.
+
+### Плейсхолдеры
+
+Внутри **строковых** значений `callback_data` можно использовать
+плейсхолдеры вида `{{переменная}}` — сервер подставит реальные данные
+клика. Ключи и нестроковые значения не обрабатываются.
+
+| Плейсхолдер | Описание |
+|---|---|
+| `{{click.id}}` | Уникальный ID клика |
+| `{{click.created_at}}` | Время клика (ISO 8601, UTC) |
+| `{{click.ip}}` | IP посетителя (пустая строка, если недоступен) |
+| `{{click.url}}` | Целевой URL, куда был сделан редирект |
+| `{{click.referrer}}` | Значение заголовка Referer (пустая строка, если нет) |
+| `{{click.user_agent}}` | User-Agent посетителя (пустая строка, если нет) |
+| `{{link.id}}` | ID короткой ссылки |
+| `{{link.code}}` | Код короткой ссылки (напр. `AbC12345`) |
+| `{{link.title}}` | Заголовок ссылки (пустая строка, если не задан) |
+
+Пример — ссылка с `callback_data`:
+
+```json
+{
+  "callback_data": {
+    "campaign_id": "cmp-42",
+    "click_id": "{{click.id}}",
+    "timestamp": "{{click.created_at}}",
+    "source_ip": "{{click.ip}}",
+    "meta": { "referrer": "{{click.referrer}}" }
+  }
+}
+```
+
+Тело колбека, отправленное после клика:
+
+```json
+{
+  "campaign_id": "cmp-42",
+  "click_id": "1337",
+  "timestamp": "2026-04-21T14:05:00+00:00",
+  "source_ip": "203.0.113.42",
+  "meta": { "referrer": "https://t.me/channel" }
+}
+```
+
+### Гарантии доставки
+
+- До **5 попыток** с паузами между ними: 1м → 5м → 15м → 1ч.
+- Успех — ответ HTTP `2xx`.
+- Редиректы **не** выполняются; `3xx` или `4xx` — постоянная ошибка (без ретрая).
+- `5xx` либо ошибка соединения/таймаут — ретрай.
+- После исчерпания попыток колбек помечается `failed`.
+- Сервер сохраняет `response_code` и `response_body` (обрезается до 10 000
+  символов) для каждой финальной попытки.
 
 ---
 
@@ -485,7 +534,91 @@ if (res.status === 201) {
 
 ---
 
-## 15. Чеклист интеграции
+## 15. Рекомендации для авторов SDK
+
+Минимальный публичный контракт клиента:
+
+- `createLink(CreateLinkRequest $request): CreateLinkResponse`
+
+Рекомендуемые DTO: `CreateLinkRequest`, `CreateLinkRule`,
+`CreateLinkCondition`, `CreateLinkResponse`, `CreateLinkResponseRule`.
+
+Рекомендуемые исключения:
+
+- `AuthenticationException` (HTTP 401);
+- `ValidationException` (HTTP 422, с `errors` как «поле → сообщения[]»);
+- `ApiException` (прочие 4xx/5xx);
+- `TransportException` (таймаут/сеть).
+
+Технические практики:
+
+- Таймаут запроса по умолчанию — 5–10 секунд.
+- Ретраить только сетевые ошибки и `5xx` (не ретраить `4xx`).
+- Всегда слать `Accept: application/json`.
+- Не преобразовывать `condition.data`, кроме JSON-сериализации.
+
+---
+
+## 16. Готовые тестовые payload'ы
+
+Валидный `time_before`:
+
+```json
+{
+  "rules": [
+    {
+      "url": "https://example.com/redirect",
+      "condition": {
+        "type": "time_before",
+        "data": { "before": "2026-03-05T10:00:00+00:00" }
+      }
+    }
+  ]
+}
+```
+
+Валидный отложенный переход:
+
+```json
+{
+  "rules": [
+    { "url": "https://example.com/redirect", "transition_mode": "delayed" }
+  ]
+}
+```
+
+Невалидный `time_before` (неверный формат даты) — ждём `422`:
+
+```json
+{
+  "rules": [
+    {
+      "url": "https://example.com/redirect",
+      "condition": {
+        "type": "time_before",
+        "data": { "before": "2026-03-05 10:00:00" }
+      }
+    }
+  ]
+}
+```
+
+Невалидный `time_before` (нет обязательного поля) — ждём `422`:
+
+```json
+{
+  "rules": [
+    {
+      "url": "https://example.com/redirect",
+      "condition": { "type": "time_before", "data": {} }
+    }
+  ]
+}
+```
+
+---
+
+## 17. Чеклист интеграции
 
 - [ ] Сервис создан в админке.
 - [ ] Выпущен токен со способностью `links:create`, сохранён в секретах.

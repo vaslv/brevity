@@ -12,7 +12,7 @@ use Tests\TestCase;
  *
  * RuleResource serialized `condition` via ConditionResource::make($condition)
  * with no null guard, so a rule WITHOUT a condition was emitted as
- * {"type":null,"data":null} instead of the `null` that SDK_API.md guarantees.
+ * {"type":null,"data":null} instead of the `null` that docs/API.md guarantees.
  * This pins the full POST /api/links 201 response contract, including the
  * condition:null case.
  */
