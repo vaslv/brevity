@@ -21,6 +21,8 @@ class LinkController extends Controller
             'forward_query',
             'callback_data',
             'domain',
+            'domain_strategy',
+            'domain_group_id',
             'rules',
         ]);
 

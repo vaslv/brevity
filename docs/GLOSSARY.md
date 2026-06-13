@@ -18,6 +18,7 @@
 | `Service` | Service | Сервис | Внешняя система, владеющая ссылками и получающая колбеки. |
 | `Link` | Link | Ссылка | Короткая ссылка. Имеет `code` (hashid) и принадлежит `Service`. |
 | `Domain` | Domain | Домен | Хост короткой ссылки (напр. `short.example.com`). Общий справочник. |
+| `DomainGroup` | Domain group | Группа доменов | Набор доменов (many-to-many); домен может входить в несколько групп. |
 | `Url` | URL | URL | Целевой URL. Общий справочник, нормализованный + с сортировкой query. |
 | `Rule` | Rule | Правило | Сопоставляет `Link` с `Url` по опциональному `Condition`. Упорядочено по приоритету. |
 | `Condition` | Condition | Условие | Переиспользуемый предикат (напр. `time_before`). Общий справочник. |
@@ -60,11 +61,26 @@
 добавить лейбл в `lang/{en,ru}/resources/condition.php` под `types.*`
 и `data_fields.*`.
 
+### Domain selection strategy (`domain_strategy`)
+
+Как сервер подбирает домен ссылки, если он не указан явно
+(`POST /api/links`). Подбор идёт по пулу: группа `domain_group_id` либо
+все домены.
+
+| Значение | EN label | RU label | Поведение |
+|---|---|---|---|
+| `random` | Random | Случайный | Случайный домен из пула. |
+| `round_robin` | Round robin | По кругу | Наименее недавно использованный — домены по кругу. |
+| `coldest` | Coldest | Самый холодный | Наименьшее число ссылок за период (`domains.coldest_period_days`). |
+
+Новые стратегии добавляются через реализации `DomainSelectionStrategyHandler`,
+зарегистрированные в `DomainStrategyRegistry`.
+
 ## Группы навигации (админка)
 
 | Ключ | EN label | RU label | Содержимое |
 |---|---|---|---|
-| `main` | Main | Основное | Сервисы, Ссылки, Домены |
+| `main` | Main | Основное | Сервисы, Ссылки, Домены, Группы доменов |
 | `analytics` | Analytics | Аналитика | Клики, Колбеки |
 | `dictionaries` | Dictionaries | Справочники | URL, Условия, IP-адреса, Рефереры, User agent'ы |
 | `system` | System | Система | Пользователи, Настройки |
