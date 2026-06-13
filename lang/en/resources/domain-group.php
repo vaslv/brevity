@@ -7,6 +7,8 @@ return [
 
     'fields' => [
         'name' => 'Name',
+        'code' => 'Code',
+        'code_hint' => 'Machine name used by the API (filter domains by group). Letters, digits, dashes/underscores.',
         'domains' => 'Domains',
         'domains_hint' => 'The same domain can belong to several groups.',
         'domains_count' => 'Domains',

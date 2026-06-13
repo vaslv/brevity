@@ -23,7 +23,7 @@ class CreateLinkDomainStrategyTest extends TestCase
     {
         $group = DomainGroup::factory()->create();
 
-        $this->postLink(['domain_group_id' => $group->id])
+        $this->postLink(['domain_group' => $group->code])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['domain_strategy']);
     }
@@ -33,9 +33,9 @@ class CreateLinkDomainStrategyTest extends TestCase
         $group = DomainGroup::factory()->create(); // no domains attached
         Domain::factory()->create(); // exists, but not in the group
 
-        $this->postLink(['domain_strategy' => 'random', 'domain_group_id' => $group->id])
+        $this->postLink(['domain_strategy' => 'random', 'domain_group' => $group->code])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['domain_group_id']);
+            ->assertJsonValidationErrors(['domain_group']);
     }
 
     public function test_a_strategy_with_no_domains_available_is_rejected(): void
@@ -59,9 +59,9 @@ class CreateLinkDomainStrategyTest extends TestCase
 
     public function test_an_unknown_group_is_rejected(): void
     {
-        $this->postLink(['domain_strategy' => 'random', 'domain_group_id' => 999999])
+        $this->postLink(['domain_strategy' => 'random', 'domain_group' => 'no-such-group'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['domain_group_id']);
+            ->assertJsonValidationErrors(['domain_group']);
     }
 
     public function test_an_unknown_strategy_is_rejected(): void
@@ -121,7 +121,7 @@ class CreateLinkDomainStrategyTest extends TestCase
         Domain::factory()->create(['value' => 'out.example.com']);
         $group->domains()->attach($inGroup);
 
-        $this->postLink(['domain_strategy' => 'random', 'domain_group_id' => $group->id])
+        $this->postLink(['domain_strategy' => 'random', 'domain_group' => $group->code])
             ->assertCreated()
             ->assertJsonPath('data.domain', 'in.example.com');
     }

@@ -24,17 +24,19 @@ class DomainGroupIndexTest extends TestCase
 
     public function test_it_lists_all_groups_with_domain_counts(): void
     {
-        $alpha = DomainGroup::factory()->create(['name' => 'Alpha']);
-        DomainGroup::factory()->create(['name' => 'Beta']);
+        $alpha = DomainGroup::factory()->create(['name' => 'Alpha', 'code' => 'alpha']);
+        DomainGroup::factory()->create(['name' => 'Beta', 'code' => 'beta']);
         $alpha->domains()->attach(Domain::factory()->count(2)->create());
 
         $this->withToken($this->serviceToken())
             ->getJson('/api/domain-groups')
             ->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonStructure(['data' => [['id', 'name', 'domains_count']]])
+            ->assertJsonStructure(['data' => [['code', 'name', 'domains_count']]])
+            ->assertJsonPath('data.0.code', 'alpha')
             ->assertJsonPath('data.0.name', 'Alpha')
             ->assertJsonPath('data.0.domains_count', 2)
+            ->assertJsonPath('data.1.code', 'beta')
             ->assertJsonPath('data.1.name', 'Beta')
             ->assertJsonPath('data.1.domains_count', 0);
     }

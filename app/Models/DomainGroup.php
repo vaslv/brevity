@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property string $name
+ * @property string $code
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read Collection<int, Domain> $domains
@@ -19,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DomainGroup newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DomainGroup newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DomainGroup query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DomainGroup whereCode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DomainGroup whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DomainGroup whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|DomainGroup whereName($value)
@@ -33,5 +35,6 @@ class DomainGroup extends Model
 
     protected $fillable = [
         'name',
+        'code',
     ];
 }

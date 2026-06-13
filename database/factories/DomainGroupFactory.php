@@ -19,6 +19,7 @@ class DomainGroupFactory extends Factory
     {
         return [
             'name' => fake()->unique()->company(),
+            'code' => fake()->unique()->slug(),
         ];
     }
 }

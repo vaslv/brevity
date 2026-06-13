@@ -29,13 +29,15 @@ class DomainGroupResourceTest extends TestCase
         Livewire::test(CreateDomainGroup::class)
             ->fillForm([
                 'name' => 'Primary',
+                'code' => 'primary',
                 'domains' => $domains->pluck('id')->all(),
             ])
             ->call('create')
             ->assertHasNoFormErrors();
 
-        $group = DomainGroup::query()->where('name', 'Primary')->firstOrFail();
+        $group = DomainGroup::query()->where('code', 'primary')->firstOrFail();
 
+        $this->assertSame('Primary', $group->name);
         $this->assertEqualsCanonicalizing(
             $domains->pluck('id')->all(),
             $group->domains->pluck('id')->all(),
@@ -59,6 +61,15 @@ class DomainGroupResourceTest extends TestCase
             [$replacement->id],
             $group->refresh()->domains->pluck('id')->all(),
         );
+    }
+
+    public function test_the_code_is_required(): void
+    {
+        // name left blank too, so the name->code auto-fill can't populate it.
+        Livewire::test(CreateDomainGroup::class)
+            ->fillForm(['name' => null, 'code' => null])
+            ->call('create')
+            ->assertHasFormErrors(['code' => 'required']);
     }
 
     public function test_the_list_page_shows_groups(): void

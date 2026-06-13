@@ -28,7 +28,7 @@ class LinkCreator
      *     callback_data?: ?array<string, mixed>,
      *     domain?: ?string,
      *     domain_strategy?: ?string,
-     *     domain_group_id?: ?int,
+     *     domain_group?: ?string,
      *     rules: array<int, array{
      *         url: string,
      *         condition?: ?array{type: string, data?: array<string, mixed>},
@@ -95,11 +95,11 @@ class LinkCreator
     /**
      * Resolve which domain a new link is created on, in precedence order:
      *   1. explicit `domain` value;
-     *   2. `domain_strategy` (optionally scoped to `domain_group_id`);
+     *   2. `domain_strategy` (optionally scoped to a `domain_group` code);
      *   3. the default domain, if one is marked;
      *   4. none — the link resolves via config('app.url').
      *
-     * @param  array{domain?: ?string, domain_strategy?: ?string, domain_group_id?: ?int}  $data
+     * @param  array{domain?: ?string, domain_strategy?: ?string, domain_group?: ?string}  $data
      */
     private function resolveDomainId(array $data): ?int
     {
@@ -114,7 +114,7 @@ class LinkCreator
         if (is_string($strategy) && $strategy !== '') {
             return $this->selectDomainId(
                 DomainSelectionStrategy::from($strategy),
-                $data['domain_group_id'] ?? null,
+                $data['domain_group'] ?? null,
             );
         }
 
@@ -131,9 +131,9 @@ class LinkCreator
         return Url::firstOrCreate(['value' => $normalized])->id;
     }
 
-    private function selectDomainId(DomainSelectionStrategy $strategy, ?int $groupId): int
+    private function selectDomainId(DomainSelectionStrategy $strategy, ?string $groupCode): int
     {
-        $domain = $this->domainSelector->select($strategy, $groupId);
+        $domain = $this->domainSelector->select($strategy, $groupCode);
 
         if ($domain !== null) {
             return $domain->id;
@@ -142,8 +142,8 @@ class LinkCreator
         // The client asked for a strategy but the scope has no domains; surface
         // it as a validation error rather than silently dropping the strategy.
         throw ValidationException::withMessages(
-            $groupId !== null
-                ? ['domain_group_id' => 'The selected domain group has no domains to choose from.']
+            $groupCode !== null
+                ? ['domain_group' => 'The selected domain group has no domains to choose from.']
                 : ['domain_strategy' => 'There are no domains available to choose from.']
         );
     }

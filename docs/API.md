@@ -133,9 +133,9 @@ curl -sS -X POST https://brevity.example.com/api/links \
 
 | Поле | Тип | Обяз. | Примечание |
 |---|---|:---:|---|
-| `domain` | string\|null | нет | Явный хост короткой ссылки. Должен существовать в справочнике. Взаимоисключим с `domain_strategy`/`domain_group_id`. Пусто и без стратегии → домен по умолчанию. |
-| `domain_strategy` | string\|null | нет | Автоподбор домена: `random` / `round_robin` / `coldest`. Обязателен при `domain_group_id`. См. §8. |
-| `domain_group_id` | int\|null | нет | Ограничить подбор группой доменов. Без него — по всем доменам. |
+| `domain` | string\|null | нет | Явный хост короткой ссылки. Должен существовать в справочнике. Взаимоисключим с `domain_strategy`/`domain_group`. Пусто и без стратегии → домен по умолчанию. |
+| `domain_strategy` | string\|null | нет | Автоподбор домена: `random` / `round_robin` / `coldest`. Обязателен при `domain_group`. См. §8. |
+| `domain_group` | string\|null | нет | Код группы — ограничить подбор группой доменов. Без него — по всем доменам. |
 | `title` | string\|null | нет | Заголовок ссылки, до 64 символов. |
 | `forward_query` | bool\|null | нет | Пробрасывать ли query-параметры при прямом редиректе. |
 | `callback_data` | object\|null | нет | Шаблон полезной нагрузки колбека (до 50 ключей). См. §10. |
@@ -233,7 +233,7 @@ curl -sS -X POST https://brevity.example.com/api/links \
 
 Чтобы получить ссылку на домене **не по умолчанию**, не указывая конкретный
 домен, передайте `domain_strategy`. Подбор идёт по пулу: домены группы
-(если задан `domain_group_id`) либо все домены.
+(если задан `domain_group` — код группы) либо все домены.
 
 | Стратегия | Как выбирает |
 |---|---|
@@ -242,11 +242,11 @@ curl -sS -X POST https://brevity.example.com/api/links \
 | `coldest` | Самый «холодный» — с наименьшим числом ссылок за период (по умолчанию 30 дней). |
 
 - `domain` и `domain_strategy` нельзя передавать вместе (`422`).
-- `domain_group_id` без `domain_strategy` — ошибка (`422`).
+- `domain_group` без `domain_strategy` — ошибка (`422`).
 - Статистика для `round_robin`/`coldest` — общая по всем сервисам.
 - Если в пуле нет доменов (нет вообще или группа пуста) — `422`.
 
-Случайный домен из группы `5`:
+Домен по кругу из группы `campaigns`:
 
 ```bash
 curl -sS -X POST https://brevity.example.com/api/links \
@@ -255,7 +255,7 @@ curl -sS -X POST https://brevity.example.com/api/links \
   -H "Content-Type: application/json" \
   -d '{
     "domain_strategy": "round_robin",
-    "domain_group_id": 5,
+    "domain_group": "campaigns",
     "rules": [ { "url": "https://example.com/landing" } ]
   }'
 ```
@@ -272,12 +272,12 @@ curl -sS -X POST https://brevity.example.com/api/links \
 
 ### `GET /api/domains` — список доменов
 
-Без параметров возвращает **все** домены. С параметром `group_id` — только
-домены, входящие в указанную группу.
+Без параметров возвращает **все** домены. С параметром `group` (код группы)
+— только домены, входящие в указанную группу.
 
 | Параметр | Тип | Обяз. | Примечание |
 |---|---|:---:|---|
-| `group_id` | integer\|null | нет | id группы. Должен существовать (иначе `422`). Без него — все домены. |
+| `group` | string\|null | нет | Код группы. Должен существовать (иначе `422`). Без него — все домены. |
 
 ```bash
 curl -sS https://brevity.example.com/api/domains \
@@ -296,10 +296,10 @@ curl -sS https://brevity.example.com/api/domains \
 }
 ```
 
-Только домены из группы с `id = 5`:
+Только домены из группы `campaigns`:
 
 ```bash
-curl -sS "https://brevity.example.com/api/domains?group_id=5" \
+curl -sS "https://brevity.example.com/api/domains?group=campaigns" \
   -H "Authorization: Bearer <ваш-токен>" \
   -H "Accept: application/json"
 ```
@@ -309,8 +309,8 @@ curl -sS "https://brevity.example.com/api/domains?group_id=5" \
 
 ### `GET /api/domain-groups` — список групп
 
-Возвращает все группы доменов с числом доменов в каждой. Значение `id`
-используйте как `group_id` в запросе доменов.
+Возвращает все группы доменов с числом доменов в каждой. Значение `code`
+используйте как `group` в запросе доменов.
 
 ```bash
 curl -sS https://brevity.example.com/api/domain-groups \
@@ -323,14 +323,14 @@ curl -sS https://brevity.example.com/api/domain-groups \
 ```json
 {
   "data": [
-    { "id": 1, "name": "Primary", "domains_count": 3 },
-    { "id": 2, "name": "Campaigns", "domains_count": 5 }
+    { "code": "primary", "name": "Primary", "domains_count": 3 },
+    { "code": "campaigns", "name": "Campaigns", "domains_count": 5 }
   ]
 }
 ```
 
-Поля: `id` — идентификатор группы, `name` — название, `domains_count` —
-число доменов в группе. Сортировка — по `name`.
+Поля: `code` — код группы, `name` — название, `domains_count` — число
+доменов в группе. Сортировка — по `name`.
 
 ---
 

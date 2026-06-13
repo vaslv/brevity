@@ -51,9 +51,9 @@ Creates a short link and transition rules.
 
 #### Request fields
 
-- `domain` (`string|null`, max 255): explicit short-link domain; must exist in the system (`exists:domains,value`). Mutually exclusive with `domain_strategy`/`domain_group_id`.
-- `domain_strategy` (`string|null`): auto-select a domain when `domain` is omitted — one of `random`, `round_robin`, `coldest`. Required when `domain_group_id` is set.
-- `domain_group_id` (`integer|null`): restrict the strategy to a domain group (`exists:domain_groups,id`); without it, selection spans all domains.
+- `domain` (`string|null`, max 255): explicit short-link domain; must exist in the system (`exists:domains,value`). Mutually exclusive with `domain_strategy`/`domain_group`.
+- `domain_strategy` (`string|null`): auto-select a domain when `domain` is omitted — one of `random`, `round_robin`, `coldest`. Required when `domain_group` is set.
+- `domain_group` (`string|null`): restrict the strategy to a domain group by its code (`exists:domain_groups,code`); without it, selection spans all domains.
 - `title` (`string|null`, max 64): link title.
 - `forward_query` (`boolean|null`): whether to forward query parameters on direct HTTP redirect.
 - `callback_data` (`object|null`, max 50 entries): callback payload template (see [Callback System](#5-callback-system)).
@@ -68,11 +68,11 @@ Creates a short link and transition rules.
 
 When `domain` is omitted, the server resolves the link's domain in this order:
 
-1. `domain_strategy` (optionally scoped by `domain_group_id`), if provided;
+1. `domain_strategy` (optionally scoped by `domain_group`), if provided;
 2. otherwise the domain marked as default, if any;
 3. otherwise none — the link resolves via `APP_URL` (response `domain` is `null`).
 
-A strategy picks from a pool — the group's domains when `domain_group_id` is given, otherwise all domains:
+A strategy picks from a pool — the group's domains when `domain_group` is given, otherwise all domains:
 
 - `random` — a uniformly random domain.
 - `round_robin` — the least-recently-assigned domain (never-used first), so links cycle through the pool.
@@ -106,7 +106,7 @@ Lists the domain catalog, optionally scoped to a single group.
 
 #### Query parameters
 
-- `group_id` (`integer|null`, optional): when present, only domains attached to that group are returned; it must exist (`exists:domain_groups,id`) or the request fails with `422`. Omit it to list every domain.
+- `group` (`string|null`, optional): a domain group code; when present, only domains attached to that group are returned; it must exist (`exists:domain_groups,code`) or the request fails with `422`. Omit it to list every domain.
 
 #### Response — `200 OK`
 
@@ -127,20 +127,20 @@ Domains are ordered by `domain` ascending.
 
 ### `GET /api/domain-groups`
 
-Lists every domain group with the number of domains it holds. Use a group's `id` as the `group_id` filter on `GET /api/domains`.
+Lists every domain group with the number of domains it holds. Use a group's `code` as the `group` filter on `GET /api/domains`.
 
 #### Response — `200 OK`
 
 ```json
 {
   "data": [
-    { "id": 1, "name": "Primary", "domains_count": 3 },
-    { "id": 2, "name": "Campaigns", "domains_count": 5 }
+    { "code": "primary", "name": "Primary", "domains_count": 3 },
+    { "code": "campaigns", "name": "Campaigns", "domains_count": 5 }
   ]
 }
 ```
 
-- `id` (`integer`): group identifier (use as `group_id`).
+- `code` (`string`): group code (use as `group` / `domain_group`).
 - `name` (`string`): group name.
 - `domains_count` (`integer`): number of domains attached to the group.
 

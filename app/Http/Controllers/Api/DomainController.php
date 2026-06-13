@@ -14,21 +14,21 @@ class DomainController extends Controller
     /**
      * List domains, optionally scoped to a single domain group.
      *
-     * Without `group_id` every domain is returned; with it, only the domains
-     * attached to that group.
+     * Without `group` every domain is returned; with it (a group code), only
+     * the domains attached to that group.
      */
     public function index(Request $request): AnonymousResourceCollection
     {
         $validated = $request->validate([
-            'group_id' => ['nullable', 'integer', 'exists:domain_groups,id'],
+            'group' => ['nullable', 'string', 'exists:domain_groups,code'],
         ]);
 
-        $groupId = $validated['group_id'] ?? null;
+        $groupCode = $validated['group'] ?? null;
 
         $domains = Domain::query()
-            ->when($groupId !== null, fn (Builder $query) => $query->whereHas(
+            ->when($groupCode !== null, fn (Builder $query) => $query->whereHas(
                 'domainGroups',
-                fn (Builder $groups) => $groups->whereKey($groupId),
+                fn (Builder $groups) => $groups->where('code', $groupCode),
             ))
             ->orderBy('value')
             ->get();
