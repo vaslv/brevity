@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Click;
 use App\Models\Condition;
 use App\Models\Domain;
+use App\Models\DomainGroup;
 use App\Models\IpAddress;
 use App\Models\Link;
 use App\Models\Referrer;
@@ -27,6 +28,7 @@ class ModelFactoriesTest extends TestCase
     {
         $this->assertModelExists(Service::factory()->create());
         $this->assertModelExists(Domain::factory()->create());
+        $this->assertModelExists(DomainGroup::factory()->create());
         $this->assertModelExists(Url::factory()->create());
         $this->assertModelExists(Condition::factory()->create());
         $this->assertModelExists(Link::factory()->create());

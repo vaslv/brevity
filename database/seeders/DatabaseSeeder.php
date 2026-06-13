@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Condition;
 use App\Models\Domain;
+use App\Models\DomainGroup;
 use App\Models\IpAddress;
 use App\Models\Link;
 use App\Models\Referrer;
@@ -30,6 +31,7 @@ class DatabaseSeeder extends Seeder
         $this->users();
         $services = $this->services();
         $domains = $this->domains();
+        $this->domainGroups($domains);
         $urls = $this->urls();
         $conditions = $this->conditions();
         $links = $this->links($services, $domains);
@@ -183,6 +185,29 @@ class DatabaseSeeder extends Seeder
                 ]),
             ])
             ->all();
+    }
+
+    /**
+     * @param  array<string, Domain>  $domains
+     */
+    private function domainGroups(array $domains): void
+    {
+        // brv.example is intentionally shared across both groups to exercise the
+        // many-to-many relationship (a domain may belong to several groups).
+        $groups = [
+            'Primary' => ['go.example', 'brv.example'],
+            'Campaigns' => ['brv.example', 'lnk.example'],
+        ];
+
+        foreach ($groups as $name => $domainKeys) {
+            $group = DomainGroup::firstOrCreate(['name' => $name]);
+
+            $ids = collect($domainKeys)
+                ->map(fn (string $key): int => $domains[$key]->id)
+                ->all();
+
+            $group->domains()->syncWithoutDetaching($ids);
+        }
     }
 
     /**

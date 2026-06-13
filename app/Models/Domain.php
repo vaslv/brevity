@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Relations\BelongsToManyDomainGroups;
 use App\Models\Relations\HasManyLinks;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,8 @@ use League\Uri\Uri;
  * @property bool $is_default
  * @property Carbon $created_at
  * @property-read string $url
+ * @property-read Collection<int, DomainGroup> $domainGroups
+ * @property-read int|null $domain_groups_count
  * @property-read Collection<int, Link> $links
  * @property-read int|null $links_count
  *
@@ -30,6 +33,7 @@ use League\Uri\Uri;
  */
 class Domain extends Model
 {
+    use BelongsToManyDomainGroups;
     use HasFactory;
     use HasManyLinks;
 
