@@ -7,8 +7,8 @@ This document describes the current public API contract required to build a clie
 - Base URL: `https://<your-host>`
 - Data format: `application/json`
 - API versioning: none (current path: `/api/...`)
-- Authentication: `Bearer` token (Laravel Sanctum personal access token). The token must carry the `links:create` ability, otherwise the request is rejected with `403 Forbidden`.
-- Rate limiting: link creation is throttled per service (`429 Too Many Requests` on exceed).
+- Authentication: `Bearer` token (Laravel Sanctum personal access token). The token must carry the `links:create` ability, otherwise the request is rejected with `403 Forbidden`. The same ability gates the read-only catalog endpoints.
+- Rate limiting: each endpoint is throttled per service in its own bucket (`429 Too Many Requests` on exceed).
 
 Recommended SDK headers:
 
@@ -81,6 +81,52 @@ Important: validation for `rules[].condition.data` is dynamic and resolved from 
    - Countdown duration is currently fixed to 5 seconds.
 3. `manual`
    - Server returns an HTML page with destination info and a manual continue button.
+
+### `GET /api/domains`
+
+Lists the domain catalog, optionally scoped to a single group.
+
+#### Query parameters
+
+- `group_id` (`integer|null`, optional): when present, only domains attached to that group are returned; it must exist (`exists:domain_groups,id`) or the request fails with `422`. Omit it to list every domain.
+
+#### Response — `200 OK`
+
+```json
+{
+  "data": [
+    { "domain": "short.example.com", "url": "https://short.example.com", "is_default": true },
+    { "domain": "go.example.com", "url": "https://go.example.com", "is_default": false }
+  ]
+}
+```
+
+- `domain` (`string`): the domain host.
+- `url` (`string`): the domain as an `https://` URL.
+- `is_default` (`boolean`): whether the domain is used when a link is created without an explicit `domain`.
+
+Domains are ordered by `domain` ascending.
+
+### `GET /api/domain-groups`
+
+Lists every domain group with the number of domains it holds. Use a group's `id` as the `group_id` filter on `GET /api/domains`.
+
+#### Response — `200 OK`
+
+```json
+{
+  "data": [
+    { "id": 1, "name": "Primary", "domains_count": 3 },
+    { "id": 2, "name": "Campaigns", "domains_count": 5 }
+  ]
+}
+```
+
+- `id` (`integer`): group identifier (use as `group_id`).
+- `name` (`string`): group name.
+- `domains_count` (`integer`): number of domains attached to the group.
+
+Groups are ordered by `name` ascending.
 
 ## 3. Server Behavior
 
