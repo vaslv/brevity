@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Models\Relations\BelongsToManyDomains;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -37,4 +39,15 @@ class DomainGroup extends Model
         'name',
         'code',
     ];
+
+    /**
+     * Normalise the code to lower case so the API's exact-match `code` lookups
+     * (the ?group= filter and domain_group) are never tripped up by casing.
+     */
+    protected function code(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => $value === null ? null : Str::lower($value),
+        );
+    }
 }

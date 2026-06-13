@@ -240,6 +240,8 @@ curl -sS -X POST https://brevity.example.com/api/links \
 
 - `domain` и `domain_strategy` нельзя передавать вместе (`422`).
 - `domain_group` без `domain_strategy` — ошибка (`422`).
+- `domain_group` — это `code` группы (всегда в нижнем регистре, сравнение
+  точное); берите значение из `GET /api/domain-groups`.
 - Статистика для `round_robin`/`coldest` — общая по всем сервисам.
 - Если в пуле нет доменов (нет вообще или группа пуста) — `422`.
 
@@ -327,7 +329,9 @@ curl -sS https://brevity.example.com/api/domain-groups \
 ```
 
 Поля: `code` — код группы, `name` — название, `domains_count` — число
-доменов в группе. Сортировка — по `name`.
+доменов в группе. Сортировка — по `name`. Код всегда в нижнем регистре;
+в фильтре `?group=` и в поле `domain_group` указывайте его точно как в
+ответе (сравнение точное).
 
 ---
 

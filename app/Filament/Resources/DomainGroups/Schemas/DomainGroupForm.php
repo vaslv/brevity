@@ -34,6 +34,10 @@ class DomainGroupForm
                     ->required()
                     ->maxLength(255)
                     ->rule('alpha_dash')
+                    // Lower-case on blur so the unique check runs on the same
+                    // value the model stores (codes are normalised to lower case).
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('code', Str::lower((string) $state)))
                     ->unique(ignoreRecord: true),
                 Select::make('domains')
                     ->label(__('resources/domain-group.fields.domains'))

@@ -76,6 +76,13 @@ class DomainGroupTest extends TestCase
         );
     }
 
+    public function test_the_code_is_normalised_to_lower_case(): void
+    {
+        $group = DomainGroup::factory()->create(['code' => 'MixedCase']);
+
+        $this->assertSame('mixedcase', $group->refresh()->code);
+    }
+
     public function test_the_same_domains_can_be_attached_to_multiple_groups(): void
     {
         $domains = Domain::factory()->count(2)->create();
