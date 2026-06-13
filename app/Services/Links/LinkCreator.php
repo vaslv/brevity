@@ -7,12 +7,18 @@ use App\Models\Domain;
 use App\Models\Link;
 use App\Models\Url;
 use App\Services\Links\Conditions\ConditionRegistry;
+use App\Services\Links\Domains\DomainSelectionStrategy;
+use App\Services\Links\Domains\DomainSelector;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use League\Uri\Modifier;
 
 class LinkCreator
 {
-    public function __construct(private readonly ConditionRegistry $registry) {}
+    public function __construct(
+        private readonly ConditionRegistry $registry,
+        private readonly DomainSelector $domainSelector,
+    ) {}
 
     /**
      * @param  array{
@@ -21,6 +27,8 @@ class LinkCreator
      *     forward_query?: ?bool,
      *     callback_data?: ?array<string, mixed>,
      *     domain?: ?string,
+     *     domain_strategy?: ?string,
+     *     domain_group_id?: ?int,
      *     rules: array<int, array{
      *         url: string,
      *         condition?: ?array{type: string, data?: array<string, mixed>},
@@ -33,7 +41,7 @@ class LinkCreator
         return DB::transaction(function () use ($data) {
             $link = Link::create([
                 'service_id' => $data['service_id'],
-                'domain_id' => $this->resolveDomainId($data['domain'] ?? null),
+                'domain_id' => $this->resolveDomainId($data),
                 'title' => $data['title'] ?? null,
                 'forward_query' => $data['forward_query'] ?? false,
                 'callback_data' => $data['callback_data'] ?? null,
@@ -84,15 +92,33 @@ class LinkCreator
             ->value('id');
     }
 
-    private function resolveDomainId(?string $value): ?int
+    /**
+     * Resolve which domain a new link is created on, in precedence order:
+     *   1. explicit `domain` value;
+     *   2. `domain_strategy` (optionally scoped to `domain_group_id`);
+     *   3. the default domain, if one is marked;
+     *   4. none — the link resolves via config('app.url').
+     *
+     * @param  array{domain?: ?string, domain_strategy?: ?string, domain_group_id?: ?int}  $data
+     */
+    private function resolveDomainId(array $data): ?int
     {
-        // No explicit domain falls back to the default one (if any is marked);
-        // otherwise the link stays domain-less and resolves via config('app.url').
-        if ($value === null || $value === '') {
-            return Domain::where('is_default', true)->value('id');
+        $value = $data['domain'] ?? null;
+
+        if (is_string($value) && $value !== '') {
+            return Domain::where('value', $value)->value('id');
         }
 
-        return Domain::where('value', $value)->value('id');
+        $strategy = $data['domain_strategy'] ?? null;
+
+        if (is_string($strategy) && $strategy !== '') {
+            return $this->selectDomainId(
+                DomainSelectionStrategy::from($strategy),
+                $data['domain_group_id'] ?? null,
+            );
+        }
+
+        return Domain::where('is_default', true)->value('id');
     }
 
     private function resolveUrlId(string $rawUrl): int
@@ -103,5 +129,22 @@ class LinkCreator
             ->toString();
 
         return Url::firstOrCreate(['value' => $normalized])->id;
+    }
+
+    private function selectDomainId(DomainSelectionStrategy $strategy, ?int $groupId): int
+    {
+        $domain = $this->domainSelector->select($strategy, $groupId);
+
+        if ($domain !== null) {
+            return $domain->id;
+        }
+
+        // The client asked for a strategy but the scope has no domains; surface
+        // it as a validation error rather than silently dropping the strategy.
+        throw ValidationException::withMessages(
+            $groupId !== null
+                ? ['domain_group_id' => 'The selected domain group has no domains to choose from.']
+                : ['domain_strategy' => 'There are no domains available to choose from.']
+        );
     }
 }

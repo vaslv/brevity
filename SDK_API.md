@@ -51,7 +51,9 @@ Creates a short link and transition rules.
 
 #### Request fields
 
-- `domain` (`string|null`, max 255): short-link domain; must exist in the system (`exists:domains,value`).
+- `domain` (`string|null`, max 255): explicit short-link domain; must exist in the system (`exists:domains,value`). Mutually exclusive with `domain_strategy`/`domain_group_id`.
+- `domain_strategy` (`string|null`): auto-select a domain when `domain` is omitted — one of `random`, `round_robin`, `coldest`. Required when `domain_group_id` is set.
+- `domain_group_id` (`integer|null`): restrict the strategy to a domain group (`exists:domain_groups,id`); without it, selection spans all domains.
 - `title` (`string|null`, max 64): link title.
 - `forward_query` (`boolean|null`): whether to forward query parameters on direct HTTP redirect.
 - `callback_data` (`object|null`, max 50 entries): callback payload template (see [Callback System](#5-callback-system)).
@@ -61,6 +63,22 @@ Creates a short link and transition rules.
 - `rules[].condition.type` (`string`, required if `condition` is present, max 32): condition type.
 - `rules[].condition.data` (`object|null`): condition payload.
 - `rules[].transition_mode` (`string|null`, max 16): transition mode (`direct`, `delayed`, `manual`).
+
+#### Domain selection
+
+When `domain` is omitted, the server resolves the link's domain in this order:
+
+1. `domain_strategy` (optionally scoped by `domain_group_id`), if provided;
+2. otherwise the domain marked as default, if any;
+3. otherwise none — the link resolves via `APP_URL` (response `domain` is `null`).
+
+A strategy picks from a pool — the group's domains when `domain_group_id` is given, otherwise all domains:
+
+- `random` — a uniformly random domain.
+- `round_robin` — the least-recently-assigned domain (never-used first), so links cycle through the pool.
+- `coldest` — the domain with the fewest links created within a rolling window (server-configured, default 30 days).
+
+Usage statistics for `round_robin`/`coldest` are global (across all services) and ignore soft-deleted links. If a strategy is requested but the pool has no domains (none configured, or the group is empty), the request fails with `422`. The chosen domain is returned in `data.domain` / `data.url`.
 
 #### Supported condition types
 

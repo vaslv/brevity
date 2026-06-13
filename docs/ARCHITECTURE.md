@@ -43,7 +43,10 @@ Rate-limited через `throttle:link-resolve` (per-link + per-IP).
 1. Валидация запроса (правила зависят от типа условия).
 2. `App\Services\Links\LinkCreator::create($validated)` оборачивает
    всё в транзакцию:
-   - `resolveDomainId` — только lookup (домен должен существовать).
+   - `resolveDomainId` — явный домен (lookup), либо автоподбор по
+     `domain_strategy` через `DomainSelector` (опц. в рамках
+     `domain_group_id`), либо домен по умолчанию. Пустой пул при заданной
+     стратегии → `ValidationException` (422).
    - `resolveUrlId` — insertOrIgnore + SELECT (race-safe).
    - `resolveConditionId` — тот же паттерн, ключ `(type, data)`.
    - Вставка `Link`, его `Rule` по порядку.
@@ -108,6 +111,32 @@ insertOrIgnore + SELECT на каждый справочник (`Referrer`, `Use
 `Hashids` с фиксированным алфавитом из 52 символов, минимальной длиной
 5, хранится как `varchar(8)`. Биективно — коллизий не бывает по
 построению.
+
+### Выбор домена (Domain selection)
+
+`App\Services\Links\Domains\`
+
+- `DomainSelectionStrategy` — enum: `random`, `round_robin`, `coldest`.
+- Интерфейс `DomainSelectionStrategyHandler`: `select(Builder $pool): ?Domain`
+  плюс статический `strategy(): DomainSelectionStrategy`.
+- `RandomDomainStrategy` / `RoundRobinDomainStrategy` / `ColdestDomainStrategy`.
+  round_robin — наименее недавно использованный (из истории ссылок, без
+  курсора); coldest — наименьший счётчик за окно
+  `config('domains.coldest_period_days')`.
+- `DomainStrategyRegistry` — мапа `strategy → handler` из tagged-сервисов.
+- `DomainSelector` — строит пул (группа через `domain_group_id` либо все
+  домены) и делегирует хендлеру; `null` при пустом пуле.
+- Подключение: `DomainStrategyServiceProvider` (тег `domain.strategy`),
+  вызывается из `LinkCreator::resolveDomainId`.
+
+Статистика round_robin/coldest — глобальная (по всем сервисам), без
+soft-deleted ссылок.
+
+**Добавление новой стратегии:**
+1. Реализовать `DomainSelectionStrategyHandler`.
+2. Добавить значение в enum `DomainSelectionStrategy`.
+3. Затегировать класс в `DomainStrategyServiceProvider` (`domain.strategy`).
+4. Обновить `SDK_API.md`, `docs/API.md`, `docs/GLOSSARY.md`.
 
 ### Rate limiting
 

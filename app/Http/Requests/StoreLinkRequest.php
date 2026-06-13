@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Service;
 use App\Services\Links\Conditions\ConditionRegistry;
+use App\Services\Links\Domains\DomainSelectionStrategy;
 use App\Services\Links\TransitionMode;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -36,7 +37,12 @@ class StoreLinkRequest extends FormRequest
         $conditionRegistry = app(ConditionRegistry::class);
 
         return [
-            'domain' => ['nullable', 'string', 'max:255', 'exists:domains,value'],
+            // An explicit domain is mutually exclusive with automatic selection.
+            'domain' => ['nullable', 'string', 'max:255', 'exists:domains,value', 'prohibits:domain_strategy,domain_group_id'],
+            // Auto-select a domain by strategy; required when a group scopes it.
+            'domain_strategy' => ['nullable', 'string', 'required_with:domain_group_id', Rule::in(DomainSelectionStrategy::values())],
+            // Optional scope for the strategy; without it selection spans all domains.
+            'domain_group_id' => ['nullable', 'integer', 'exists:domain_groups,id'],
             'title' => ['nullable', 'string', 'max:64'],
             'forward_query' => ['nullable', 'boolean'],
             'callback_data' => ['nullable', 'array', 'max:50'],
