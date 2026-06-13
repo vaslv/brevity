@@ -56,6 +56,17 @@ class AppServiceProvider extends ServiceProvider
                 $service ? 'service:'.$service->id : 'ip:'.$request->ip()
             );
         });
+
+        // Read-only catalog endpoints (domains, domain groups): cheap, but still
+        // capped per owning service in its own bucket so it never competes with
+        // the create-link limit.
+        RateLimiter::for('api-read', function (Request $request) {
+            $service = $request->user();
+
+            return Limit::perMinute(120)->by(
+                $service ? 'service:'.$service->id : 'ip:'.$request->ip()
+            );
+        });
     }
 
     /**
