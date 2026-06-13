@@ -36,6 +36,6 @@ class LongLinkCodeResolvesTest extends TestCase
         $url = Url::query()->create(['value' => $target]);
         Rule::query()->create(['link_id' => $link->id, 'url_id' => $url->id, 'priority' => 1]);
 
-        $this->get('/'.$code)->assertRedirect($target);
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect($target);
     }
 }

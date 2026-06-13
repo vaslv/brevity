@@ -27,9 +27,10 @@ class ResolveLinkResolutionTest extends TestCase
         $link = Link::factory()->forDomain($domain)->create();
         Rule::factory()->for($link)->create();
 
-        // The request arrives on the default test host (localhost), not the
-        // link's domain, so the resolver hides it.
-        $this->get('/'.$link->code)->assertNotFound();
+        // The request arrives on a short-link host that differs from the link's
+        // own domain, so the resolver hides it (the host guard lets the request
+        // through; the controller's domain check is what 404s).
+        $this->get(static::SHORT_LINK_HOST.'/'.$link->code)->assertNotFound();
     }
 
     public function test_a_failed_condition_falls_through_to_the_fallback_rule(): void
@@ -46,7 +47,7 @@ class ResolveLinkResolutionTest extends TestCase
         Rule::factory()->for($link)->priority(2)
             ->state(['url_id' => $home->id])->create();
 
-        $this->get('/'.$link->code)->assertRedirect('https://example.com/home');
+        $this->get(static::SHORT_LINK_HOST.'/'.$link->code)->assertRedirect('https://example.com/home');
     }
 
     public function test_a_higher_priority_matching_rule_wins_and_records_its_url(): void
@@ -63,7 +64,7 @@ class ResolveLinkResolutionTest extends TestCase
         Rule::factory()->for($link)->priority(2)
             ->state(['url_id' => $home->id])->create();
 
-        $this->get('/'.$link->code)->assertRedirect('https://example.com/sale');
+        $this->get(static::SHORT_LINK_HOST.'/'.$link->code)->assertRedirect('https://example.com/sale');
 
         $this->assertDatabaseHas('clicks', [
             'link_id' => $link->id,
@@ -81,12 +82,12 @@ class ResolveLinkResolutionTest extends TestCase
         // as disabled (see docs/ARCHITECTURE.md — Модель данных).
         $link->delete();
 
-        $this->get('/'.$code)->assertNotFound();
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertNotFound();
     }
 
     public function test_an_unknown_code_returns_404(): void
     {
-        $this->get('/abcdef')->assertNotFound();
+        $this->get(static::SHORT_LINK_HOST.'/abcdef')->assertNotFound();
     }
 
     public function test_forward_query_merges_incoming_params_with_target_winning(): void
@@ -95,7 +96,7 @@ class ResolveLinkResolutionTest extends TestCase
         $url = Url::factory()->create(['value' => 'https://example.com/p?a=1']);
         Rule::factory()->for($link)->state(['url_id' => $url->id])->create();
 
-        $this->get('/'.$link->code.'?a=2&b=3')
+        $this->get(static::SHORT_LINK_HOST.'/'.$link->code.'?a=2&b=3')
             ->assertRedirect('https://example.com/p?a=1&b=3');
     }
 
@@ -105,7 +106,7 @@ class ResolveLinkResolutionTest extends TestCase
         $url = Url::factory()->create(['value' => 'https://example.com/p?a=1']);
         Rule::factory()->for($link)->state(['url_id' => $url->id])->create();
 
-        $this->get('/'.$link->code.'?b=3')
+        $this->get(static::SHORT_LINK_HOST.'/'.$link->code.'?b=3')
             ->assertRedirect('https://example.com/p?a=1');
     }
 
@@ -117,6 +118,6 @@ class ResolveLinkResolutionTest extends TestCase
         $past = Condition::factory()->timeBefore('2020-01-01T00:00:00+00:00')->create();
         Rule::factory()->for($link)->withCondition($past)->create();
 
-        $this->get('/'.$link->code)->assertNotFound();
+        $this->get(static::SHORT_LINK_HOST.'/'.$link->code)->assertNotFound();
     }
 }

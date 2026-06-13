@@ -11,18 +11,17 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Every host in APP_HOST resolves to the same app, but only the technical host
- * (the host of APP_URL — `localhost` under phpunit) may serve the admin panel,
- * API and Horizon. Short-link domains 404 those subsystems while still
- * resolving short codes.
+ * Every host in APP_HOST resolves to the same app, but the two roles are split:
+ * only the technical host (the host of APP_URL — `localhost` under phpunit)
+ * serves the admin panel, API and Horizon, and only the short-link domains
+ * resolve short codes. Each role 404s on the other's hosts.
  *
  * @see EnsureTechnicalHost
+ * @see EnsureShortLinkHost
  */
 class TechnicalHostRestrictionTest extends TestCase
 {
     use RefreshDatabase;
-
-    private const string SHORT_LINK_HOST = 'http://lnk.test';
 
     public function test_admin_login_404s_on_a_short_link_host(): void
     {
@@ -39,13 +38,27 @@ class TechnicalHostRestrictionTest extends TestCase
         $this->get(self::SHORT_LINK_HOST.'/horizon')->assertNotFound();
     }
 
-    public function test_short_links_resolve_on_both_the_technical_and_short_link_hosts(): void
+    public function test_short_links_404_on_an_unknown_host_not_in_app_host(): void
     {
         $target = 'https://example.com/landing';
         $code = $this->createDomainlessLink($target);
 
-        $this->get('/'.$code)->assertRedirect($target);
+        // A host pointed at the server but absent from APP_HOST is neither the
+        // technical host nor a known short-link domain — the allowlist hides it.
+        $this->get('http://unknown.test/'.$code)->assertNotFound();
+    }
+
+    public function test_short_links_resolve_on_a_short_link_host_but_404_on_the_technical_host(): void
+    {
+        $target = 'https://example.com/landing';
+        $code = $this->createDomainlessLink($target);
+
+        // Short-link domain: resolves. Technical host: 404 — it serves the admin
+        // panel, API and Horizon only and must never redirect a short code.
+        // (Both hosts spelled out absolutely: a relative URL after an absolute
+        // request inherits the prior request's host in Laravel's test client.)
         $this->get(self::SHORT_LINK_HOST.'/'.$code)->assertRedirect($target);
+        $this->get('http://localhost/'.$code)->assertNotFound();
     }
 
     public function test_the_api_404s_on_a_short_link_host_even_with_a_valid_token(): void

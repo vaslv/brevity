@@ -22,16 +22,16 @@ class LinkResolveRateLimitTest extends TestCase
         // Burn the limit for code A.
         for ($i = 0; $i < 8; $i++) {
             $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.70'])
-                ->get('/'.$codeA);
+                ->get(static::SHORT_LINK_HOST.'/'.$codeA);
         }
 
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.70'])
-            ->get('/'.$codeA)
+            ->get(static::SHORT_LINK_HOST.'/'.$codeA)
             ->assertStatus(429);
 
         // Code B from same IP should still resolve (per-code counter is separate).
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.70'])
-            ->get('/'.$codeB)
+            ->get(static::SHORT_LINK_HOST.'/'.$codeB)
             ->assertRedirect();
     }
 
@@ -42,16 +42,16 @@ class LinkResolveRateLimitTest extends TestCase
         // Burn the per-link limit for one IP.
         for ($i = 0; $i < 8; $i++) {
             $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.60'])
-                ->get('/'.$code);
+                ->get(static::SHORT_LINK_HOST.'/'.$code);
         }
 
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.60'])
-            ->get('/'.$code)
+            ->get(static::SHORT_LINK_HOST.'/'.$code)
             ->assertStatus(429);
 
         // Different IP must not be affected.
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.61'])
-            ->get('/'.$code)
+            ->get(static::SHORT_LINK_HOST.'/'.$code)
             ->assertRedirect();
     }
 
@@ -62,12 +62,12 @@ class LinkResolveRateLimitTest extends TestCase
         // Per-link/IP limit is 8/min. First 8 pass, 9th is 429.
         for ($i = 0; $i < 8; $i++) {
             $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.50'])
-                ->get('/'.$code)
+                ->get(static::SHORT_LINK_HOST.'/'.$code)
                 ->assertRedirect();
         }
 
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.50'])
-            ->get('/'.$code)
+            ->get(static::SHORT_LINK_HOST.'/'.$code)
             ->assertStatus(429);
     }
 

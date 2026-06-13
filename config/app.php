@@ -79,9 +79,10 @@ return [
     | Technical Host
     |--------------------------------------------------------------------------
     |
-    | The single hostname that serves the admin panel, API and Horizon. Every
-    | other host in APP_HOST is a short-link domain only — those subsystems 404
-    | there (see App\Http\Middleware\EnsureTechnicalHost). Defaults to the host
+    | The single hostname that serves the admin panel, API and Horizon, and
+    | which never resolves a short code (see App\Http\Middleware\EnsureShortLinkHost).
+    | Every other host in APP_HOST is a short-link domain only — those subsystems
+    | 404 there (see App\Http\Middleware\EnsureTechnicalHost). Defaults to the host
     | of APP_URL; override with APP_TECHNICAL_HOST only if they should differ.
     |
     */

@@ -35,7 +35,7 @@ class TargetUrlSchemeTest extends TestCase
         $link->update(['code' => $code]);
         Rule::query()->create(['link_id' => $link->id, 'url_id' => $url->id, 'priority' => 1]);
 
-        $this->get('/'.$code)->assertNotFound();
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertNotFound();
     }
 
     public function test_admin_url_form_rejects_a_non_http_scheme(): void

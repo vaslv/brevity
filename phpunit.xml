@@ -20,6 +20,9 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_URL" value="http://localhost"/>
+        <!-- First host is the technical host (admin/API/Horizon — from APP_URL);
+             the rest are short-link domains the resolver answers on. -->
+        <env name="APP_HOST" value="localhost,lnk.test,example.com"/>
         <env name="APP_TIMEZONE" value="UTC"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

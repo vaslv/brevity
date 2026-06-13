@@ -43,7 +43,7 @@ class DictionaryValueByteOverflowTest extends TestCase
             'REMOTE_ADDR' => '198.51.100.7',
             'HTTP_REFERER' => $hugeReferrer,
             'HTTP_USER_AGENT' => $hugeUserAgent,
-        ])->get('/'.$code)->assertRedirect();
+        ])->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect();
 
         $this->assertDatabaseCount('clicks', 1);
 

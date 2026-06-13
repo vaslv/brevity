@@ -39,7 +39,7 @@ class TrustedProxyIpSpoofingTest extends TestCase
         $this->withServerVariables([
             'REMOTE_ADDR' => $realIp,
             'HTTP_X_FORWARDED_FOR' => $spoofedIp,
-        ])->get('/'.$code)->assertRedirect();
+        ])->get(static::SHORT_LINK_HOST.'/'.$code)->assertRedirect();
 
         $this->assertDatabaseHas('ip_addresses', ['value' => $realIp]);
         $this->assertDatabaseMissing('ip_addresses', ['value' => $spoofedIp]);
