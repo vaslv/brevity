@@ -29,6 +29,12 @@ services:
       - /var/run/docker.sock:/tmp/docker.sock:ro
     labels:
       com.github.nginx-proxy.nginx: "true"
+    environment:
+      # Disable TLS 1.3 (policy allows TLSv1.2 only); default would be Mozilla-Intermediate = TLSv1.2 + TLSv1.3
+      SSL_POLICY: AWS-TLS-1-2-2017-01
+      # Force HTTP/2 on and HTTP/3 (QUIC) off (these are the image defaults, set explicitly)
+      ENABLE_HTTP2: "true"
+      ENABLE_HTTP3: "false"
     networks:
       - proxy
 
