@@ -54,7 +54,6 @@ pint.json
 
 # CI / compose / container build files
 .gitlab-ci.yml
-compose.yaml
 docker-compose*.yml
 Dockerfile
 .dockerignore

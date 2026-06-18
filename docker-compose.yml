@@ -20,6 +20,7 @@ services:
         volumes:
             - '.:/var/www/html'
             - '${HOME}/.ssh:/home/sail/.ssh:ro'
+            - '${HOME}/.gitconfig:/home/sail/.gitconfig:ro'
         networks:
             - sail
         depends_on:
