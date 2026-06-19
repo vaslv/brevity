@@ -90,7 +90,7 @@
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
-    "version": "1.9.2",
+    "version": "1.9.3",
     "repositories": [{
         "name": "example-release",
         "type": "vcs",
