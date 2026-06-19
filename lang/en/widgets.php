@@ -10,4 +10,8 @@ return [
         'heading' => 'Clicks over the last 14 days',
         'dataset' => 'Clicks',
     ],
+    'links_per_domain_chart' => [
+        'heading' => 'Links per domain',
+        'dataset' => 'Links',
+    ],
 ];
