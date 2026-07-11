@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property string $value
+ * @property bool $is_bot
  * @property Carbon $created_at
  * @property-read Collection<int, Click> $clicks
  * @property-read int|null $clicks_count
@@ -33,7 +34,12 @@ class UserAgent extends Model
 
     public $timestamps = false;
 
+    protected $casts = [
+        'is_bot' => 'boolean',
+    ];
+
     protected $fillable = [
         'value',
+        'is_bot',
     ];
 }

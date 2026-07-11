@@ -17,7 +17,8 @@ readonly class ClickRecorder
     private const MAX_USER_AGENT_BYTES = 2000;
 
     public function __construct(
-        private DictionaryValueResolver $dictionaryValueResolver
+        private DictionaryValueResolver $dictionaryValueResolver,
+        private BotDetector $botDetector,
     ) {}
 
     public function record(Link $link, string $uuid, int $urlId, ?string $ip, ?string $referrer, ?string $userAgent): Click
@@ -39,7 +40,7 @@ readonly class ClickRecorder
                 'link_id' => $link->id,
                 'url_id' => $urlId,
                 'referrer_id' => $this->dictionaryValueResolver->resolveId(Referrer::class, $referrerValue),
-                'user_agent_id' => $this->dictionaryValueResolver->resolveId(UserAgent::class, $userAgentValue),
+                'user_agent_id' => $this->resolveUserAgentId($userAgentValue),
                 'ip_address_id' => $this->dictionaryValueResolver->resolveId(IpAddress::class, $ipValue),
             ]
         );
@@ -74,5 +75,32 @@ readonly class ClickRecorder
         // up to 4N bytes; capping by characters let it overflow the index, which
         // threw SQLSTATE 54000 and silently dropped the click.
         return mb_strcut($value, 0, $maxBytes, 'UTF-8');
+    }
+
+    /**
+     * User agents bypass the generic dictionary resolver: detection runs only
+     * on the miss path (a racing duplicate may detect too — the insert winner's
+     * value persists, detection is deterministic per UA), and existing rows are
+     * never re-detected — re-detection after a pattern-library update belongs
+     * to the backfill command.
+     */
+    private function resolveUserAgentId(?string $value): ?int
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $id = UserAgent::query()->where('value', $value)->value('id');
+
+        if ($id !== null) {
+            return (int) $id;
+        }
+
+        // createOrFirst is race-safe on the UNIQUE `value` index; detection runs
+        // only on this miss path, once per unique user agent.
+        return UserAgent::query()->createOrFirst(
+            ['value' => $value],
+            ['is_bot' => $this->botDetector->isBot($value)],
+        )->id;
     }
 }
