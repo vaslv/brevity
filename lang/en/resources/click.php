@@ -12,6 +12,7 @@ return [
         'link' => 'Link',
         'referrer' => 'Referrer',
         'user_agent' => 'User agent',
+        'is_bot' => 'Bot',
         'ip_address' => 'IP address',
         'created_at' => 'Created at',
     ],
@@ -19,6 +20,7 @@ return [
     'filters' => [
         'service' => 'Service',
         'link' => 'Link',
+        'is_bot' => 'Bot',
         'created_from' => 'From date',
         'created_until' => 'Until date',
     ],
