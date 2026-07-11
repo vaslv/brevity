@@ -12,6 +12,14 @@ class UserAgentFactory extends Factory
 {
     protected $model = UserAgent::class;
 
+    public function bot(): static
+    {
+        return $this->state(fn (): array => [
+            'value' => 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+            'is_bot' => true,
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -19,6 +27,7 @@ class UserAgentFactory extends Factory
     {
         return [
             'value' => fake()->unique()->userAgent(),
+            'is_bot' => false,
         ];
     }
 }

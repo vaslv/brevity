@@ -73,6 +73,7 @@ Table referrers {
 Table user_agents {
   id bigserial [primary key]
   value text [not null, unique]
+  is_bot boolean [not null, default: false]
   created_at timestamptz [not null, default: `now()`]
 }
 
