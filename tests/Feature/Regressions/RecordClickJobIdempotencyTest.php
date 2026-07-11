@@ -53,11 +53,18 @@ class RecordClickJobIdempotencyTest extends TestCase
 
         // Run the job, then run it again — an at-least-once retry of the same job.
         app()->call([$captured, 'handle']);
+        $dataAfterFirstRun = Callback::query()->firstOrFail()->data;
         app()->call([$captured, 'handle']);
 
         $this->assertSame(1, Click::query()->count(), 'A retried RecordClickJob must not create a second Click.');
         $this->assertSame(1, Callback::query()->count(), 'A retried RecordClickJob must not create a second Callback.');
         Queue::assertPushed(SendCallbackJob::class, 1);
+
+        // The stored payload (including the server-set is_bot mark) must
+        // survive the retry unchanged: firstOrCreate never rewrites `data`.
+        $callback = Callback::query()->firstOrFail();
+        $this->assertSame($dataAfterFirstRun, $callback->data);
+        $this->assertArrayHasKey('is_bot', $callback->data);
     }
 
     private function setupLinkWithCallback(): string

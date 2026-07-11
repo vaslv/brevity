@@ -21,6 +21,7 @@ readonly class CallbackDataRenderer
         return [
             'click.id' => (string) $click->id,
             'click.created_at' => $click->created_at->toIso8601String(),
+            'click.is_bot' => ($click->userAgent?->is_bot ?? false) ? 'true' : 'false',
             'click.ip' => $click->ipAddress?->value ?? '',
             'click.url' => $click->url->value,
             'click.referrer' => $click->referrer?->value ?? '',
