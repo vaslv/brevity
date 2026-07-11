@@ -77,6 +77,20 @@ Table user_agents {
   created_at timestamptz [not null, default: `now()`]
 }
 
+Table link_click_counters {
+  id bigserial [primary key]
+  link_id bigint [not null]
+  is_bot boolean [not null]
+  slot smallint [not null]
+  count bigint [not null, default: 0]
+
+  indexes {
+    (link_id, is_bot, slot) [unique]
+  }
+}
+
+Ref: links.id < link_click_counters.link_id [delete: restrict]
+
 Table ip_addresses {
   id bigserial [primary key]
   value inet [not null, unique]

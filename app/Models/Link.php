@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Relations\BelongsToDomain;
 use App\Models\Relations\BelongsToService;
+use App\Models\Relations\HasManyClickCounters;
 use App\Models\Relations\HasManyClicks;
 use App\Models\Relations\HasManyRules;
 use App\Services\Links\CodeStrategy\CodeGenerator;
@@ -26,6 +27,8 @@ use League\Uri\Uri;
  * @property Carbon|null $deleted_at
  * @property-read Collection<int, Click> $clicks
  * @property-read int|null $clicks_count
+ * @property-read Collection<int, LinkClickCounter> $clickCounters
+ * @property-read int|null $click_counters_count
  * @property-read Domain|null $domain
  * @property-read string $url
  * @property-read Collection<int, Rule> $rules
@@ -55,6 +58,7 @@ class Link extends Model
     use BelongsToDomain;
     use BelongsToService;
     use HasFactory;
+    use HasManyClickCounters;
     use HasManyClicks;
     use HasManyRules;
     use SoftDeletes;
