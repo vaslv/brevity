@@ -136,7 +136,7 @@ class StoreLinkRequestTest extends TestCase
 
     public function test_it_rejects_more_than_the_maximum_number_of_rules(): void
     {
-        // Hardening (CODE_REVIEW m3): cap the number of rules per request.
+        // Hardening (review 2026-06 m3): cap the number of rules per request.
         $rules = array_fill(0, 51, ['url' => 'https://example.com/x']);
 
         $this->postLink(['rules' => $rules])
@@ -146,7 +146,7 @@ class StoreLinkRequestTest extends TestCase
 
     public function test_it_rejects_non_http_scheme_urls(): void
     {
-        // Hardening (CODE_REVIEW m2): only http/https targets are accepted, so a
+        // Hardening (review 2026-06 m2): only http/https targets are accepted, so a
         // non-web scheme can never be stored as a redirect target.
         $response = $this->postLink([
             'rules' => [
@@ -161,7 +161,7 @@ class StoreLinkRequestTest extends TestCase
 
     public function test_it_strips_unknown_condition_data_keys(): void
     {
-        // Hardening (CODE_REVIEW m3): only handler-known fields are persisted,
+        // Hardening (review 2026-06 m3): only handler-known fields are persisted,
         // so stray keys don't fragment the (type, data) dedup index.
         $response = $this->postLink([
             'rules' => [

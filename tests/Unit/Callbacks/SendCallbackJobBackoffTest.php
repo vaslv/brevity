@@ -6,7 +6,7 @@ use App\Jobs\SendCallbackJob;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Guard for docs/CODE_REVIEW.md — m11: the backoff schedule has exactly
+ * Guard for docs/08-decisions.md (review 2026-06) — m11: the backoff schedule has exactly
  * `tries - 1` gaps (no dead trailing element).
  */
 class SendCallbackJobBackoffTest extends TestCase

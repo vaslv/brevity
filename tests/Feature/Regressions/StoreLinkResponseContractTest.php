@@ -8,11 +8,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — H1 (and the T10 coverage gap).
+ * Regression for docs/08-decisions.md (audit 2026-06) — H1 (and the T10 coverage gap).
  *
  * RuleResource serialized `condition` via ConditionResource::make($condition)
  * with no null guard, so a rule WITHOUT a condition was emitted as
- * {"type":null,"data":null} instead of the `null` that docs/API.md guarantees.
+ * {"type":null,"data":null} instead of the `null` that docs/03-api.md guarantees.
  * This pins the full POST /api/links 201 response contract, including the
  * condition:null case.
  */

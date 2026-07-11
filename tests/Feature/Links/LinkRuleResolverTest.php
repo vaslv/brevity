@@ -15,7 +15,7 @@ use RuntimeException;
 use Tests\TestCase;
 
 /**
- * Core coverage for the rule-resolving engine (docs/AUDIT_2026-06.md — Phase 4).
+ * Core coverage for the rule-resolving engine (docs/08-decisions.md (audit 2026-06) — Phase 4).
  * Exercises LinkRuleResolver directly: priority ordering, condition gating,
  * fallback selection, the no-match case, and the unknown-condition-type guard.
  */

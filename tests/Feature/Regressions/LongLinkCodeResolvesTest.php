@@ -10,7 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — H7.
+ * Regression for docs/08-decisions.md (audit 2026-06) — H7.
  *
  * Link.code is Hashids.encode(id) stored in what was varchar(8); the code grows
  * to 9 chars at id ~52.5B and up to 14 at the bigint ceiling, overflowing the

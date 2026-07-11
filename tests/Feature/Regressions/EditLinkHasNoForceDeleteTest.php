@@ -12,7 +12,7 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — M8.
+ * Regression for docs/08-decisions.md (audit 2026-06) — M8.
  *
  * The Link edit page exposed a ForceDeleteAction, but clicks.link_id is
  * restrictOnDelete and clicks/callbacks must outlive a link — so force-deleting

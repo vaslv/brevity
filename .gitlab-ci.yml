@@ -8,7 +8,7 @@ variables:
   DOCKER_HOST: "unix:///var/run/docker.sock"
   # SSH login on the deploy server. Defaults to root so existing setups keep
   # working; set DEPLOY_USER to a non-root user with docker access once the
-  # server has one (docs/AUDIT_2026-06.md — Low / CI, block B).
+  # server has one (docs/08-decisions.md (audit 2026-06) — Low / CI, block B).
   DEPLOY_USER: "root"
 
 # Reusable shell snippet, referenced from deploy/rollback via *smoke_test.
@@ -72,7 +72,7 @@ build:
 deploy:
   extends: .deploy_base
   # Remaining server-side prerequisites to fully activate block B
-  # (docs/AUDIT_2026-06.md — Low / CI):
+  # (docs/08-decisions.md (audit 2026-06) — Low / CI):
   #   - create a non-root user with docker access on the server and set the
   #     DEPLOY_USER CI variable to it (defaults to root until then);
   #   - set HEALTHCHECK_URL (e.g. https://<APP_HOST>/up) to enable the smoke test;

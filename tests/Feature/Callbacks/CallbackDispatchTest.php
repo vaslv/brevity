@@ -152,7 +152,7 @@ class CallbackDispatchTest extends TestCase
 
     public function test_it_treats_a_redirect_response_as_a_permanent_failure_without_following(): void
     {
-        // SSRF hardening (CODE_REVIEW M3): redirects are not followed
+        // SSRF hardening (review 2026-06 M3): redirects are not followed
         // (allow_redirects => false), and a 3xx is a permanent, non-retryable
         // failure — a callback endpoint must never bounce us to another host
         // (e.g. 169.254.169.254) the send-time guard never validated.

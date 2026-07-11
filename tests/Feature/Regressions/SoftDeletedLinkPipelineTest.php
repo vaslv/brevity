@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — M2 and M3.
+ * Regression for docs/08-decisions.md (audit 2026-06) — M2 and M3.
  *
  * The async pipeline resolved the link with the SoftDeletes scope applied:
  * RecordClickJob's Link::findOrFail threw (dropping a real click) and

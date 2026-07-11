@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — H2.
+ * Regression for docs/08-decisions.md (audit 2026-06) — H2.
  *
  * CallbackDispatcher relies on Callback::firstOrCreate(['click_id' => ...]) for
  * "one callback per click", but callbacks.click_id had no unique index — so a

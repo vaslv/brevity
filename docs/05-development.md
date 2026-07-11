@@ -28,8 +28,10 @@ vendor/bin/sail test tests/Feature/Callbacks/   # по пути
 ```
 
 Все тесты должны проходить до любого коммита, который уходит в `main`.
-Сейчас 48 тестов, покрывающих резолвинг, rate limiting, колбеки,
-резолверы справочников и сервис `LinkCreator`.
+Регресс-тесты в `tests/Feature/Regressions/` — файл на исторический баг
+(docstring ссылается на ID находки в
+[08-decisions.md](./08-decisions.md)); их нельзя удалять без решения
+владельца.
 
 ## Стиль кода
 
@@ -51,11 +53,11 @@ vendor/bin/sail bin pint --dirty --format agent
 1. Трогаешь админ-копирайт? Правь соответствующий
    `lang/en/resources/<x>.php` и `lang/ru/resources/<x>.php` — обе
    стороны.
-2. Меняешь термин? Сначала обнови [docs/GLOSSARY.md](./GLOSSARY.md).
+2. Меняешь термин? Сначала обнови [docs/02-glossary.md](./02-glossary.md).
 3. Обвязка Filament / строки ядра Laravel приходят из vendor-файлов —
    не изобретай заново.
 
-Полный i18n-раскладу см. в [docs/ADMIN.md](./ADMIN.md).
+Полный i18n-раскладу см. в [docs/04-admin.md](./04-admin.md).
 
 ## Релизы
 

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — C1 (Critical) and M1.
+ * Regression for docs/08-decisions.md (audit 2026-06) — C1 (Critical) and M1.
  *
  * referrers.value / user_agents.value / urls.value carry a UNIQUE btree index
  * whose key is limited to ~2704 bytes. ClickRecorder capped dictionary values by

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — H5.
+ * Regression for docs/08-decisions.md (audit 2026-06) — H5.
  *
  * Postgres does not auto-index FK columns, and links had indexes only on id and
  * code. Service-scoped queries and restrictOnDelete reverse lookups on

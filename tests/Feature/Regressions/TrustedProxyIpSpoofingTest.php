@@ -10,7 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Regression for docs/CODE_REVIEW.md — C1 (Critical).
+ * Regression for docs/08-decisions.md (review 2026-06) — C1 (Critical).
  *
  * `bootstrap/app.php` calls `trustProxies(at: '*')`, so every client is treated
  * as a trusted proxy and a forged `X-Forwarded-For` is taken as the client IP.

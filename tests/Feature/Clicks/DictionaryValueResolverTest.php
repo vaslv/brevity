@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
- * Covers docs/AUDIT_2026-06.md — Low: dictionary resolver hot path.
+ * Covers docs/08-decisions.md (audit 2026-06) — Low: dictionary resolver hot path.
  *
  * The resolver used insertOrIgnore + a separate SELECT, i.e. two queries on
  * every resolve even though referrers/user-agents/IPs recur heavily and the row

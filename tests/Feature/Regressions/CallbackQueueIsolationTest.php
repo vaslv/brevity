@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — M13.
+ * Regression for docs/08-decisions.md (audit 2026-06) — M13.
  *
  * Click recording and callback delivery shared the single 'default' queue, so a
  * callback backlog (slow endpoints, up to ~1h backoff) could starve click

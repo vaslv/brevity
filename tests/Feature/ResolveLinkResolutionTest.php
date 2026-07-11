@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 /**
  * End-to-end coverage of the resolve controller's selection logic
- * (docs/AUDIT_2026-06.md — Phase 4): unknown code / domain mismatch / no-match
+ * (docs/08-decisions.md (audit 2026-06) — Phase 4): unknown code / domain mismatch / no-match
  * 404s, priority + condition gating, and forward_query merge semantics.
  * Transition-mode rendering is covered by ResolveLinkTransitionModeTest.
  */
@@ -79,7 +79,7 @@ class ResolveLinkResolutionTest extends TestCase
         $code = $link->code;
 
         // findByCode applies the SoftDeletes scope, so a trashed link is treated
-        // as disabled (see docs/ARCHITECTURE.md — Модель данных).
+        // as disabled (see docs/01-architecture.md — Модель данных).
         $link->delete();
 
         $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertNotFound();

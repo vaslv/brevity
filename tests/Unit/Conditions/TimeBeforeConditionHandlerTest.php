@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Tests\TestCase;
 
 /**
- * Coverage for docs/AUDIT_2026-06.md — M14 (and the T7 gap).
+ * Coverage for docs/08-decisions.md (audit 2026-06) — M14 (and the T7 gap).
  *
  * matches() now reads the stored `before` value directly and fails closed on
  * malformed data, rather than re-running Validator (and reporting to Sentry) on

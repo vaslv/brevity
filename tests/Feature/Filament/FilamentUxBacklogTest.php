@@ -20,7 +20,7 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Covers docs/AUDIT_2026-06.md — Low: Filament UX.
+ * Covers docs/08-decisions.md (audit 2026-06) — Low: Filament UX.
  *
  * Enum/registry-backed columns searched the raw stored value instead of the
  * translated label the operator sees; the url_id rule select eagerly preloaded

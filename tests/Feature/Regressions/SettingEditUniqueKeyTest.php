@@ -11,7 +11,7 @@ use Tests\TestCase;
 use Vaslv\LaravelSettings\Models\Setting;
 
 /**
- * Guard test (originally written to probe CODE_REVIEW M4 — now RETRACTED).
+ * Guard test (originally written to probe review 2026-06 M4 — now RETRACTED).
  *
  * The review suspected that `SettingForm`'s `TextInput::make('key')->unique()`
  * (without `ignoreRecord: true`) would break editing existing settings. This

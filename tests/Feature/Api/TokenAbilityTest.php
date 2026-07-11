@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Guard for docs/CODE_REVIEW.md — m4.
+ * Guard for docs/08-decisions.md (review 2026-06) — m4.
  *
  * Service tokens are scoped to the `links:create` ability and the API route
  * enforces it. Wildcard ('*') tokens still pass (backward compatible).

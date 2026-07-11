@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — M5.
+ * Regression for docs/08-decisions.md (audit 2026-06) — M5.
  *
  * The viewHorizon gate authorized any authenticated user ($user !== null),
  * independent of panel access. It now delegates to canAccessPanel so Horizon

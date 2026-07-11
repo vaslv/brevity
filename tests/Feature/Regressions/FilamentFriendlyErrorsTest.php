@@ -16,7 +16,7 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — M7.
+ * Regression for docs/08-decisions.md (audit 2026-06) — M7.
  *
  * Creating a duplicate Url/Domain value and bulk-deleting a dictionary row that
  * is still referenced (clicks/rules, restrictOnDelete) both surfaced a raw

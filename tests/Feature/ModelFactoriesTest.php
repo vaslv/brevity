@@ -18,7 +18,7 @@ use Tests\TestCase;
 
 /**
  * Smoke coverage for the model factories introduced for the resolving-core
- * tests (docs/AUDIT_2026-06.md — Phase 4: factories + core coverage).
+ * tests (docs/08-decisions.md (audit 2026-06) — Phase 4: factories + core coverage).
  */
 class ModelFactoriesTest extends TestCase
 {

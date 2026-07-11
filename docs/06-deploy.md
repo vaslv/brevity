@@ -1,0 +1,112 @@
+# Продакшен и деплой
+
+Факты об эксплуатации, которые нельзя вывести из кода, плюс ранбук
+переезда деплоя (выполнен 2026-06-10, пригодится при смене сервера или
+деплой-пользователя).
+
+## Топология
+
+- Прод: Docker Compose, проект **`brevity`** (имя зафиксировано в
+  `docker-compose.production.yml`, от директории запуска не зависит).
+- Именованные тома: `brevity_nginx_html`, `brevity_nginx_certs`,
+  `brevity_nginx_acme` (Let's Encrypt), `brevity_redis_data`. Потеря
+  томов certs/acme = перевыпуск сертификатов.
+- Приложение: Octane (FrankenPHP), очереди — Horizon (`redis`), отдельная
+  очередь `callbacks` (изоляция от записи кликов).
+
+## CI/CD (GitLab, деплой по тегу)
+
+- Пайплайн деплоит по SSH под `DEPLOY_USER` (CI-переменная; прод —
+  `brevity`, не root). `.env` и compose-файл копируются в домашнюю
+  директорию этого пользователя.
+- **`LARAVEL_IMAGE` не хранится в серверном `.env`** — CI экспортирует её
+  в команде деплоя. Любая ручная `docker compose`-команда на сервере
+  требует её явно (для `down`/`ps` годится заглушка:
+  `LARAVEL_IMAGE=dummy`). Реальный образ:
+  `docker inspect laravel-web --format '{{.Config.Image}}'`.
+- Миграции выполняются на деплое (gated `migrate --force`).
+- Smoke-тест после деплоя — `HEALTHCHECK_URL`
+  (`https://brevity.example.com/up`); manual-job `rollback` с
+  `ROLLBACK_TAG`.
+- Пайплайн по уже существующему тегу не перезапускается после правок
+  `.gitlab-ci.yml` — пересоздать тег или запустить вручную.
+
+## Релиз
+
+Semver **без** префикса `v`; источник истины — `version` в
+`composer.json` + git-тег. Интерактивная команда — `composer release`
+(dev-пакет `example/release`); пуш тега запускает деплой. Детали —
+[05-development.md](./05-development.md).
+
+## Ручные операции на сервере
+
+Перед остановкой контейнеров дать Horizon дообработать очередь:
+
+```bash
+docker exec laravel-horizon php artisan horizon:terminate
+```
+
+Проверка здоровья:
+
+```bash
+docker compose -p brevity ps
+curl -I https://brevity.example.com/up
+docker exec laravel-horizon php artisan horizon:status
+```
+
+## Секреты и конфиги вне git
+
+Серверный `.env`: `DB_PASSWORD`, `APP_KEY`, `HASHIDS_SALT` (независим от
+`APP_KEY` — см. [08-decisions.md](./08-decisions.md)), SMTP-креды.
+Конвенция: ключи (не значения) `.env` / `.env.example` / `.env.production`
+держатся синхронными.
+
+## Ранбук: переезд деплоя (новый сервер / деплой-пользователь)
+
+Впервые выполнен 2026-06-10 (root → `brevity`). Окно простоя между
+остановкой и подъёмом — 2–5 минут.
+
+1. **Пользователь** (на сервере, под root): `useradd -m -s /bin/bash
+   <user>`, `usermod -aG docker <user>`, скопировать
+   `authorized_keys` в `~/.ssh` (права 700/600). Проверка с локальной
+   машины: `ssh <user>@<host> docker ps` — без sudo.
+2. **Остановить старый проект, не трогая тома** (сначала
+   `horizon:terminate`, дождаться остановки контейнера):
+
+   ```bash
+   cd <старая-директория>
+   LARAVEL_IMAGE=dummy docker compose -p <старый-проект> --env-file .env \
+     -f docker-compose.production.yml down     # БЕЗ -v!
+   ```
+
+3. **Перенести тома под новый префикс** (переименования томов в Docker
+   нет — копируем содержимое):
+
+   ```bash
+   for v in nginx_html nginx_certs nginx_acme redis_data; do
+     docker volume create brevity_$v
+     docker run --rm -v <старый>_$v:/from:ro -v brevity_$v:/to alpine \
+       sh -c "cp -a /from/. /to/"
+   done
+   ```
+
+4. **CI-переменные GitLab** (Settings → CI/CD → Variables):
+   `DEPLOY_USER=<user>`, `HEALTHCHECK_URL=https://<host>/up`. Флаг
+   Protected — только если деплойные теги protected.
+5. **Задеплоить**: создать и запушить новый тег.
+6. **Проверка**: `docker compose -p brevity ps` (up/healthy), `curl -I
+   .../up` (200), `horizon:status` (running), `docker logs
+   acme-companion --since 10m` (**не** выпускает новые сертификаты —
+   признак, что тома certs переехали), `docker exec redis redis-cli
+   dbsize` (не пустой).
+7. **Уборка** — только через день-два после успешной проверки: удалить
+   старые тома и `.env`/compose-файл из старой директории.
+
+**Откат**: пока старые тома целы — поднять старый проект из старой
+директории (`LARAVEL_IMAGE=<реальный-образ> docker compose -p
+<старый-проект> ... up -d`).
+
+**Грабли первого прогона**: `LARAVEL_IMAGE` обязателен даже для `down`
+(compose падает на валидации); строка с `: ` внутри plain-скаляра в
+`script:` `.gitlab-ci.yml` парсится как словарь — оборачивать в одинарные
+кавычки целиком; пайплайн по существующему тегу сам не перезапустится.
