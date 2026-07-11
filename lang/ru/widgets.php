@@ -3,6 +3,8 @@
 return [
     'stats' => [
         'links_total' => 'Ссылки',
+        'clicks_total' => 'Кликов всего',
+        'clicks_total_non_bots' => 'Без ботов: :count',
         'clicks_today' => 'Кликов сегодня',
         'clicks_week' => 'Кликов за 7 дней',
     ],

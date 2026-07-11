@@ -25,7 +25,8 @@
 | `Click` | Click | Клик | Зафиксированный визит, зарезолвивший ссылку. Аналитика. |
 | `Callback` | Callback | Колбек | Исходящий HTTP POST на `Service.callback_url` после клика. |
 | `Referrer` | Referrer | Реферер | Значение HTTP Referer. Общий справочник. |
-| `UserAgent` | User agent | User agent | Значение HTTP User-Agent. Общий справочник. Термин сохранён по-английски. |
+| `UserAgent` | User agent | User agent | Значение HTTP User-Agent. Общий справочник. Несёт флаг `is_bot` (детекция краулеров). Термин сохранён по-английски. |
+| `LinkClickCounter` | Click counter | Счётчик кликов | Слотовый предагрегат кликов ссылки, разрез бот/не бот; итог = сумма слотов. |
 | `IpAddress` | IP address | IP-адрес | IP посетителя. Общий справочник. |
 | `Setting` | Setting | Настройка | Key/value настройка приложения (vaslv/laravel-settings). |
 | `User` | User | Пользователь | Пользователь админки. |
@@ -93,6 +94,7 @@
 | Термин | Выбрано | Отвергнуто |
 |---|---|---|
 | Callback (RU) | **Колбек** | Коллбэк, Вебхук |
+| Bot (RU) | **Бот** | Краулер, Робот |
 | Referrer (RU) | **Реферер** | Источник перехода |
 | User Agent (RU) | **User agent** (оставлено на английском) | Агент пользователя |
 | Click (RU) | **Клик** | Переход |
