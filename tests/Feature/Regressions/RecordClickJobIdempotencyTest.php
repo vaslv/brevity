@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 /**
- * Regression for docs/CODE_REVIEW.md — M2 (Major).
+ * Regression for docs/08-decisions.md (review 2026-06) — M2 (Major).
  *
  * `RecordClickJob` records a Click and creates a Callback on every execution
  * with no idempotency key. Queue delivery is at-least-once: if the job is

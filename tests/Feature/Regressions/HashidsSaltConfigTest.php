@@ -5,7 +5,7 @@ namespace Tests\Feature\Regressions;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — H4.
+ * Regression for docs/08-decisions.md (audit 2026-06) — H4.
  *
  * config/hashids.php used to default the salt to config('app.key')
  * (`env('HASHIDS_SALT', config('app.key'))`). That coupled short-code stability

@@ -5,7 +5,7 @@
 
 > Единый источник по HTTP API: как начать работать, полный список полей,
 > правила валидации, колбеки и готовые тестовые payload'ы для авторов SDK.
-> Терминология — в [GLOSSARY.md](./GLOSSARY.md).
+> Терминология — в [02-glossary.md](./02-glossary.md).
 
 ---
 
@@ -193,7 +193,7 @@ curl -sS -X POST https://brevity.example.com/api/links \
 
 Список типов расширяемый (через `ConditionHandler` в `ConditionRegistry`).
 Актуальный перечень и форму `data` для каждого типа см. в
-[GLOSSARY.md](./GLOSSARY.md).
+[02-glossary.md](./02-glossary.md).
 
 ---
 

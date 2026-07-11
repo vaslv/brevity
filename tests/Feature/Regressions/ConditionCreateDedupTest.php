@@ -11,7 +11,7 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Guard for docs/CODE_REVIEW.md — m6.
+ * Guard for docs/08-decisions.md (review 2026-06) — m6.
  *
  * Conditions are deduplicated by (type, data). Creating a duplicate in the
  * admin must reuse the existing row instead of raising a unique-constraint 500.

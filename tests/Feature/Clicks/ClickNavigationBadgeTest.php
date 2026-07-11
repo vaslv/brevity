@@ -11,7 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Guards the clicks sidebar badge (docs/CODE_REVIEW.md — M7): it counts only
+ * Guards the clicks sidebar badge (docs/08-decisions.md (review 2026-06) — M7): it counts only
  * today's clicks via an index-friendly range filter, not whereDate().
  */
 class ClickNavigationBadgeTest extends TestCase

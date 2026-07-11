@@ -26,7 +26,7 @@ class EditLink extends EditRecord
                 ->modalHeading(fn (Link $record): string => __('resources/link.delete.modal_heading', ['code' => $record->code]))
                 ->modalDescription(fn (Link $record): string => __('resources/link.delete.modal_description', ['code' => $record->code])),
             // No ForceDeleteAction: clicks.link_id is restrictOnDelete and
-            // clicks/callbacks must outlive a link (see docs/ARCHITECTURE.md), so
+            // clicks/callbacks must outlive a link (see docs/01-architecture.md), so
             // force-deleting a link with clicks would raise a raw FK error.
             RestoreAction::make(),
         ];

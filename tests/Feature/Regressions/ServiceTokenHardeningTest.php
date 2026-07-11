@@ -12,7 +12,7 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — M6.
+ * Regression for docs/08-decisions.md (audit 2026-06) — M6.
  *
  * Service tokens never expired, had no secret-scanning prefix, and expired rows
  * were never pruned. Tokens now carry a prefix, expired tokens are pruned on a

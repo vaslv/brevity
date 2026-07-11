@@ -7,7 +7,7 @@ use RuntimeException;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — M9.
+ * Regression for docs/08-decisions.md (audit 2026-06) — M9.
  *
  * config/queue.php defaulted to the 'database' connection while Horizon only
  * drains 'redis', so a forgotten/misconfigured QUEUE_CONNECTION silently routed

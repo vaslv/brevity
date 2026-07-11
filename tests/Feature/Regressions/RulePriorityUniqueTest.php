@@ -15,7 +15,7 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Guard for docs/CODE_REVIEW.md — m5.
+ * Guard for docs/08-decisions.md (review 2026-06) — m5.
  *
  * `rules` has a unique (link_id, priority). The admin priority field now
  * validates per-link uniqueness so a duplicate shows a form error instead of a

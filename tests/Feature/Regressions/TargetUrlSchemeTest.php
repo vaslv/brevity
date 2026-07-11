@@ -14,7 +14,7 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — M10.
+ * Regression for docs/08-decisions.md (audit 2026-06) — M10.
  *
  * redirect()->away() / the interstitial href emitted whatever scheme was stored
  * in urls.value. The API enforces http/https on write, but seeders/raw SQL/admin

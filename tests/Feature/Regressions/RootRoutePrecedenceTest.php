@@ -10,7 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Guard for docs/CODE_REVIEW.md — M5.
+ * Guard for docs/08-decisions.md (review 2026-06) — M5.
  *
  * The root catch-all `GET /{code}` shares the root namespace with the Filament
  * panel (path '') and the `/up` health check. This test locks in that the

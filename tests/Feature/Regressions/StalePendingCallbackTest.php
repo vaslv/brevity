@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — M4.
+ * Regression for docs/08-decisions.md (audit 2026-06) — M4.
  *
  * CallbackDispatcher only enqueues SendCallbackJob on wasRecentlyCreated, so a
  * crash between the Callback row commit and the Redis enqueue left the row stuck

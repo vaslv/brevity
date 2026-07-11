@@ -17,7 +17,7 @@ use RuntimeException;
 use Tests\TestCase;
 
 /**
- * Retry/exhaustion coverage for outbound callbacks (docs/AUDIT_2026-06.md —
+ * Retry/exhaustion coverage for outbound callbacks (docs/08-decisions.md (audit 2026-06) —
  * Phase 4). 4xx/3xx permanent failures are covered by CallbackDispatchTest;
  * this pins the retryable 5xx path and the terminal failed() hook.
  */

@@ -10,7 +10,7 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Regression for docs/AUDIT_2026-06.md — M15.
+ * Regression for docs/08-decisions.md (audit 2026-06) — M15.
  *
  * The Users table exposed a DeleteBulkAction with no guard, so an admin could
  * bulk-delete every user (all users are admins) and lock everyone out. Users are

@@ -12,7 +12,7 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Guard for docs/CODE_REVIEW.md — m13.
+ * Guard for docs/08-decisions.md (review 2026-06) — m13.
  *
  * The admin callback_data field is a JSON editor (not a flat KeyValue), so
  * nested templates round-trip without being flattened/corrupted.

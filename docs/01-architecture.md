@@ -51,7 +51,7 @@ Rate-limited через `throttle:link-resolve` (per-link + per-IP).
    - `resolveConditionId` — тот же паттерн, ключ `(type, data)`.
    - Вставка `Link`, его `Rule` по порядку.
 3. Возвращает 201 с payload'ом созданного (точная форма — см.
-   `docs/API.md`).
+   `docs/03-api.md`).
 
 ## Ключевые подсистемы
 
@@ -74,7 +74,7 @@ Rate-limited через `throttle:link-resolve` (per-link + per-IP).
 3. Добавить ветку рендера в схему `ConditionForm`.
 4. Перевести `types.<new_type>` и `data_fields.<new_type>.*` в
    `lang/{en,ru}/resources/condition.php`.
-5. Обновить `docs/API.md` и `docs/GLOSSARY.md`.
+5. Обновить `docs/03-api.md` и `docs/02-glossary.md`.
 
 ### Колбеки (Callbacks)
 
@@ -136,7 +136,7 @@ soft-deleted ссылок.
 1. Реализовать `DomainSelectionStrategyHandler`.
 2. Добавить значение в enum `DomainSelectionStrategy`.
 3. Затегировать класс в `DomainStrategyServiceProvider` (`domain.strategy`).
-4. Обновить `docs/API.md`, `docs/GLOSSARY.md`.
+4. Обновить `docs/03-api.md`, `docs/02-glossary.md`.
 
 ### Rate limiting
 
@@ -160,7 +160,7 @@ per-link + per-IP. Защищает от скрейпа и подбора код
 
 ```
 app/
-  Filament/                 Админка (см. docs/ADMIN.md)
+  Filament/                 Админка (см. docs/04-admin.md)
   Http/Controllers/
     ResolveLink.php         GET /{code}
     Api/LinkController.php  POST /api/links
@@ -180,13 +180,13 @@ config/
 database/migrations/
 docs/                       Эта папка
 lang/
-  en/, ru/                  Структурированные lang-файлы (см. docs/ADMIN.md)
+  en/, ru/                  Структурированные lang-файлы (см. docs/04-admin.md)
   ru.json                   Легаси JSON-ключи, всё ещё в ходу
 routes/
   web.php                   GET /{code}
   api.php                   POST /api/links
 scripts/
-  release.sh                Интерактивный тэггер (см. docs/DEVELOPMENT.md)
+  release.sh                Интерактивный тэггер (см. docs/05-development.md)
 tests/                      Feature + unit тесты
 ```
 
@@ -200,6 +200,6 @@ tests/                      Feature + unit тесты
 
 ## Внешние контракты
 
-- **Публичный API** → `docs/API.md`.
-- **Payload'ы колбеков** → тоже `docs/API.md` (§10).
+- **Публичный API** → `docs/03-api.md`.
+- **Payload'ы колбеков** → тоже `docs/03-api.md` (§10).
 - **Админка Filament** → только внутреннее.

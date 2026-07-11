@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Guard for docs/CODE_REVIEW.md — m8.
+ * Guard for docs/08-decisions.md (review 2026-06) — m8.
  *
  * The Filament user form exposes an email_verified_at field; it must be
  * mass-assignable, otherwise saves silently drop it.
