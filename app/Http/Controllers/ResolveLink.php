@@ -136,14 +136,16 @@ class ResolveLink extends Controller
             ? $this->forwardQueryParams($rule->url->value, $request)
             : $rule->url->value;
 
+        // Every visit must reach the tracker: a cached redirect would swallow
+        // repeat clicks — and every click is a callback to the partner.
         if (! $transitionMode->usesPage()) {
-            return redirect()->away($targetUrl);
+            return redirect()->away($targetUrl)->header('Cache-Control', 'no-store');
         }
 
         return response()->view('link.redirect', [
             'transitionMode' => $transitionMode,
             'targetUrl' => $targetUrl,
             'countdownSeconds' => self::REDIRECT_COUNTDOWN_SECONDS,
-        ]);
+        ])->header('Cache-Control', 'no-store');
     }
 }
