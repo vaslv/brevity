@@ -17,6 +17,7 @@ return [
         'short_url' => 'Short URL',
         'short_url_copied' => 'Copied',
         'clicks_count' => 'Clicks',
+        'clicks_count_non_bots' => 'non-bots: :count',
         'title' => 'Title',
         'forward_query' => 'Forward query',
         'forward_query_help' => 'When enabled, query parameters of the incoming request are appended to the target URL.',

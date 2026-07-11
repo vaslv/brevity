@@ -17,6 +17,7 @@ return [
         'short_url' => 'Короткая ссылка',
         'short_url_copied' => 'Скопировано',
         'clicks_count' => 'Клики',
+        'clicks_count_non_bots' => 'без ботов: :count',
         'title' => 'Заголовок',
         'forward_query' => 'Пробрасывать query-параметры',
         'forward_query_help' => 'Когда включено, query-параметры входящего запроса добавляются к целевому URL.',

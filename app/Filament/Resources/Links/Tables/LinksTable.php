@@ -11,12 +11,19 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class LinksTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            // Second aggregate for the clicks column description: the main
+            // state (total) is loaded by the column's ->sum() itself.
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->withSum(
+                ['clickCounters as non_bot_clicks_sum' => fn ($q) => $q->where('is_bot', false)],
+                'count',
+            ))
             ->columns([
                 TextColumn::make('service.name')
                     ->label(__('resources/link.fields.service'))
@@ -26,10 +33,23 @@ class LinksTable
                     ->copyable()
                     ->copyMessage(__('resources/link.fields.short_url_copied'))
                     ->searchable(query: fn ($query, string $search) => $query->where('code', 'ilike', "%{$search}%")),
-                TextColumn::make('clicks_count')
+                // Click totals come from the pre-aggregated slot counters, not
+                // COUNT over clicks (see docs/01-architecture.md) — the clicks
+                // table grows unbounded, the counters stay ~200 rows per link max.
+                TextColumn::make('click_counters_sum_count')
                     ->label(__('resources/link.fields.clicks_count'))
-                    ->counts('clicks')
-                    ->sortable(),
+                    ->sum('clickCounters', 'count')
+                    ->default(0)
+                    ->formatStateUsing(fn ($state): string => (string) (int) $state)
+                    ->description(fn ($record): string => __('resources/link.fields.clicks_count_non_bots', [
+                        'count' => (int) $record->non_bot_clicks_sum,
+                    ]))
+                    // A link without counters aggregates to NULL, and Postgres
+                    // puts NULLs first on DESC — a zero-click link would top the
+                    // "most clicked" sort. Treat NULL as zero explicitly.
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderByRaw(
+                        'click_counters_sum_count '.($direction === 'desc' ? 'desc nulls last' : 'asc nulls first'),
+                    )),
                 IconColumn::make('forward_query')
                     ->label(__('resources/link.fields.forward_query'))
                     ->boolean()

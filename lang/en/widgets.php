@@ -3,6 +3,8 @@
 return [
     'stats' => [
         'links_total' => 'Links',
+        'clicks_total' => 'Clicks (all time)',
+        'clicks_total_non_bots' => 'Non-bots: :count',
         'clicks_today' => 'Clicks today',
         'clicks_week' => 'Clicks (7 days)',
     ],
