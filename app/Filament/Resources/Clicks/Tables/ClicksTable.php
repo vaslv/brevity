@@ -7,9 +7,11 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -46,6 +48,11 @@ class ClicksTable
                     ->limit(60)
                     ->tooltip(fn (?string $state): ?string => $state)
                     ->searchable(),
+                // A click without a user agent has no flag to compute → not a bot.
+                IconColumn::make('userAgent.is_bot')
+                    ->label(__('resources/click.fields.is_bot'))
+                    ->boolean()
+                    ->default(false),
                 TextColumn::make('ipAddress.value')
                     ->label(__('resources/click.fields.ip_address'))
                     ->searchable()
@@ -61,6 +68,20 @@ class ClicksTable
                     // Lazy server-side search instead of loading every link.
                     ->relationship('link', 'code')
                     ->searchable(),
+                TernaryFilter::make('is_bot')
+                    ->label(__('resources/click.filters.is_bot'))
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->whereHas(
+                            'userAgent',
+                            fn (Builder $userAgent) => $userAgent->where('is_bot', true),
+                        ),
+                        // "Not a bot" includes clicks without a user agent.
+                        false: fn (Builder $query): Builder => $query->whereDoesntHave(
+                            'userAgent',
+                            fn (Builder $userAgent) => $userAgent->where('is_bot', true),
+                        ),
+                        blank: fn (Builder $query): Builder => $query,
+                    ),
                 Filter::make('created_at')
                     ->schema([
                         DatePicker::make('created_from')

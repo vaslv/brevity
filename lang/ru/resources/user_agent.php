@@ -7,7 +7,12 @@ return [
 
     'fields' => [
         'value' => 'Значение',
+        'is_bot' => 'Бот',
         'created_at' => 'Создан',
+    ],
+
+    'filters' => [
+        'is_bot' => 'Бот',
     ],
 
     'pages' => [
