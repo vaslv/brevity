@@ -7,6 +7,7 @@ use App\Models\IpAddress;
 use App\Models\Link;
 use App\Models\Referrer;
 use App\Models\UserAgent;
+use Illuminate\Support\Facades\DB;
 
 readonly class ClickRecorder
 {
@@ -19,6 +20,7 @@ readonly class ClickRecorder
     public function __construct(
         private DictionaryValueResolver $dictionaryValueResolver,
         private BotDetector $botDetector,
+        private ClickCounterIncrementer $clickCounterIncrementer,
     ) {}
 
     public function record(Link $link, string $uuid, int $urlId, ?string $ip, ?string $referrer, ?string $userAgent): Click
@@ -27,23 +29,39 @@ readonly class ClickRecorder
         $referrerValue = $this->normalizeString($referrer ?? '', self::MAX_REFERRER_BYTES);
         $userAgentValue = $this->normalizeString($userAgent ?? '', self::MAX_USER_AGENT_BYTES);
 
+        // Dictionary resolution stays OUTSIDE the transaction below: each
+        // resolver is race-safe on its own, and keeping them out avoids
+        // serializing unrelated inserts (see review 2026-06 — m14).
+        $referrerId = $this->dictionaryValueResolver->resolveId(Referrer::class, $referrerValue);
+        $userAgentRow = $this->resolveUserAgent($userAgentValue);
+        $ipAddressId = $this->dictionaryValueResolver->resolveId(IpAddress::class, $ipValue);
+
         // Idempotent on `uuid`: a retried RecordClickJob reuses the existing
         // click instead of recording a duplicate visit. Race-safety comes from
         // the UNIQUE index on clicks.uuid (a concurrent duplicate INSERT violates
         // it and firstOrCreate re-selects the winning row), not from firstOrCreate
-        // itself; the insertOrIgnore-based dictionary resolvers are likewise
-        // index-backed.
-        return Click::query()->firstOrCreate(
-            ['uuid' => $uuid],
-            [
-                'service_id' => $link->service_id,
-                'link_id' => $link->id,
-                'url_id' => $urlId,
-                'referrer_id' => $this->dictionaryValueResolver->resolveId(Referrer::class, $referrerValue),
-                'user_agent_id' => $this->resolveUserAgentId($userAgentValue),
-                'ip_address_id' => $this->dictionaryValueResolver->resolveId(IpAddress::class, $ipValue),
-            ]
-        );
+        // itself. The counter increment is atomic with the click insert and runs
+        // only when the click was actually created — a retry or a lost race
+        // never double-counts.
+        return DB::transaction(function () use ($link, $uuid, $urlId, $referrerId, $userAgentRow, $ipAddressId): Click {
+            $click = Click::query()->firstOrCreate(
+                ['uuid' => $uuid],
+                [
+                    'service_id' => $link->service_id,
+                    'link_id' => $link->id,
+                    'url_id' => $urlId,
+                    'referrer_id' => $referrerId,
+                    'user_agent_id' => $userAgentRow?->id,
+                    'ip_address_id' => $ipAddressId,
+                ]
+            );
+
+            if ($click->wasRecentlyCreated) {
+                $this->clickCounterIncrementer->increment($link->id, $userAgentRow?->is_bot ?? false);
+            }
+
+            return $click;
+        });
     }
 
     private function normalizeIp(?string $value): ?string
@@ -84,16 +102,16 @@ readonly class ClickRecorder
      * never re-detected — re-detection after a pattern-library update belongs
      * to the backfill command.
      */
-    private function resolveUserAgentId(?string $value): ?int
+    private function resolveUserAgent(?string $value): ?UserAgent
     {
         if ($value === null) {
             return null;
         }
 
-        $id = UserAgent::query()->where('value', $value)->value('id');
+        $existing = UserAgent::query()->where('value', $value)->first(['id', 'is_bot']);
 
-        if ($id !== null) {
-            return (int) $id;
+        if ($existing !== null) {
+            return $existing;
         }
 
         // createOrFirst is race-safe on the UNIQUE `value` index; detection runs
@@ -101,6 +119,6 @@ readonly class ClickRecorder
         return UserAgent::query()->createOrFirst(
             ['value' => $value],
             ['is_bot' => $this->botDetector->isBot($value)],
-        )->id;
+        );
     }
 }
