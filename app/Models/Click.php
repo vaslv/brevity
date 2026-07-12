@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Relations\BelongsToGeoLocation;
 use App\Models\Relations\BelongsToIpAddress;
 use App\Models\Relations\BelongsToLink;
 use App\Models\Relations\BelongsToReferrer;
@@ -25,10 +26,12 @@ use Illuminate\Support\Carbon;
  * @property int|null $user_agent_id
  * @property int|null $ip_address_id
  * @property int|null $rule_variant_id
+ * @property int|null $geo_location_id
  * @property string|null $visited_query
  * @property Carbon $created_at
  * @property-read Collection<int, Callback> $callbacks
  * @property-read int|null $callbacks_count
+ * @property-read GeoLocation|null $geoLocation
  * @property-read IpAddress|null $ipAddress
  * @property-read Link $link
  * @property-read Referrer|null $referrer
@@ -53,6 +56,7 @@ use Illuminate\Support\Carbon;
  */
 class Click extends Model
 {
+    use BelongsToGeoLocation;
     use BelongsToIpAddress;
     use BelongsToLink;
     use BelongsToReferrer;
@@ -74,6 +78,7 @@ class Click extends Model
         'user_agent_id',
         'ip_address_id',
         'rule_variant_id',
+        'geo_location_id',
         'visited_query',
     ];
 }

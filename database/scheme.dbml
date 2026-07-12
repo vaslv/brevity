@@ -128,6 +128,20 @@ Table ip_addresses {
   created_at timestamptz [not null, default: `now()`]
 }
 
+// Click geolocation dictionary (stage 4). region/city are '' (never NULL) when
+// unknown so the UNIQUE tuple dedupes — Postgres treats NULLs as distinct.
+Table geo_locations {
+  id bigserial [primary key]
+  country_code char(2) [not null] // ISO 3166-1 alpha-2
+  region varchar(128) [not null, default: '']
+  city varchar(128) [not null, default: '']
+  created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    (country_code, region, city) [unique]
+  }
+}
+
 Table clicks {
   id bigserial [primary key]
   service_id bigint [not null]
@@ -137,6 +151,7 @@ Table clicks {
   user_agent_id bigint
   ip_address_id bigint
   rule_variant_id bigint
+  geo_location_id bigint
   visited_query text [default: null]
   created_at timestamptz [not null, default: `now()`]
 
@@ -144,6 +159,9 @@ Table clicks {
     user_agent_id // admin bot filter + user_agents restrict-check
     ip_address_id // RI probe per ip_addresses delete in ips:prune
     rule_variant_id // per-variant analytics + SET NULL sweep on rule rewrite
+    // + partial: (geo_location_id) WHERE geo_location_id IS NOT NULL —
+    //   per-country analytics + geo_locations restrict-check
+    //   (clicks_geo_location_id_index)
     // + partial: (created_at) WHERE ip_address_id IS NOT NULL — detach phase
     //   of ips:prune (clicks_pending_ip_created_at_index)
   }
@@ -156,6 +174,7 @@ Ref: referrers.id < clicks.referrer_id [delete: restrict]
 Ref: user_agents.id < clicks.user_agent_id [delete: restrict]
 Ref: ip_addresses.id < clicks.ip_address_id [delete: restrict]
 Ref: rule_variants.id < clicks.rule_variant_id [delete: set null]
+Ref: geo_locations.id < clicks.geo_location_id [delete: restrict]
 
 Enum callback_status {
   pending
