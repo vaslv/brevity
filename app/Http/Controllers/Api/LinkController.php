@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLinkRequest;
+use App\Http\Requests\UpdateLinkRequest;
 use App\Http\Resources\LinkResource;
 use App\Http\Resources\LinkWithStatsResource;
 use App\Models\Link;
 use App\Services\Links\LinkCreator;
+use App\Services\Links\LinkUpdater;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -57,5 +59,23 @@ class LinkController extends Controller
         return LinkResource::make($link)
             ->response()
             ->setStatusCode(201);
+    }
+
+    public function update(UpdateLinkRequest $request, string $code, LinkUpdater $linkUpdater): LinkResource
+    {
+        // Same tenant-scoped lookup as show(): foreign, unknown and
+        // soft-deleted codes all take the identical path to 404.
+        $link = Link::query()
+            ->where('code', $code)
+            ->where('service_id', $request->user()->id)
+            ->first();
+
+        if ($link === null) {
+            abort(404);
+        }
+
+        // validated() of a `sometimes` request carries only the keys the
+        // client sent — exactly the sentinel semantics LinkUpdater expects.
+        return LinkResource::make($linkUpdater->update($link, $request->validated()));
     }
 }
