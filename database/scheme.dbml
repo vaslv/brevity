@@ -21,6 +21,9 @@ Table links {
   title varchar(64) [default: null]
   forward_query boolean [not null, default: false]
   callback_data jsonb [default: null]
+  valid_since timestamptz [default: null]
+  valid_until timestamptz [default: null]
+  max_clicks int [default: null]
   created_at timestamptz [not null, default: `now()`]
   deleted_at timestamptz [default: null]
 

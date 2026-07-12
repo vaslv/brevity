@@ -31,6 +31,11 @@ class LinkFactory extends Factory
         ];
     }
 
+    public function expired(): static
+    {
+        return $this->state(['valid_until' => now()->subMinute()]);
+    }
+
     public function forDomain(Domain $domain): static
     {
         return $this->state(['domain_id' => $domain->id]);
@@ -41,11 +46,21 @@ class LinkFactory extends Factory
         return $this->state(['forward_query' => true]);
     }
 
+    public function scheduled(): static
+    {
+        return $this->state(['valid_since' => now()->addDay()]);
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */
     public function withCallbackData(array $data = ['campaign_id' => 'cmp-1']): static
     {
         return $this->state(['callback_data' => $data]);
+    }
+
+    public function withMaxClicks(int $maxClicks): static
+    {
+        return $this->state(['max_clicks' => $maxClicks]);
     }
 }
