@@ -13,3 +13,7 @@ Schedule::command(SnapshotCommand::class)->everyFiveMinutes();
 Schedule::command(RedispatchStaleCallbacks::class)->everyThirtyMinutes();
 
 Schedule::command('sanctum:prune-expired --hours=24')->daily();
+
+// IP retention (decision 2026-07-11): detach IPs from old clicks and drop
+// orphaned ip_addresses rows.
+Schedule::command('ips:prune')->daily();

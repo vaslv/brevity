@@ -15,4 +15,12 @@ return [
      * forward_query so it never leaks into the target URL.
      */
     'disable_param' => env('TRACKING_DISABLE_PARAM', ''),
+
+    /*
+     * IP retention (decision 2026-07-11): raw IPs serve anti-fraud and partner
+     * callbacks, but not forever. Clicks older than this many days lose their
+     * IP reference and orphaned ip_addresses rows are deleted (ips:prune,
+     * scheduled daily).
+     */
+    'ip_retention_days' => env('TRACKING_IP_RETENTION_DAYS', 90),
 ];
