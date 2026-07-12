@@ -118,7 +118,7 @@ insertOrIgnore + SELECT на каждый справочник (`Referrer`, `Use
 - **Флаг бота живёт на справочнике `user_agents`** (`is_bot`), не на
   клике: детекция детерминирована по UA и вычисляется один раз при
   создании строки (`BotDetector` — интерфейс, реализация
-  `CrawlerDetectBotDetector` поверх jaybizzle/crawler-detect; синглтон в
+  `DeviceDetectorBotDetector` поверх matomo/device-detector; синглтон в
   `AppServiceProvider`). Существующие строки не пере-детектируются на
   горячем пути — пере-детекция после обновления библиотеки паттернов:
   `artisan user-agents:detect-bots` (keyset + лок). Клик без UA — не бот.
