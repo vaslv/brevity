@@ -41,6 +41,12 @@ class DetectBotUserAgents extends Command
 
         $this->info("Re-detected user agents; {$changed} flag(s) changed.");
 
+        // The bot split in link_click_counters was snapshotted at click time;
+        // flipped flags leave it stale until the counters are rebuilt.
+        if ($changed > 0) {
+            $this->warn('Bot flags changed — run clicks:rebuild-counters to refresh the counter split.');
+        }
+
         return self::SUCCESS;
     }
 

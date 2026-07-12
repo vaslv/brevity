@@ -38,6 +38,17 @@ class ApiV1ProblemDetailsTest extends TestCase
             ->assertJsonStructure(['data' => ['url', 'domain', 'code', 'rules']]);
     }
 
+    public function test_v1_link_read_update_and_domain_groups_require_a_token(): void
+    {
+        // The 401 matrix for the endpoints not covered by the POST test above.
+        $this->getJson('/api/v1/links/somecode')
+            ->assertStatus(401)->assertJson(['type' => 'unauthenticated']);
+        $this->patchJson('/api/v1/links/somecode', ['title' => 'X'])
+            ->assertStatus(401)->assertJson(['type' => 'unauthenticated']);
+        $this->getJson('/api/v1/domain-groups')
+            ->assertStatus(401)->assertJson(['type' => 'unauthenticated']);
+    }
+
     public function test_v1_missing_ability_is_problem_json(): void
     {
         $this->withHeader('Authorization', 'Bearer '.$this->serviceToken([]))
@@ -69,6 +80,14 @@ class ApiV1ProblemDetailsTest extends TestCase
     {
         $this->withHeader('Authorization', 'Bearer '.$this->serviceToken(['links:create']))
             ->getJson('/api/v1/domains')
+            ->assertOk()
+            ->assertJsonStructure(['data']);
+    }
+
+    public function test_v1_serves_the_domain_group_catalog(): void
+    {
+        $this->withHeader('Authorization', 'Bearer '.$this->serviceToken(['links:create']))
+            ->getJson('/api/v1/domain-groups')
             ->assertOk()
             ->assertJsonStructure(['data']);
     }

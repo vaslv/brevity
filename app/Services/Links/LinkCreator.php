@@ -32,6 +32,7 @@ class LinkCreator
      *     rules: array<int, array{
      *         url: string,
      *         conditions?: array<int, array{type: string, data?: array<string, mixed>}>,
+     *         variants?: array<int, array{url: string, weight: int, label?: ?string}>,
      *         transition_mode?: ?string,
      *     }>,
      *  }  $data
