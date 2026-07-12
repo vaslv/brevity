@@ -44,6 +44,34 @@ class MultiConditionRuleTest extends TestCase
             ->assertRedirect('https://example.com/fallback');
     }
 
+    public function test_after_date_and_time_before_form_a_window(): void
+    {
+        // A rule gated by [after, before): the AND-set matches only inside the
+        // window. Also exercises the after_date registration end-to-end (registry
+        // → resolver), not just the handler in isolation.
+        $windowRule = fn (string $after, string $before) => [
+            'url' => 'https://example.com/in-window',
+            'conditions' => [
+                Condition::query()->create(['type' => 'after_date', 'data' => ['after' => $after]]),
+                Condition::query()->create(['type' => 'time_before', 'data' => ['before' => $before]]),
+            ],
+        ];
+
+        $open = $this->linkWithRules([
+            $windowRule(now()->subDay()->toIso8601String(), now()->addDay()->toIso8601String()),
+            ['url' => 'https://example.com/closed', 'conditions' => []],
+        ]);
+        $this->get(static::SHORT_LINK_HOST.'/'.$open)
+            ->assertRedirect('https://example.com/in-window');
+
+        $notYet = $this->linkWithRules([
+            $windowRule(now()->addDay()->toIso8601String(), now()->addWeek()->toIso8601String()),
+            ['url' => 'https://example.com/closed', 'conditions' => []],
+        ]);
+        $this->get(static::SHORT_LINK_HOST.'/'.$notYet)
+            ->assertRedirect('https://example.com/closed');
+    }
+
     public function test_api_accepts_a_conditions_list(): void
     {
         $response = $this->createLink([

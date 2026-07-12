@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Links\Conditions\AfterDateConditionHandler;
 use App\Services\Links\Conditions\ConditionRegistry;
 use App\Services\Links\Conditions\TimeBeforeConditionHandler;
 use Illuminate\Support\ServiceProvider;
@@ -12,6 +13,7 @@ class ConditionServiceProvider extends ServiceProvider
     {
         $this->app->tag([
             TimeBeforeConditionHandler::class,
+            AfterDateConditionHandler::class,
         ], 'condition.handler');
 
         $this->app->singleton(ConditionRegistry::class, function ($app) {
