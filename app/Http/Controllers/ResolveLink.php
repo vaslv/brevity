@@ -105,6 +105,12 @@ class ResolveLink extends Controller
             abort(404);
         }
 
+        // A link outside its lifecycle window or over its click limit is
+        // indistinguishable from a missing one: 404, no click, no callback.
+        if (! $link->isAlive(now())) {
+            abort(404);
+        }
+
         $context = new ConditionContext($link, $request, now()->toImmutable());
 
         $rule = $resolver->resolve($link, $context);

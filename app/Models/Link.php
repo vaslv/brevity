@@ -23,6 +23,9 @@ use League\Uri\Uri;
  * @property string|null $title
  * @property bool $forward_query
  * @property array<array-key, mixed>|null $callback_data
+ * @property Carbon|null $valid_since
+ * @property Carbon|null $valid_until
+ * @property int|null $max_clicks
  * @property Carbon $created_at
  * @property Carbon|null $deleted_at
  * @property-read Collection<int, Click> $clicks
@@ -68,6 +71,8 @@ class Link extends Model
     protected $casts = [
         'forward_query' => 'boolean',
         'callback_data' => 'array',
+        'valid_since' => 'datetime',
+        'valid_until' => 'datetime',
         'deleted_at' => 'datetime',
     ];
 
@@ -78,6 +83,9 @@ class Link extends Model
         'title',
         'forward_query',
         'callback_data',
+        'valid_since',
+        'valid_until',
+        'max_clicks',
     ];
 
     public static function findByCode(string $code): ?Link
@@ -92,6 +100,31 @@ class Link extends Model
         return Uri::new($base)
             ->withPath('/'.$this->code)
             ->toString();
+    }
+
+    /**
+     * Lifecycle check (docs/07-plans.md §4): alive only while valid_since is
+     * not in the future, valid_until is not in the past, and the counter sum
+     * (all clicks, bots included — decision 2026-07-12) stays below
+     * max_clicks. The counter query runs only for limited links; async click
+     * recording makes the limit slightly soft (bounded by queue lag).
+     */
+    public function isAlive(\DateTimeInterface $now): bool
+    {
+        if ($this->valid_since !== null && $this->valid_since->greaterThan($now)) {
+            return false;
+        }
+
+        if ($this->valid_until !== null && $this->valid_until->lessThan($now)) {
+            return false;
+        }
+
+        if ($this->max_clicks !== null
+            && (int) $this->clickCounters()->sum('count') >= $this->max_clicks) {
+            return false;
+        }
+
+        return true;
     }
 
     protected static function booted(): void
