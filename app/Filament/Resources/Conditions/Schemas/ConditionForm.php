@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\Conditions\Schemas;
 
 use App\Services\Links\Conditions\ConditionRegistry;
+use App\Services\Links\Conditions\IpAddressConditionHandler;
 use Carbon\CarbonImmutable;
+use Closure;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -68,6 +70,20 @@ class ConditionForm
                                 ->label(__('resources/condition.data_fields.query_param.value'))
                                 ->required()
                                 ->maxLength(255),
+                        ],
+                        'ip_address' => [
+                            TextInput::make('data.ip')
+                                ->label(__('resources/condition.data_fields.ip_address.ip'))
+                                ->helperText(__('resources/condition.data_fields.ip_address.ip_help'))
+                                ->required()
+                                ->maxLength(64)
+                                // Same pattern check as the API path: the admin
+                                // direct-create bypasses the request validator.
+                                ->rule(fn (): Closure => static function (string $attribute, mixed $value, Closure $fail): void {
+                                    if (! is_string($value) || ! IpAddressConditionHandler::isValidPattern($value)) {
+                                        $fail(__('resources/condition.data_fields.ip_address.invalid'));
+                                    }
+                                }),
                         ],
                         default => [],
                     }),

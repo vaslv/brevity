@@ -19,12 +19,14 @@ return [
         'time_before' => 'Time before',
         'after_date' => 'After date',
         'query_param' => 'Query parameter',
+        'ip_address' => 'IP address',
     ],
 
     'describe' => [
         'time_before' => 'Before :datetime',
         'after_date' => 'After :datetime',
         'query_param' => 'Query :key=:value',
+        'ip_address' => 'IP :ip',
     ],
 
     'data_fields' => [
@@ -40,6 +42,11 @@ return [
             'key' => 'Query parameter name',
             'key_help' => 'Rule matches when the visit URL has this parameter with the exact value below.',
             'value' => 'Expected value',
+        ],
+        'ip_address' => [
+            'ip' => 'IP address, CIDR or wildcard',
+            'ip_help' => 'Exact IP (1.2.3.4), CIDR range (10.0.0.0/24) or IPv4 wildcard (11.22.*.*).',
+            'invalid' => 'Enter an exact IP, a CIDR range, or an IPv4 wildcard.',
         ],
     ],
 

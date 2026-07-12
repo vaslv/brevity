@@ -19,12 +19,14 @@ return [
         'time_before' => 'До указанного времени',
         'after_date' => 'После указанной даты',
         'query_param' => 'Query-параметр',
+        'ip_address' => 'IP-адрес',
     ],
 
     'describe' => [
         'time_before' => 'До :datetime',
         'after_date' => 'После :datetime',
         'query_param' => 'Query :key=:value',
+        'ip_address' => 'IP :ip',
     ],
 
     'data_fields' => [
@@ -40,6 +42,11 @@ return [
             'key' => 'Имя query-параметра',
             'key_help' => 'Правило срабатывает, когда в URL визита есть этот параметр с точным значением ниже.',
             'value' => 'Ожидаемое значение',
+        ],
+        'ip_address' => [
+            'ip' => 'IP-адрес, CIDR или wildcard',
+            'ip_help' => 'Точный IP (1.2.3.4), CIDR-диапазон (10.0.0.0/24) или IPv4-wildcard (11.22.*.*).',
+            'invalid' => 'Укажите точный IP, CIDR-диапазон или IPv4-wildcard.',
         ],
     ],
 
