@@ -17,17 +17,20 @@ readonly class ClickRecorder
 
     private const MAX_USER_AGENT_BYTES = 2000;
 
+    private const MAX_VISITED_QUERY_BYTES = 2000;
+
     public function __construct(
         private DictionaryValueResolver $dictionaryValueResolver,
         private BotDetector $botDetector,
         private ClickCounterIncrementer $clickCounterIncrementer,
     ) {}
 
-    public function record(Link $link, string $uuid, int $urlId, ?string $ip, ?string $referrer, ?string $userAgent): Click
+    public function record(Link $link, string $uuid, int $urlId, ?string $ip, ?string $referrer, ?string $userAgent, ?string $visitedQuery = null): Click
     {
         $ipValue = $this->normalizeIp($ip);
         $referrerValue = $this->normalizeString($referrer ?? '', self::MAX_REFERRER_BYTES);
         $userAgentValue = $this->normalizeString($userAgent ?? '', self::MAX_USER_AGENT_BYTES);
+        $visitedQueryValue = $this->normalizeString($visitedQuery ?? '', self::MAX_VISITED_QUERY_BYTES);
 
         // Dictionary resolution stays OUTSIDE the transaction below: each
         // resolver is race-safe on its own, and keeping them out avoids
@@ -43,7 +46,7 @@ readonly class ClickRecorder
         // itself. The counter increment is atomic with the click insert and runs
         // only when the click was actually created — a retry or a lost race
         // never double-counts.
-        return DB::transaction(function () use ($link, $uuid, $urlId, $referrerId, $userAgentRow, $ipAddressId): Click {
+        return DB::transaction(function () use ($link, $uuid, $urlId, $referrerId, $userAgentRow, $ipAddressId, $visitedQueryValue): Click {
             $click = Click::query()->firstOrCreate(
                 ['uuid' => $uuid],
                 [
@@ -53,6 +56,7 @@ readonly class ClickRecorder
                     'referrer_id' => $referrerId,
                     'user_agent_id' => $userAgentRow?->id,
                     'ip_address_id' => $ipAddressId,
+                    'visited_query' => $visitedQueryValue,
                 ]
             );
 

@@ -441,6 +441,7 @@ curl -sS https://brevity.example.com/api/v1/domain-groups \
 | `{{click.url}}` | Целевой URL, куда был сделан редирект |
 | `{{click.referrer}}` | Значение заголовка Referer (пустая строка, если нет) |
 | `{{click.user_agent}}` | User-Agent посетителя (пустая строка, если нет) |
+| `{{click.query.<param>}}` | Значение query-параметра визита (напр. `{{click.query.sub_id}}`). Отсутствующий параметр — пустая строка. Точки и пробелы в именах параметров PHP приводит к `_` (`utm.source` → `{{click.query.utm_source}}`); дефисы поддерживаются |
 | `{{link.id}}` | ID короткой ссылки |
 | `{{link.code}}` | Код короткой ссылки (напр. `AbC12345`) |
 | `{{link.title}}` | Заголовок ссылки (пустая строка, если не задан) |

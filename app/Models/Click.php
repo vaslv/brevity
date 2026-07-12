@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $referrer_id
  * @property int|null $user_agent_id
  * @property int|null $ip_address_id
+ * @property string|null $visited_query
  * @property Carbon $created_at
  * @property-read Collection<int, Callback> $callbacks
  * @property-read int|null $callbacks_count
@@ -68,5 +69,6 @@ class Click extends Model
         'referrer_id',
         'user_agent_id',
         'ip_address_id',
+        'visited_query',
     ];
 }
