@@ -61,6 +61,9 @@ class Condition extends Model
                 'key' => $this->data['key'] ?? '—',
                 'value' => $this->data['value'] ?? '—',
             ]),
+            'ip_address' => __('resources/condition.describe.ip_address', [
+                'ip' => $this->data['ip'] ?? '—',
+            ]),
             default => __('resources/condition.types.'.$this->type),
         };
     }
