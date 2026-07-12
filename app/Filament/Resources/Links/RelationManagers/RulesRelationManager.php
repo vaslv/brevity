@@ -4,11 +4,13 @@ namespace App\Filament\Resources\Links\RelationManagers;
 
 use App\Models\Condition;
 use App\Services\Links\TransitionMode;
+use Closure;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -42,6 +44,40 @@ class RulesRelationManager extends RelationManager
                     ->getOptionLabelFromRecordUsing(fn (Condition $c): string => $c->describe())
                     ->searchable()
                     ->preload(),
+                // A/B split (GAP-04): 2+ weighted targets. Empty = the rule
+                // uses its own URL above.
+                Repeater::make('variants')
+                    ->label(__('resources/link.rules.fields.variants'))
+                    ->helperText(__('resources/link.rules.fields.variants_help'))
+                    ->relationship()
+                    ->schema([
+                        Select::make('url_id')
+                            ->label(__('resources/link.rules.fields.variant_url'))
+                            ->relationship('url', 'value')
+                            ->searchable()
+                            ->required(),
+                        TextInput::make('weight')
+                            ->label(__('resources/link.rules.fields.variant_weight'))
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(1000)
+                            ->default(1)
+                            ->required(),
+                        TextInput::make('label')
+                            ->label(__('resources/link.rules.fields.variant_label'))
+                            ->maxLength(64),
+                    ])
+                    ->columns(3)
+                    ->minItems(0)
+                    // No empty starter row: a rule without a split must submit
+                    // an empty variant set, not one blank variant.
+                    ->defaultItems(0)
+                    // Either no split at all, or a real 2+ arm split.
+                    ->rule(fn (): Closure => static function (string $attribute, mixed $value, Closure $fail): void {
+                        if (is_array($value) && count($value) === 1) {
+                            $fail(__('resources/link.rules.fields.variants_min'));
+                        }
+                    }),
                 Select::make('transition_mode')
                     ->label(__('resources/link.rules.fields.transition_mode'))
                     ->helperText(__('resources/link.rules.fields.transition_mode_help'))

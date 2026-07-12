@@ -24,7 +24,7 @@ readonly class CallbackDispatcher
             return;
         }
 
-        $click->loadMissing(['url', 'referrer', 'userAgent', 'ipAddress']);
+        $click->loadMissing(['url', 'referrer', 'userAgent', 'ipAddress', 'ruleVariant']);
 
         $rendered = $this->renderer->render($link->callback_data, $click);
 

@@ -6,6 +6,7 @@ use App\Models\Click;
 use App\Models\IpAddress;
 use App\Models\Link;
 use App\Models\Referrer;
+use App\Models\RuleVariant;
 use App\Models\UserAgent;
 use Illuminate\Support\Facades\DB;
 
@@ -25,7 +26,7 @@ readonly class ClickRecorder
         private ClickCounterIncrementer $clickCounterIncrementer,
     ) {}
 
-    public function record(Link $link, string $uuid, int $urlId, ?string $ip, ?string $referrer, ?string $userAgent, ?string $visitedQuery = null): Click
+    public function record(Link $link, string $uuid, int $urlId, ?string $ip, ?string $referrer, ?string $userAgent, ?string $visitedQuery = null, ?int $ruleVariantId = null): Click
     {
         $ipValue = $this->normalizeIp($ip);
         $referrerValue = $this->normalizeString($referrer ?? '', self::MAX_REFERRER_BYTES);
@@ -39,6 +40,14 @@ readonly class ClickRecorder
         $userAgentRow = $this->resolveUserAgent($userAgentValue);
         $ipAddressId = $this->dictionaryValueResolver->resolveId(IpAddress::class, $ipValue);
 
+        // A rule rewrite (PATCH) between the redirect and this async job may have
+        // deleted the chosen variant. Drop a dangling reference to null rather
+        // than hit the FK: the click is a historical fact and must survive. A
+        // retry re-checks and converges once the delete has committed.
+        $variantId = $ruleVariantId !== null && RuleVariant::whereKey($ruleVariantId)->exists()
+            ? $ruleVariantId
+            : null;
+
         // Idempotent on `uuid`: a retried RecordClickJob reuses the existing
         // click instead of recording a duplicate visit. Race-safety comes from
         // the UNIQUE index on clicks.uuid (a concurrent duplicate INSERT violates
@@ -46,7 +55,7 @@ readonly class ClickRecorder
         // itself. The counter increment is atomic with the click insert and runs
         // only when the click was actually created — a retry or a lost race
         // never double-counts.
-        return DB::transaction(function () use ($link, $uuid, $urlId, $referrerId, $userAgentRow, $ipAddressId, $visitedQueryValue): Click {
+        return DB::transaction(function () use ($link, $uuid, $urlId, $referrerId, $userAgentRow, $ipAddressId, $visitedQueryValue, $variantId): Click {
             $click = Click::query()->firstOrCreate(
                 ['uuid' => $uuid],
                 [
@@ -56,6 +65,7 @@ readonly class ClickRecorder
                     'referrer_id' => $referrerId,
                     'user_agent_id' => $userAgentRow?->id,
                     'ip_address_id' => $ipAddressId,
+                    'rule_variant_id' => $variantId,
                     'visited_query' => $visitedQueryValue,
                 ]
             );

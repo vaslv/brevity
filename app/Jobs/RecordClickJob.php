@@ -27,6 +27,7 @@ class RecordClickJob implements ShouldQueue
         // Default keeps in-flight serialized jobs from before this field
         // deployable-safe.
         private readonly ?string $visitedQuery = null,
+        private readonly ?int $ruleVariantId = null,
     ) {}
 
     public function failed(Throwable $e): void
@@ -57,7 +58,7 @@ class RecordClickJob implements ShouldQueue
         // visit and must be recorded (and its callback delivered).
         $link = Link::withTrashed()->findOrFail($this->linkId);
 
-        $click = $clickRecorder->record($link, $this->clickUuid, $this->urlId, $this->ip, $this->referrer, $this->userAgent, $this->visitedQuery);
+        $click = $clickRecorder->record($link, $this->clickUuid, $this->urlId, $this->ip, $this->referrer, $this->userAgent, $this->visitedQuery, $this->ruleVariantId);
 
         $callbackDispatcher->dispatchForClick($click);
     }

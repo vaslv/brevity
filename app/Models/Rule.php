@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Relations\BelongsToLink;
 use App\Models\Relations\BelongsToManyConditions;
 use App\Models\Relations\BelongsToUrl;
+use App\Models\Relations\HasManyVariants;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +20,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property-read Collection<int, Condition> $conditions
  * @property-read int|null $conditions_count
+ * @property-read Collection<int, RuleVariant> $variants
+ * @property-read int|null $variants_count
  * @property-read Link $link
  * @property-read Url $url
  *
@@ -40,6 +43,7 @@ class Rule extends Model
     use BelongsToManyConditions;
     use BelongsToUrl;
     use HasFactory;
+    use HasManyVariants;
 
     public const UPDATED_AT = null;
 

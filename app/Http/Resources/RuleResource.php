@@ -29,6 +29,11 @@ class RuleResource extends JsonResource
             'condition' => $conditions->isNotEmpty()
                 ? ConditionResource::make($conditions->first())
                 : null,
+            'variants' => $this->resource->variants->map(fn ($variant): array => [
+                'url' => $variant->url->value,
+                'weight' => $variant->weight,
+                'label' => $variant->label,
+            ])->all(),
             'transition_mode' => $this->resource->transition_mode,
         ];
     }

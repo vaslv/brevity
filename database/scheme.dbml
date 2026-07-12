@@ -78,6 +78,22 @@ Table condition_rule {
 Ref: rules.id < condition_rule.rule_id [delete: CASCADE]
 Ref: conditions.id < condition_rule.condition_id [delete: restrict]
 
+// A/B split (GAP-04): a rule fans its winning traffic across weighted targets.
+Table rule_variants {
+  id bigserial [primary key]
+  rule_id bigint [not null]
+  url_id bigint [not null]
+  weight smallint [not null]
+  label varchar(64) [default: null]
+
+  Indexes {
+    rule_id
+  }
+}
+
+Ref: rules.id < rule_variants.rule_id [delete: CASCADE]
+Ref: urls.id < rule_variants.url_id [delete: restrict]
+
 Table referrers {
   id bigserial [primary key]
   value varchar(2048) [not null, unique]
@@ -119,6 +135,7 @@ Table clicks {
   referrer_id bigint
   user_agent_id bigint
   ip_address_id bigint
+  rule_variant_id bigint
   visited_query text [default: null]
   created_at timestamptz [not null, default: `now()`]
 }
@@ -129,6 +146,7 @@ Ref: urls.id < clicks.url_id [delete: restrict]
 Ref: referrers.id < clicks.referrer_id [delete: restrict]
 Ref: user_agents.id < clicks.user_agent_id [delete: restrict]
 Ref: ip_addresses.id < clicks.ip_address_id [delete: restrict]
+Ref: rule_variants.id < clicks.rule_variant_id [delete: set null]
 
 Enum callback_status {
   pending

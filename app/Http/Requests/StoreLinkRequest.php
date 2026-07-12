@@ -58,16 +58,7 @@ class StoreLinkRequest extends FormRequest
             // max: PG integer ceiling — an over-limit value must 422, not 500.
             'max_clicks' => ['nullable', 'integer', 'min:1', 'max:2147483647'],
             'rules' => ['required', 'array', 'min:1', 'max:50'],
-            'rules.*.url' => [
-                'required',
-                'url:http,https',
-                'max:2048',
-                static function (string $attribute, mixed $value, \Closure $fail): void {
-                    if (is_string($value) && strlen($value) > self::MAX_URL_BYTES) {
-                        $fail('The destination URL must not exceed '.self::MAX_URL_BYTES.' bytes.');
-                    }
-                },
-            ],
+            'rules.*.url' => self::destinationUrlRules(),
             // A rule matches when ALL its conditions match (RUL-01). Capped to
             // keep a single rule's AND-set bounded.
             'rules.*.conditions' => ['nullable', 'array', 'max:10'],
@@ -78,6 +69,13 @@ class StoreLinkRequest extends FormRequest
                 Rule::in($conditionRegistry->types()),
             ],
             'rules.*.conditions.*.data' => ['nullable', 'array'],
+            // A/B split (GAP-04): at least 2 weighted targets. No variants =
+            // the rule uses its own url as before.
+            'rules.*.variants' => ['nullable', 'array', 'min:2', 'max:20'],
+            // Variants write to urls.value like the primary url — same byte cap.
+            'rules.*.variants.*.url' => self::destinationUrlRules(),
+            'rules.*.variants.*.weight' => ['required', 'integer', 'min:1', 'max:1000'],
+            'rules.*.variants.*.label' => ['nullable', 'string', 'max:64'],
             'rules.*.transition_mode' => [
                 'nullable',
                 'string',
@@ -149,5 +147,25 @@ class StoreLinkRequest extends FormRequest
         }
 
         return $validationRules;
+    }
+
+    /**
+     * A destination URL (rule target or A/B variant): a web scheme, byte-capped
+     * so it fits the urls.value UNIQUE index (see MAX_URL_BYTES).
+     *
+     * @return array<int, ValidationRule|string|\Closure>
+     */
+    private static function destinationUrlRules(): array
+    {
+        return [
+            'required',
+            'url:http,https',
+            'max:2048',
+            static function (string $attribute, mixed $value, \Closure $fail): void {
+                if (is_string($value) && strlen($value) > self::MAX_URL_BYTES) {
+                    $fail('The destination URL must not exceed '.self::MAX_URL_BYTES.' bytes.');
+                }
+            },
+        ];
     }
 }

@@ -26,6 +26,7 @@ readonly class CallbackDataRenderer
             'click.url' => $click->url->value,
             'click.referrer' => $click->referrer?->value ?? '',
             'click.user_agent' => $click->userAgent?->value ?? '',
+            'click.variant' => $this->variantLabel($click),
             ...$this->queryVariables($click),
             'link.id' => (string) $click->link_id,
             'link.code' => (string) $click->link->code,
@@ -98,5 +99,15 @@ readonly class CallbackDataRenderer
         }
 
         return $value;
+    }
+
+    /**
+     * The A/B variant a click resolved to (GAP-04): the partner needs to know
+     * which arm converted. Its label, or an empty string when the rule ran no
+     * split (or the variant was since removed).
+     */
+    private function variantLabel(Click $click): string
+    {
+        return $click->ruleVariant?->label ?? '';
     }
 }

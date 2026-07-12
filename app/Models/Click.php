@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Relations\BelongsToIpAddress;
 use App\Models\Relations\BelongsToLink;
 use App\Models\Relations\BelongsToReferrer;
+use App\Models\Relations\BelongsToRuleVariant;
 use App\Models\Relations\BelongsToService;
 use App\Models\Relations\BelongsToUrl;
 use App\Models\Relations\BelongsToUserAgent;
@@ -23,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $referrer_id
  * @property int|null $user_agent_id
  * @property int|null $ip_address_id
+ * @property int|null $rule_variant_id
  * @property string|null $visited_query
  * @property Carbon $created_at
  * @property-read Collection<int, Callback> $callbacks
@@ -30,6 +32,7 @@ use Illuminate\Support\Carbon;
  * @property-read IpAddress|null $ipAddress
  * @property-read Link $link
  * @property-read Referrer|null $referrer
+ * @property-read RuleVariant|null $ruleVariant
  * @property-read Service $service
  * @property-read Url $url
  * @property-read UserAgent|null $userAgent
@@ -53,6 +56,7 @@ class Click extends Model
     use BelongsToIpAddress;
     use BelongsToLink;
     use BelongsToReferrer;
+    use BelongsToRuleVariant;
     use BelongsToService;
     use BelongsToUrl;
     use BelongsToUserAgent;
@@ -69,6 +73,7 @@ class Click extends Model
         'referrer_id',
         'user_agent_id',
         'ip_address_id',
+        'rule_variant_id',
         'visited_query',
     ];
 }

@@ -52,7 +52,7 @@ class LinkCreator
 
             $this->ruleSetWriter->replace($link, $data['rules']);
 
-            return $link->load('rules.conditions', 'rules.url');
+            return $link->load('rules.conditions', 'rules.url', 'rules.variants.url');
         });
     }
 

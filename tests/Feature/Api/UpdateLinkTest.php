@@ -110,6 +110,26 @@ class UpdateLinkTest extends TestCase
         ])->assertStatus(422)->assertJsonPath('type', 'validation-error');
     }
 
+    public function test_patch_replaces_the_variant_set(): void
+    {
+        $service = $this->makeService();
+        $link = $this->makeLink($service);
+
+        $this->patchLink($service, $link->code, [
+            'rules' => [[
+                'url' => 'https://example.com/control',
+                'variants' => [
+                    ['url' => 'https://example.com/a', 'weight' => 2, 'label' => 'A'],
+                    ['url' => 'https://example.com/b', 'weight' => 5, 'label' => 'B'],
+                ],
+            ]],
+        ])->assertOk()
+            ->assertJsonCount(2, 'data.rules.0.variants')
+            ->assertJsonPath('data.rules.0.variants.1.label', 'B');
+
+        $this->assertSame(2, $link->rules()->firstOrFail()->variants()->count());
+    }
+
     public function test_rules_are_replaced_as_a_whole_ordered_set(): void
     {
         $service = $this->makeService();

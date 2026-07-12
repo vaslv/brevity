@@ -60,7 +60,7 @@ readonly class LinkUpdater
                 $this->ruleSetWriter->replace($link, $input['rules']);
             }
 
-            return $link->load('rules.conditions', 'rules.url');
+            return $link->load('rules.conditions', 'rules.url', 'rules.variants.url');
         });
     }
 

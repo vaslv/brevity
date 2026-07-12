@@ -26,6 +26,7 @@ readonly class LinkRuleSetWriter
      * @param  array<int, array{
      *     url: string,
      *     conditions?: array<int, array{type: string, data?: array<string, mixed>}>,
+     *     variants?: array<int, array{url: string, weight: int, label?: ?string}>,
      *     transition_mode?: ?string,
      * }>  $rules
      */
@@ -49,6 +50,14 @@ readonly class LinkRuleSetWriter
             // AND semantics and would violate the pivot's unique index.
             if ($conditionIds !== []) {
                 $rule->conditions()->attach(array_unique($conditionIds));
+            }
+
+            foreach ($ruleData['variants'] ?? [] as $variant) {
+                $rule->variants()->create([
+                    'url_id' => $this->resolveUrlId($variant['url']),
+                    'weight' => $variant['weight'],
+                    'label' => $variant['label'] ?? null,
+                ]);
             }
         }
     }
