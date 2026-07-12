@@ -21,12 +21,16 @@ return new class extends Migration
     {
         Schema::create('rule_variants', function (Blueprint $table) {
             $table->id();
-            // Postgres does not index referencing FKs automatically; the rule
-            // index backs the cascade delete on a rule-set rewrite.
-            $table->foreignId('rule_id')->constrained('rules')->cascadeOnDelete()->index();
+            $table->foreignId('rule_id')->constrained('rules')->cascadeOnDelete();
             $table->foreignId('url_id')->constrained('urls')->restrictOnDelete();
             $table->smallInteger('weight');
             $table->string('label', 64)->nullable();
+
+            // Postgres does not index referencing FKs automatically; this index
+            // backs the cascade delete on a rule-set rewrite. A separate call on
+            // purpose: chaining ->index() onto ->constrained() sets the FK
+            // constraint NAME and creates no index (review 2026-07-12 — r1).
+            $table->index('rule_id');
         });
 
         DB::statement('alter table rule_variants add constraint rule_variants_weight_check check (weight >= 1)');

@@ -9,6 +9,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('clicks', function (Blueprint $table) {
+            $table->dropIndex(['rule_variant_id']);
             $table->dropConstrainedForeignId('rule_variant_id');
         });
     }
@@ -21,10 +22,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('clicks', function (Blueprint $table) {
-            // Indexed: powers per-variant analytics and the ON DELETE SET NULL
-            // sweep when a rule-set rewrite drops variants.
             $table->foreignId('rule_variant_id')->nullable()->after('url_id')
-                ->constrained('rule_variants')->nullOnDelete()->index();
+                ->constrained('rule_variants')->nullOnDelete();
+            // A separate call on purpose: chaining ->index() onto ->constrained()
+            // sets the FK constraint NAME (to "1") and creates no index (review
+            // 2026-07-12 — r1). This index powers per-variant analytics and the
+            // ON DELETE SET NULL sweep when a rule-set rewrite drops variants.
+            $table->index('rule_variant_id');
         });
     }
 };

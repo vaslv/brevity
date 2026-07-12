@@ -72,6 +72,7 @@ Table condition_rule {
 
   Indexes {
     (rule_id, condition_id) [unique]
+    condition_id // restrict-check on a conditions delete
   }
 }
 
@@ -138,6 +139,14 @@ Table clicks {
   rule_variant_id bigint
   visited_query text [default: null]
   created_at timestamptz [not null, default: `now()`]
+
+  Indexes {
+    user_agent_id // admin bot filter + user_agents restrict-check
+    ip_address_id // RI probe per ip_addresses delete in ips:prune
+    rule_variant_id // per-variant analytics + SET NULL sweep on rule rewrite
+    // + partial: (created_at) WHERE ip_address_id IS NOT NULL — detach phase
+    //   of ips:prune (clicks_pending_ip_created_at_index)
+  }
 }
 
 Ref: services.id < clicks.service_id [delete: restrict]
