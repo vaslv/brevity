@@ -253,6 +253,10 @@ curl -sS -X PATCH https://brevity.example.com/api/v1/links/AbC12345 \
 | `after_date` | Срабатывает, когда текущее время **достигло** указанного (включительно) | `{ "after": "<ISO 8601>" }` |
 | `query_param` | Срабатывает при точном совпадении query-параметра визита `key=value` | `{ "key": "partner", "value": "acme" }` |
 | `ip_address` | Срабатывает по IP посетителя: точный / CIDR / IPv4-wildcard | `{ "ip": "10.0.0.0/24" }` |
+| `device` | Срабатывает по типу устройства из User-Agent. Одно устройство матчит несколько типов (iPhone = `ios` И `mobile`) | `{ "device": "mobile" }` |
+
+Типы `device`: `android`, `ios`, `mobile`, `windows`, `macos`,
+`linux`, `chromeos`, `desktop`.
 
 Формат `before`/`after` — `Y-m-d\TH:i:sP`, например
 `2026-03-05T10:00:00+00:00`. Поле обязательно для своего типа. Пара
