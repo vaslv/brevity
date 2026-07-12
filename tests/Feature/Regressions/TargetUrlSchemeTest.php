@@ -3,8 +3,10 @@
 namespace Tests\Feature\Regressions;
 
 use App\Filament\Resources\Urls\Pages\CreateUrl;
+use App\Models\Click;
 use App\Models\Link;
 use App\Models\Rule;
+use App\Models\RuleVariant;
 use App\Models\Service;
 use App\Models\Url;
 use App\Models\User;
@@ -36,6 +38,33 @@ class TargetUrlSchemeTest extends TestCase
         Rule::query()->create(['link_id' => $link->id, 'url_id' => $url->id, 'priority' => 1]);
 
         $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertNotFound();
+    }
+
+    public function test_a_non_http_variant_url_is_not_resolved(): void
+    {
+        // The scheme guard validates the SELECTED target; make sure the variant
+        // branch is covered too, not only the rule's own url. Both variants are
+        // malicious so the sticky pick cannot dodge the guard.
+        $service = Service::query()->create(['name' => 'Svc '.fake()->unique()->word()]);
+        $link = Link::query()->create(['service_id' => $service->id, 'forward_query' => false]);
+        $code = 'varEvil1';
+        $link->update(['code' => $code]);
+        $rule = Rule::query()->create([
+            'link_id' => $link->id,
+            'url_id' => Url::query()->create(['value' => 'https://example.com/control'])->id,
+            'priority' => 1,
+        ]);
+
+        foreach (['javascript:alert(1)', 'javascript:alert(2)'] as $bad) {
+            RuleVariant::query()->create([
+                'rule_id' => $rule->id,
+                'url_id' => Url::query()->create(['value' => $bad])->id,
+                'weight' => 1,
+            ]);
+        }
+
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)->assertNotFound();
+        $this->assertSame(0, Click::query()->count());
     }
 
     public function test_admin_url_form_rejects_a_non_http_scheme(): void
