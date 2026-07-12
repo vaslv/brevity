@@ -18,11 +18,13 @@ return [
     'types' => [
         'time_before' => 'Time before',
         'after_date' => 'After date',
+        'query_param' => 'Query parameter',
     ],
 
     'describe' => [
         'time_before' => 'Before :datetime',
         'after_date' => 'After :datetime',
+        'query_param' => 'Query :key=:value',
     ],
 
     'data_fields' => [
@@ -33,6 +35,11 @@ return [
         'after_date' => [
             'after' => 'Match once current time is at or after',
             'after_help' => 'Rule matches once the current time reaches this moment (inclusive).',
+        ],
+        'query_param' => [
+            'key' => 'Query parameter name',
+            'key_help' => 'Rule matches when the visit URL has this parameter with the exact value below.',
+            'value' => 'Expected value',
         ],
     ],
 
