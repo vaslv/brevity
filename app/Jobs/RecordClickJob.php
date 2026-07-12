@@ -6,6 +6,7 @@ use App\Models\Link;
 use App\Services\Links\Callbacks\CallbackDispatcher;
 use App\Services\Links\Clicks\ClickRecorder;
 use App\Services\Links\Clicks\IgnoredSourceMatcher;
+use App\Services\Links\Geo\GeoLocator;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -46,6 +47,7 @@ class RecordClickJob implements ShouldQueue
         ClickRecorder $clickRecorder,
         CallbackDispatcher $callbackDispatcher,
         IgnoredSourceMatcher $ignoredSourceMatcher,
+        GeoLocator $geoLocator,
     ): void {
         // Traffic hygiene: a visit from an ignored source (office IP,
         // monitoring) records no click and therefore sends no callback.
@@ -58,7 +60,12 @@ class RecordClickJob implements ShouldQueue
         // visit and must be recorded (and its callback delivered).
         $link = Link::withTrashed()->findOrFail($this->linkId);
 
-        $click = $clickRecorder->record($link, $this->clickUuid, $this->urlId, $this->ip, $this->referrer, $this->userAgent, $this->visitedQuery, $this->ruleVariantId);
+        // Geolocate the visitor here (recording is already async, the redirect is
+        // untouched). locate() never throws — a missing database or an unknown IP
+        // simply leaves the click unlocated.
+        $geo = $geoLocator->locate($this->ip);
+
+        $click = $clickRecorder->record($link, $this->clickUuid, $this->urlId, $this->ip, $this->referrer, $this->userAgent, $this->visitedQuery, $this->ruleVariantId, $geo);
 
         $callbackDispatcher->dispatchForClick($click);
     }
