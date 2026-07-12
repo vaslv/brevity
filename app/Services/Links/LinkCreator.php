@@ -9,6 +9,7 @@ use App\Models\Url;
 use App\Services\Links\Conditions\ConditionRegistry;
 use App\Services\Links\Domains\DomainSelectionStrategy;
 use App\Services\Links\Domains\DomainSelector;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use League\Uri\Modifier;
@@ -26,6 +27,9 @@ class LinkCreator
      *     title?: ?string,
      *     forward_query?: ?bool,
      *     callback_data?: ?array<string, mixed>,
+     *     valid_since?: ?string,
+     *     valid_until?: ?string,
+     *     max_clicks?: ?int,
      *     domain?: ?string,
      *     domain_strategy?: ?string,
      *     domain_group?: ?string,
@@ -45,6 +49,9 @@ class LinkCreator
                 'title' => $data['title'] ?? null,
                 'forward_query' => $data['forward_query'] ?? false,
                 'callback_data' => $data['callback_data'] ?? null,
+                'valid_since' => $this->parseInstant($data['valid_since'] ?? null),
+                'valid_until' => $this->parseInstant($data['valid_until'] ?? null),
+                'max_clicks' => $data['max_clicks'] ?? null,
             ]);
 
             foreach ($data['rules'] as $index => $ruleData) {
@@ -58,6 +65,17 @@ class LinkCreator
 
             return $link->load('rules.condition', 'rules.url');
         });
+    }
+
+    /**
+     * Eloquent's datetime cast formats an instance in its OWN timezone while
+     * the timestamptz column is written in the session (UTC) zone — a non-UTC
+     * offset would be silently relabeled, shifting the instant. Normalize to
+     * UTC explicitly at the API boundary.
+     */
+    private function parseInstant(?string $value): ?CarbonImmutable
+    {
+        return $value === null ? null : CarbonImmutable::parse($value)->utc();
     }
 
     /**
