@@ -50,9 +50,10 @@ class ViewService extends ViewRecord
                     $days = $data['expires_in_days'] ?? null;
                     $expiresAt = filled($days) ? now()->addDays((int) $days) : null;
 
-                    // Least-privilege: scope to the only ability the API needs.
+                    // Least-privilege: exactly the abilities the /api/v1
+                    // surface needs — create, read own links, update own links.
                     $plainTextToken = $service
-                        ->createToken('service-token', ['links:create'], $expiresAt)
+                        ->createToken('service-token', ['links:create', 'links:read', 'links:update'], $expiresAt)
                         ->plainTextToken;
 
                     $markdown = implode("\n\n", [
