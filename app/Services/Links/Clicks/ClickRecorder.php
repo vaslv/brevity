@@ -3,22 +3,17 @@
 namespace App\Services\Links\Clicks;
 
 use App\Models\Click;
-use App\Models\GeoLocation;
 use App\Models\IpAddress;
 use App\Models\Link;
 use App\Models\Referrer;
 use App\Models\RuleVariant;
 use App\Models\UserAgent;
+use App\Services\Links\Geo\GeoLocationResolver;
 use App\Services\Links\Geo\ResolvedGeoLocation;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 readonly class ClickRecorder
 {
-    // geo_locations.region / .city are varchar(128); geo names come from MaxMind
-    // (bounded), but cap defensively so a lookup can never overflow the column.
-    private const MAX_GEO_NAME_CHARS = 128;
-
     private const MAX_IP_BYTES = 45;
 
     private const MAX_REFERRER_BYTES = 2000;
@@ -31,6 +26,7 @@ readonly class ClickRecorder
         private DictionaryValueResolver $dictionaryValueResolver,
         private BotDetector $botDetector,
         private ClickCounterIncrementer $clickCounterIncrementer,
+        private GeoLocationResolver $geoLocationResolver,
     ) {}
 
     public function record(Link $link, string $uuid, int $urlId, ?string $ip, ?string $referrer, ?string $userAgent, ?string $visitedQuery = null, ?int $ruleVariantId = null, ?ResolvedGeoLocation $geo = null): Click
@@ -46,7 +42,7 @@ readonly class ClickRecorder
         $referrerId = $this->dictionaryValueResolver->resolveId(Referrer::class, $referrerValue);
         $userAgentRow = $this->resolveUserAgent($userAgentValue);
         $ipAddressId = $this->dictionaryValueResolver->resolveId(IpAddress::class, $ipValue);
-        $geoLocationId = $this->resolveGeoLocationId($geo);
+        $geoLocationId = $this->geoLocationResolver->resolveId($geo);
 
         // A rule rewrite (PATCH) between the redirect and this async job may have
         // deleted the chosen variant. Drop a dangling reference to null rather
@@ -116,38 +112,6 @@ readonly class ClickRecorder
         // up to 4N bytes; capping by characters let it overflow the index, which
         // threw SQLSTATE 54000 and silently dropped the click.
         return mb_strcut($value, 0, $maxBytes, 'UTF-8');
-    }
-
-    /**
-     * Resolve the (country, region, city) tuple to a geo_locations id, or null
-     * when the click has no location. SELECT-first like the other dictionaries
-     * (locations recur heavily across clicks); createOrFirst is race-safe on the
-     * UNIQUE tuple for the miss. Geo is best-effort enrichment: any failure here
-     * logs a warning and leaves the click unlocated rather than dropping it.
-     */
-    private function resolveGeoLocationId(?ResolvedGeoLocation $geo): ?int
-    {
-        if ($geo === null) {
-            return null;
-        }
-
-        $attributes = [
-            'country_code' => $geo->countryCode,
-            'region' => mb_substr($geo->region, 0, self::MAX_GEO_NAME_CHARS),
-            'city' => mb_substr($geo->city, 0, self::MAX_GEO_NAME_CHARS),
-        ];
-
-        try {
-            return GeoLocation::query()->where($attributes)->value('id')
-                ?? GeoLocation::query()->createOrFirst($attributes)->id;
-        } catch (\Throwable $e) {
-            report($e);
-            Log::warning('Failed to resolve click geolocation; recording the click unlocated.', [
-                'country_code' => $geo->countryCode,
-            ]);
-
-            return null;
-        }
     }
 
     /**
