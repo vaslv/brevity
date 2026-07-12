@@ -2,7 +2,7 @@
 
 namespace App\Services\Links\Clicks;
 
-use DeviceDetector\DeviceDetector;
+use DeviceDetector\Parser\Bot;
 
 /**
  * Bot detection backed by matomo/device-detector. The same library powers the
@@ -17,12 +17,14 @@ readonly class DeviceDetectorBotDetector implements BotDetector
             return false;
         }
 
-        $detector = new DeviceDetector($userAgent);
-        // We only need the bot verdict here — skip the (more expensive) full
-        // device/client parse.
-        $detector->discardBotInformation(false);
-        $detector->parse();
+        // Only the verdict is needed, so use the standalone bot parser: a full
+        // DeviceDetector::parse() would also run the OS/client/device regex
+        // cascade for every NON-bot UA — an order of magnitude more work on
+        // the detect-bots backfill and the unique-UA miss path.
+        $parser = new Bot;
+        $parser->setUserAgent($userAgent);
+        $parser->discardDetails();
 
-        return $detector->isBot();
+        return $parser->parse() !== null;
     }
 }
