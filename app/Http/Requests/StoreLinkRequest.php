@@ -46,6 +46,17 @@ class StoreLinkRequest extends FormRequest
             'title' => ['nullable', 'string', 'max:64'],
             'forward_query' => ['nullable', 'boolean'],
             'callback_data' => ['nullable', 'array', 'max:50'],
+            // Lifecycle limits (docs/03-api.md §5): same strict ISO 8601 format
+            // as condition dates; NULL = no limit. The window edges are
+            // inclusive; a zero-length window (since == until) is allowed.
+            'valid_since' => ['nullable', 'date_format:Y-m-d\TH:i:sP'],
+            'valid_until' => array_values(array_filter([
+                'nullable',
+                'date_format:Y-m-d\TH:i:sP',
+                $this->filled('valid_since') ? 'after_or_equal:valid_since' : null,
+            ])),
+            // max: PG integer ceiling — an over-limit value must 422, not 500.
+            'max_clicks' => ['nullable', 'integer', 'min:1', 'max:2147483647'],
             'rules' => ['required', 'array', 'min:1', 'max:50'],
             'rules.*.url' => [
                 'required',
