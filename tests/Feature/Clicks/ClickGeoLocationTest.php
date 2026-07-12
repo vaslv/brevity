@@ -8,6 +8,7 @@ use App\Models\GeoLocation;
 use App\Models\Link;
 use App\Models\Url;
 use App\Services\Links\Clicks\ClickRecorder;
+use App\Services\Links\Geo\GeoDatabaseUpdater;
 use App\Services\Links\Geo\GeoLocator;
 use App\Services\Links\Geo\ResolvedGeoLocation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -136,5 +137,18 @@ class ClickGeoLocationTest extends TestCase
         RecordClickJob::dispatchSync((string) Str::uuid(), $link->id, $url->id, '81.2.69.142', null, 'UA');
 
         $this->assertSame('London', Click::query()->firstOrFail()->geoLocation->city);
+    }
+
+    public function test_the_job_pings_the_geo_updater_to_keep_the_database_fresh(): void
+    {
+        // A recorded click keeps the geo database fresh "by traffic".
+        $this->mock(GeoDatabaseUpdater::class)
+            ->shouldReceive('pingFromTraffic')
+            ->once();
+
+        $link = Link::factory()->create();
+        $url = Url::factory()->create();
+
+        RecordClickJob::dispatchSync((string) Str::uuid(), $link->id, $url->id, '203.0.113.9', null, 'UA');
     }
 }
