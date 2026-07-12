@@ -30,6 +30,11 @@ Route::prefix('v1')->group(function () {
         Route::get('/links/{code}', [LinkController::class, 'show']);
     });
 
+    // Updates share the write throttle bucket with creation.
+    Route::middleware(['auth:sanctum', 'abilities:links:update', 'throttle:api-links'])->group(function () {
+        Route::patch('/links/{code}', [LinkController::class, 'update']);
+    });
+
     Route::middleware(['auth:sanctum', 'abilities:links:create', 'throttle:api-read'])->group(function () {
         Route::get('/domains', [DomainController::class, 'index']);
         Route::get('/domain-groups', [DomainGroupController::class, 'index']);

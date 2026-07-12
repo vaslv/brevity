@@ -2,23 +2,19 @@
 
 namespace App\Services\Links;
 
-use App\Models\Condition;
 use App\Models\Domain;
 use App\Models\Link;
-use App\Models\Url;
-use App\Services\Links\Conditions\ConditionRegistry;
 use App\Services\Links\Domains\DomainSelectionStrategy;
 use App\Services\Links\Domains\DomainSelector;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use League\Uri\Modifier;
 
 class LinkCreator
 {
     public function __construct(
-        private readonly ConditionRegistry $registry,
         private readonly DomainSelector $domainSelector,
+        private readonly LinkRuleSetWriter $ruleSetWriter,
     ) {}
 
     /**
@@ -54,14 +50,7 @@ class LinkCreator
                 'max_clicks' => $data['max_clicks'] ?? null,
             ]);
 
-            foreach ($data['rules'] as $index => $ruleData) {
-                $link->rules()->create([
-                    'url_id' => $this->resolveUrlId($ruleData['url']),
-                    'condition_id' => $this->resolveConditionId($ruleData['condition'] ?? null),
-                    'transition_mode' => $ruleData['transition_mode'] ?? null,
-                    'priority' => $index + 1,
-                ]);
-            }
+            $this->ruleSetWriter->replace($link, $data['rules']);
 
             return $link->load('rules.condition', 'rules.url');
         });
@@ -76,38 +65,6 @@ class LinkCreator
     private function parseInstant(?string $value): ?CarbonImmutable
     {
         return $value === null ? null : CarbonImmutable::parse($value)->utc();
-    }
-
-    /**
-     * @param  array{type: string, data?: array<string, mixed>}|null  $condition
-     */
-    private function resolveConditionId(?array $condition): ?int
-    {
-        if (empty($condition)) {
-            return null;
-        }
-
-        $type = $condition['type'];
-        $data = $condition['data'] ?? [];
-
-        // Persist only handler-known fields so stray keys don't fragment the
-        // (type, data) dedup index with near-duplicate rows.
-        if ($handler = $this->registry->getHandler($type)) {
-            $data = $handler::validate($data);
-        }
-
-        $encoded = json_encode($data);
-
-        Condition::insertOrIgnore([
-            'type' => $type,
-            'data' => $encoded,
-            'created_at' => now(),
-        ]);
-
-        return Condition::query()
-            ->where('type', $type)
-            ->whereRaw('"data"::jsonb = ?::jsonb', [$encoded])
-            ->value('id');
     }
 
     /**
@@ -137,16 +94,6 @@ class LinkCreator
         }
 
         return Domain::where('is_default', true)->value('id');
-    }
-
-    private function resolveUrlId(string $rawUrl): int
-    {
-        $normalized = Modifier::wrap($rawUrl)
-            ->normalize()
-            ->sortQuery()
-            ->toString();
-
-        return Url::firstOrCreate(['value' => $normalized])->id;
     }
 
     private function selectDomainId(DomainSelectionStrategy $strategy, ?string $groupCode): int
