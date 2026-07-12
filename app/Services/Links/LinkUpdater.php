@@ -30,6 +30,13 @@ readonly class LinkUpdater
             // replacements would race on the unique (link_id, priority) index.
             Link::query()->whereKey($link->getKey())->lockForUpdate()->value('id');
 
+            // The instance was loaded before the lock; a concurrent PATCH may
+            // have committed meanwhile. Re-read under the lock so the
+            // merged-window guard below checks against the current row, not a
+            // stale snapshot (two racing PATCHes could otherwise commit a
+            // crossed window).
+            $link->refresh();
+
             $attributes = [];
 
             foreach (['title', 'callback_data', 'max_clicks'] as $field) {
