@@ -49,6 +49,14 @@ class ResolveLink extends Controller
     {
         $incoming = $request->query();
 
+        // The tracking-disable parameter is service plumbing — never leak it
+        // into the target URL.
+        $disableParam = (string) config('tracking.disable_param');
+
+        if ($disableParam !== '') {
+            unset($incoming[$disableParam]);
+        }
+
         if (! is_array($incoming) || $incoming === []) {
             return $targetUrl;
         }
@@ -84,6 +92,13 @@ class ResolveLink extends Controller
         }
 
         return strcasecmp($link->domain->value, $request->host()) !== 0;
+    }
+
+    private function trackingDisabled(Request $request): bool
+    {
+        $param = (string) config('tracking.disable_param');
+
+        return $param !== '' && $request->query->has($param);
     }
 
     /**
@@ -129,14 +144,17 @@ class ResolveLink extends Controller
 
         $transitionMode = TransitionMode::tryFrom((string) $rule->transition_mode) ?? TransitionMode::Direct;
 
-        RecordClickJob::dispatch(
-            (string) Str::uuid(),
-            $link->id,
-            $rule->url_id,
-            $request->ip(),
-            $request->headers->get('referer'),
-            $request->userAgent(),
-        );
+        // Test visits opt out of tracking entirely: no click, no callback.
+        if (! $this->trackingDisabled($request)) {
+            RecordClickJob::dispatch(
+                (string) Str::uuid(),
+                $link->id,
+                $rule->url_id,
+                $request->ip(),
+                $request->headers->get('referer'),
+                $request->userAgent(),
+            );
+        }
 
         $targetUrl = $link->forward_query
             ? $this->forwardQueryParams($rule->url->value, $request)

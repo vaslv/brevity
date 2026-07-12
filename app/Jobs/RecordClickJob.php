@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Link;
 use App\Services\Links\Callbacks\CallbackDispatcher;
 use App\Services\Links\Clicks\ClickRecorder;
+use App\Services\Links\Clicks\IgnoredSourceMatcher;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -37,8 +38,17 @@ class RecordClickJob implements ShouldQueue
         ]);
     }
 
-    public function handle(ClickRecorder $clickRecorder, CallbackDispatcher $callbackDispatcher): void
-    {
+    public function handle(
+        ClickRecorder $clickRecorder,
+        CallbackDispatcher $callbackDispatcher,
+        IgnoredSourceMatcher $ignoredSourceMatcher,
+    ): void {
+        // Traffic hygiene: a visit from an ignored source (office IP,
+        // monitoring) records no click and therefore sends no callback.
+        if ($ignoredSourceMatcher->isIgnored($this->ip)) {
+            return;
+        }
+
         // withTrashed: the resolve already happened against a live link; if it was
         // soft-deleted before this job ran, the click is still a real historical
         // visit and must be recorded (and its callback delivered).
