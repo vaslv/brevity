@@ -24,7 +24,7 @@ class LinkController extends Controller
         $link = Link::query()
             ->where('code', $code)
             ->where('service_id', $request->user()->id)
-            ->with(['rules.conditions', 'rules.url', 'clickCounters', 'domain'])
+            ->with(['rules.conditions', 'rules.url', 'rules.variants.url', 'clickCounters', 'domain'])
             ->first();
 
         if ($link === null) {

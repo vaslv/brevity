@@ -6,6 +6,7 @@ use App\Jobs\RecordClickJob;
 use App\Models\Link;
 use App\Services\Links\Conditions\ConditionContext;
 use App\Services\Links\LinkRuleResolver;
+use App\Services\Links\RuleVariantSelector;
 use App\Services\Links\TransitionMode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -107,7 +108,8 @@ class ResolveLink extends Controller
     public function __invoke(
         string $code,
         Request $request,
-        LinkRuleResolver $resolver
+        LinkRuleResolver $resolver,
+        RuleVariantSelector $variantSelector,
     ): RedirectResponse|Response {
         $link = Link::findByCode($code);
 
@@ -134,11 +136,15 @@ class ResolveLink extends Controller
             abort(404);
         }
 
-        // Re-validate the stored target scheme at read time. The API enforces
+        // A/B split (GAP-04): the winning rule may fan out to weighted target
+        // URLs. Without variants this returns the rule's own url unchanged.
+        $target = $variantSelector->select($rule, $link, $request);
+
+        // Re-validate the resolved target scheme at read time. The API enforces
         // http/https on write, but seeders/raw SQL/admin edits could bypass that;
         // never emit a non-web scheme (e.g. javascript:) into a Location header or
         // a clickable href.
-        if (! $this->hasAllowedScheme($rule->url->value)) {
+        if (! $this->hasAllowedScheme($target['url_value'])) {
             abort(404);
         }
 
@@ -149,17 +155,18 @@ class ResolveLink extends Controller
             RecordClickJob::dispatch(
                 (string) Str::uuid(),
                 $link->id,
-                $rule->url_id,
+                $target['url_id'],
                 $request->ip(),
                 $request->headers->get('referer'),
                 $request->userAgent(),
                 $request->getQueryString(),
+                $target['variant']?->id,
             );
         }
 
         $targetUrl = $link->forward_query
-            ? $this->forwardQueryParams($rule->url->value, $request)
-            : $rule->url->value;
+            ? $this->forwardQueryParams($target['url_value'], $request)
+            : $target['url_value'];
 
         // Every visit must reach the tracker: a cached redirect would swallow
         // repeat clicks — and every click is a callback to the partner.

@@ -17,7 +17,7 @@ readonly class LinkRuleResolver
     {
         /** @var Rule[] $rules */
         $rules = $link->rules()
-            ->with('url', 'conditions')
+            ->with('url', 'conditions', 'variants.url')
             ->get();
 
         foreach ($rules as $rule) {
