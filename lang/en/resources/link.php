@@ -49,8 +49,7 @@ return [
         'fields' => [
             'url_id' => 'URL',
             'url' => 'URL',
-            'condition_id' => 'Condition',
-            'condition' => 'Condition',
+            'conditions' => 'Conditions (all must match)',
             'transition_mode' => 'Transition mode',
             'transition_mode_help' => 'How the server responds when this rule matches. Default is Direct (302 redirect).',
             'priority' => 'Priority',

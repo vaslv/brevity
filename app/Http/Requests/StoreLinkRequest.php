@@ -68,14 +68,16 @@ class StoreLinkRequest extends FormRequest
                     }
                 },
             ],
-            'rules.*.condition' => ['nullable', 'array'],
-            'rules.*.condition.type' => [
-                'required_with:rules.*.condition',
+            // A rule matches when ALL its conditions match (RUL-01). Capped to
+            // keep a single rule's AND-set bounded.
+            'rules.*.conditions' => ['nullable', 'array', 'max:10'],
+            'rules.*.conditions.*.type' => [
+                'required',
                 'string',
                 'max:32',
                 Rule::in($conditionRegistry->types()),
             ],
-            'rules.*.condition.data' => ['nullable', 'array'],
+            'rules.*.conditions.*.data' => ['nullable', 'array'],
             'rules.*.transition_mode' => [
                 'nullable',
                 'string',
@@ -84,6 +86,29 @@ class StoreLinkRequest extends FormRequest
             ],
             ...$this->conditionDataRules($conditionRegistry),
         ];
+    }
+
+    /**
+     * Backward compatibility (RUL-01): a rule may carry a single `condition`
+     * object OR a `conditions` list. Fold the legacy singular form into the
+     * canonical list here so validation and persistence only deal with lists.
+     */
+    protected function prepareForValidation(): void
+    {
+        $rules = $this->input('rules');
+
+        if (! is_array($rules)) {
+            return;
+        }
+
+        foreach ($rules as $index => $rule) {
+            if (is_array($rule) && ! array_key_exists('conditions', $rule) && isset($rule['condition'])) {
+                $rules[$index]['conditions'] = [$rule['condition']];
+                unset($rules[$index]['condition']);
+            }
+        }
+
+        $this->merge(['rules' => $rules]);
     }
 
     /**
@@ -100,24 +125,26 @@ class StoreLinkRequest extends FormRequest
         $validationRules = [];
 
         foreach ($rules as $index => $rule) {
-            if (! is_array($rule)) {
+            if (! is_array($rule) || ! is_array($rule['conditions'] ?? null)) {
                 continue;
             }
 
-            $type = data_get($rule, 'condition.type');
+            foreach ($rule['conditions'] as $conditionIndex => $condition) {
+                $type = data_get($condition, 'type');
 
-            if (! is_string($type)) {
-                continue;
-            }
+                if (! is_string($type)) {
+                    continue;
+                }
 
-            $handler = $conditionRegistry->getHandler($type);
+                $handler = $conditionRegistry->getHandler($type);
 
-            if (! $handler) {
-                continue;
-            }
+                if (! $handler) {
+                    continue;
+                }
 
-            foreach ($handler::rules() as $field => $fieldRules) {
-                $validationRules["rules.$index.condition.data.$field"] = $fieldRules;
+                foreach ($handler::rules() as $field => $fieldRules) {
+                    $validationRules["rules.$index.conditions.$conditionIndex.data.$field"] = $fieldRules;
+                }
             }
         }
 

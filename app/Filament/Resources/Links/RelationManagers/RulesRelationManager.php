@@ -33,17 +33,15 @@ class RulesRelationManager extends RelationManager
                     // destination, so search lazily instead of loading them all.
                     ->searchable()
                     ->required(),
-                Select::make('condition_id')
-                    ->label(__('resources/link.rules.fields.condition_id'))
-                    ->options(
-                        fn () => Condition::query()
-                            ->orderBy('type')
-                            ->get()
-                            ->mapWithKeys(fn (Condition $c) => [$c->id => $c->describe()])
-                            ->all()
-                    )
+                // Multi-condition rule (RUL-01): the rule matches when ALL
+                // selected conditions match. Empty = unconditional.
+                Select::make('conditions')
+                    ->label(__('resources/link.rules.fields.conditions'))
+                    ->relationship('conditions', 'type')
+                    ->multiple()
+                    ->getOptionLabelFromRecordUsing(fn (Condition $c): string => $c->describe())
                     ->searchable()
-                    ->nullable(),
+                    ->preload(),
                 Select::make('transition_mode')
                     ->label(__('resources/link.rules.fields.transition_mode'))
                     ->helperText(__('resources/link.rules.fields.transition_mode_help'))
@@ -76,6 +74,8 @@ class RulesRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('priority')
+            // Eager-load conditions for the AND-set column below (no N+1).
+            ->modifyQueryUsing(fn ($query) => $query->with('conditions'))
             ->defaultSort('priority')
             ->columns([
                 TextColumn::make('priority')
@@ -86,9 +86,11 @@ class RulesRelationManager extends RelationManager
                     ->label(__('resources/link.rules.fields.url'))
                     ->searchable()
                     ->limit(60),
-                TextColumn::make('condition')
-                    ->label(__('resources/link.rules.fields.condition'))
-                    ->state(fn ($record): ?string => $record->condition?->describe())
+                TextColumn::make('conditions')
+                    ->label(__('resources/link.rules.fields.conditions'))
+                    ->state(fn ($record): ?string => $record->conditions->isNotEmpty()
+                        ? $record->conditions->map(fn (Condition $c) => $c->describe())->join(' & ')
+                        : null)
                     ->placeholder('-'),
                 TextColumn::make('transition_mode')
                     ->label(__('resources/link.rules.fields.transition_mode'))

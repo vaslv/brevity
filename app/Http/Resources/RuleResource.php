@@ -18,13 +18,16 @@ class RuleResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $conditions = $this->resource->conditions;
+
         return [
             'url' => $this->resource->url->value,
-            // Guard against a null condition: a nested JsonResource::make(null)
-            // does NOT collapse to null, it serializes as {"type":null,"data":null}.
-            // docs/03-api.md guarantees `condition` is null for an unconditional rule.
-            'condition' => $this->resource->condition
-                ? ConditionResource::make($this->resource->condition)
+            'conditions' => ConditionResource::collection($conditions),
+            // Deprecated (RUL-01): the single `condition` field is kept for
+            // legacy clients — the first condition, or null when unconditional.
+            // New clients read the `conditions` array.
+            'condition' => $conditions->isNotEmpty()
+                ? ConditionResource::make($conditions->first())
                 : null,
             'transition_mode' => $this->resource->transition_mode,
         ];

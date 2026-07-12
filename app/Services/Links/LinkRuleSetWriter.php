@@ -20,9 +20,12 @@ readonly class LinkRuleSetWriter
     ) {}
 
     /**
+     * Rule data is already normalized to a `conditions` list (the single legacy
+     * `condition` is folded into it upstream by the request).
+     *
      * @param  array<int, array{
      *     url: string,
-     *     condition?: ?array{type: string, data?: array<string, mixed>},
+     *     conditions?: array<int, array{type: string, data?: array<string, mixed>}>,
      *     transition_mode?: ?string,
      * }>  $rules
      */
@@ -31,24 +34,30 @@ readonly class LinkRuleSetWriter
         $link->rules()->delete();
 
         foreach ($rules as $index => $ruleData) {
-            $link->rules()->create([
+            $rule = $link->rules()->create([
                 'url_id' => $this->resolveUrlId($ruleData['url']),
-                'condition_id' => $this->resolveConditionId($ruleData['condition'] ?? null),
                 'transition_mode' => $ruleData['transition_mode'] ?? null,
                 'priority' => $index + 1,
             ]);
+
+            $conditionIds = array_map(
+                fn (array $condition): int => $this->resolveConditionId($condition),
+                $ruleData['conditions'] ?? [],
+            );
+
+            // array_unique: the same condition twice on one rule is a no-op for
+            // AND semantics and would violate the pivot's unique index.
+            if ($conditionIds !== []) {
+                $rule->conditions()->attach(array_unique($conditionIds));
+            }
         }
     }
 
     /**
-     * @param  array{type: string, data?: array<string, mixed>}|null  $condition
+     * @param  array{type: string, data?: array<string, mixed>}  $condition
      */
-    private function resolveConditionId(?array $condition): ?int
+    private function resolveConditionId(array $condition): int
     {
-        if (empty($condition)) {
-            return null;
-        }
-
         $type = $condition['type'];
         $data = $condition['data'] ?? [];
 

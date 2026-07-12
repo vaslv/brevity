@@ -58,7 +58,7 @@ class ModelFactoriesTest extends TestCase
     {
         $rule = Rule::factory()->withCondition()->create();
 
-        $this->assertNotNull($rule->condition_id);
-        $this->assertSame('time_before', $rule->condition->type);
+        $this->assertCount(1, $rule->conditions);
+        $this->assertSame('time_before', $rule->conditions->first()->type);
     }
 }

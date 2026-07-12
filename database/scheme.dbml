@@ -53,7 +53,6 @@ Table conditions {
 Table rules {
   id bigserial [primary key]
   link_id bigint [not null]
-  condition_id bigint [default: null]
   url_id bigint [not null]
   priority integer [not null, default: 0]
   created_at timestamptz [not null, default: `now()`]
@@ -65,7 +64,19 @@ Table rules {
 
 Ref: links.id < rules.link_id [delete: CASCADE]
 Ref: urls.id < rules.url_id [delete: restrict]
-Ref: conditions.id < rules.condition_id [delete: restrict]
+
+// Multi-condition rules (RUL-01): a rule matches when ALL its conditions match.
+Table condition_rule {
+  rule_id bigint [not null]
+  condition_id bigint [not null]
+
+  Indexes {
+    (rule_id, condition_id) [unique]
+  }
+}
+
+Ref: rules.id < condition_rule.rule_id [delete: CASCADE]
+Ref: conditions.id < condition_rule.condition_id [delete: restrict]
 
 Table referrers {
   id bigserial [primary key]
