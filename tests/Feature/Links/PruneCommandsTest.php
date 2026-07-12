@@ -9,6 +9,7 @@ use App\Models\Link;
 use App\Models\LinkClickCounter;
 use App\Models\Service;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 /**
@@ -69,6 +70,18 @@ class PruneCommandsTest extends TestCase
             ->assertSuccessful();
     }
 
+    public function test_ips_prune_aborts_when_another_run_holds_the_lock(): void
+    {
+        $lock = Cache::lock('ips:prune', 60);
+        $this->assertTrue($lock->get());
+
+        try {
+            $this->artisan('ips:prune')->assertFailed();
+        } finally {
+            $lock->release();
+        }
+    }
+
     public function test_ips_prune_detaches_old_clicks_and_deletes_orphaned_rows(): void
     {
         config()->set('tracking.ip_retention_days', 90);
@@ -87,6 +100,21 @@ class PruneCommandsTest extends TestCase
         $this->assertSame($freshIp->id, $freshClick->refresh()->ip_address_id);
         $this->assertDatabaseMissing('ip_addresses', ['id' => $oldIp->id]);
         $this->assertDatabaseHas('ip_addresses', ['id' => $freshIp->id]);
+    }
+
+    public function test_prune_dead_aborts_when_another_run_holds_the_lock(): void
+    {
+        $expired = Link::factory()->create(['valid_until' => now()->subDay()]);
+        $lock = Cache::lock('links:prune-dead', 60);
+        $this->assertTrue($lock->get());
+
+        try {
+            $this->artisan('links:prune-dead --expired')->assertFailed();
+        } finally {
+            $lock->release();
+        }
+
+        $this->assertNull($expired->refresh()->deleted_at);
     }
 
     public function test_prune_dead_combines_conditions_with_or(): void
