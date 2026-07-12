@@ -69,6 +69,11 @@ class Condition extends Model
                     ? __('resources/condition.device_types.'.$this->data['device'])
                     : '—',
             ]),
+            'language' => __('resources/condition.describe.language', [
+                'language' => isset($this->data['country']) && $this->data['country'] !== ''
+                    ? ($this->data['language'] ?? '—').'-'.$this->data['country']
+                    : ($this->data['language'] ?? '—'),
+            ]),
             default => __('resources/condition.types.'.$this->type),
         };
     }

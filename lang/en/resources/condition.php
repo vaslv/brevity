@@ -21,6 +21,7 @@ return [
         'query_param' => 'Query parameter',
         'ip_address' => 'IP address',
         'device' => 'Device',
+        'language' => 'Language',
     ],
 
     'describe' => [
@@ -29,6 +30,7 @@ return [
         'query_param' => 'Query :key=:value',
         'ip_address' => 'IP :ip',
         'device' => 'Device :device',
+        'language' => 'Language :language',
     ],
 
     'device_types' => [
@@ -64,6 +66,12 @@ return [
         'device' => [
             'device' => 'Device type',
             'device_help' => 'One user agent can match several types (an iPhone is both iOS and Mobile).',
+        ],
+        'language' => [
+            'language' => 'Language code',
+            'language_help' => 'ISO 639 language subtag (e.g. en). Matches when Accept-Language strongly prefers it (quality ≥ 0.9).',
+            'country' => 'Country code (optional)',
+            'country_help' => 'ISO 3166-1 alpha-2 (e.g. US). When set, requires an exact language-country match.',
         ],
     ],
 
