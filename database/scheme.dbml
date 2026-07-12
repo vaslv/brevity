@@ -108,6 +108,7 @@ Table clicks {
   referrer_id bigint
   user_agent_id bigint
   ip_address_id bigint
+  visited_query text [default: null]
   created_at timestamptz [not null, default: `now()`]
 }
 

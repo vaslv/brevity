@@ -26,17 +26,63 @@ readonly class CallbackDataRenderer
             'click.url' => $click->url->value,
             'click.referrer' => $click->referrer?->value ?? '',
             'click.user_agent' => $click->userAgent?->value ?? '',
+            ...$this->queryVariables($click),
             'link.id' => (string) $click->link_id,
             'link.code' => (string) $click->link->code,
             'link.title' => $click->link->title ?? '',
         ];
     }
 
+    /**
+     * The visit's own query params (GAP-03): {{click.query.<param>}} gives the
+     * partner its sub-ids back in the postback. Scalars only; a missing param
+     * renders as an empty string (handled in renderString).
+     *
+     * @return array<string, string>
+     */
+    private function queryVariables(Click $click): array
+    {
+        if ($click->visited_query === null) {
+            return [];
+        }
+
+        parse_str($click->visited_query, $params);
+
+        $variables = [];
+
+        foreach ($params as $key => $value) {
+            if (is_scalar($value)) {
+                // The stored query string is byte-capped, so a percent-encoded
+                // multibyte sequence may be cut mid-way; after urldecode that
+                // yields invalid UTF-8, which Postgres jsonb (callbacks.data)
+                // rejects. Scrub every value the same way ClickRecorder does.
+                $variables['click.query.'.$key] = str_replace(
+                    "\0",
+                    '',
+                    mb_convert_encoding((string) $value, 'UTF-8', 'UTF-8'),
+                );
+            }
+        }
+
+        return $variables;
+    }
+
     private function renderString(string $template, array $variables): string
     {
+        // Hyphens are allowed for the sake of {{click.query.sub-id}} — query
+        // param names commonly carry them.
         return preg_replace_callback(
-            '/\{\{\s*([a-zA-Z][a-zA-Z0-9_.]*)\s*\}\}/',
-            static fn (array $matches): string => $variables[$matches[1]] ?? $matches[0],
+            '/\{\{\s*([a-zA-Z][a-zA-Z0-9_.-]*)\s*\}\}/',
+            static function (array $matches) use ($variables): string {
+                // Contract (docs/03-api.md §10): an absent query param renders
+                // as an empty string; any other unknown placeholder is left
+                // verbatim (it may be the partner's own syntax).
+                if (str_starts_with($matches[1], 'click.query.')) {
+                    return $variables[$matches[1]] ?? '';
+                }
+
+                return $variables[$matches[1]] ?? $matches[0];
+            },
             $template
         );
     }

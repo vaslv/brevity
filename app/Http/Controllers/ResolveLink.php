@@ -153,6 +153,7 @@ class ResolveLink extends Controller
                 $request->ip(),
                 $request->headers->get('referer'),
                 $request->userAgent(),
+                $request->getQueryString(),
             );
         }
 
