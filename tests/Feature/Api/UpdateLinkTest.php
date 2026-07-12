@@ -2,12 +2,16 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Click;
 use App\Models\Link;
 use App\Models\Rule;
+use App\Models\RuleVariant;
 use App\Models\Service;
 use App\Models\Url;
+use App\Services\Links\LinkUpdater;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 /**
@@ -130,6 +134,38 @@ class UpdateLinkTest extends TestCase
         $this->assertSame(2, $link->rules()->firstOrFail()->variants()->count());
     }
 
+    public function test_patching_rules_detaches_variants_from_existing_clicks(): void
+    {
+        $service = $this->makeService();
+        $link = $this->makeLink($service);
+        $variant = RuleVariant::factory()->create(['rule_id' => $link->rules()->firstOrFail()->id]);
+        $click = Click::factory()->create([
+            'link_id' => $link->id,
+            'service_id' => $service->id,
+            'rule_variant_id' => $variant->id,
+        ]);
+
+        $this->patchLink($service, $link->code, [
+            'rules' => [['url' => 'https://example.com/new']],
+        ])->assertOk();
+
+        // ON DELETE SET NULL: the historical click survives the rewrite with a
+        // detached variant, not an FK error.
+        $this->assertNull($click->refresh()->rule_variant_id);
+    }
+
+    public function test_patching_since_above_stored_until_is_rejected(): void
+    {
+        $service = $this->makeService();
+        $link = $this->makeLink($service, ['valid_until' => now()->addDay()]);
+
+        // Mirror of the valid_until case: the merged-window guard must catch
+        // both directions.
+        $this->patchLink($service, $link->code, [
+            'valid_since' => now()->addMonth()->format('Y-m-d\TH:i:sP'),
+        ])->assertStatus(422)->assertJsonPath('type', 'validation-error');
+    }
+
     public function test_rules_are_replaced_as_a_whole_ordered_set(): void
     {
         $service = $this->makeService();
@@ -149,6 +185,23 @@ class UpdateLinkTest extends TestCase
             [1, 2],
             $link->rules()->orderBy('priority')->pluck('priority')->all(),
         );
+    }
+
+    public function test_the_window_guard_reads_the_row_fresh_under_the_lock(): void
+    {
+        $service = $this->makeService();
+        $link = $this->makeLink($service);
+
+        // A "concurrent" PATCH commits valid_until while our instance still
+        // holds the pre-lock snapshot (null); the guard must check the fresh
+        // row, or two racing PATCHes could commit a crossed window.
+        Link::query()->whereKey($link->id)->update(['valid_until' => now()->addDay()]);
+
+        $this->expectException(ValidationException::class);
+
+        app(LinkUpdater::class)->update($link, [
+            'valid_since' => now()->addMonth()->format('Y-m-d\TH:i:sP'),
+        ]);
     }
 
     private function makeLink(Service $service, array $attributes = []): Link
