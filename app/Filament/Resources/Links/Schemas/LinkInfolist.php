@@ -33,6 +33,17 @@ class LinkInfolist
                 IconEntry::make('forward_query')
                     ->label(__('resources/link.fields.forward_query'))
                     ->boolean(),
+                TextEntry::make('valid_since')
+                    ->label(__('resources/link.fields.valid_since'))
+                    ->dateTime()
+                    ->placeholder('-'),
+                TextEntry::make('valid_until')
+                    ->label(__('resources/link.fields.valid_until'))
+                    ->dateTime()
+                    ->placeholder('-'),
+                TextEntry::make('max_clicks')
+                    ->label(__('resources/link.fields.max_clicks'))
+                    ->placeholder('-'),
                 TextEntry::make('created_at')
                     ->label(__('resources/link.fields.created_at'))
                     ->dateTime(),
