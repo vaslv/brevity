@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Links\Schemas;
 
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -27,6 +28,22 @@ class LinkForm
                     ->preload(),
                 TextInput::make('title')
                     ->label(__('resources/link.fields.title'))
+                    ->columnSpan(2),
+                DateTimePicker::make('valid_since')
+                    ->label(__('resources/link.fields.valid_since'))
+                    ->helperText(__('resources/link.fields.valid_since_help'))
+                    ->seconds(false),
+                DateTimePicker::make('valid_until')
+                    ->label(__('resources/link.fields.valid_until'))
+                    ->helperText(__('resources/link.fields.valid_until_help'))
+                    ->seconds(false)
+                    ->afterOrEqual('valid_since'),
+                TextInput::make('max_clicks')
+                    ->label(__('resources/link.fields.max_clicks'))
+                    ->helperText(__('resources/link.fields.max_clicks_help'))
+                    ->numeric()
+                    ->minValue(1)
+                    ->maxValue(2147483647)
                     ->columnSpan(2),
                 Toggle::make('forward_query')
                     ->label(__('resources/link.fields.forward_query'))

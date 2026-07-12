@@ -9,6 +9,7 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -81,6 +82,17 @@ class LinksTable
             ])
             ->filters([
                 TrashedFilter::make(),
+                // "Alive only": inside the lifecycle window and under the
+                // click limit — the same semantics the resolver enforces.
+                Filter::make('only_alive')
+                    ->label(__('resources/link.filters.only_alive'))
+                    ->toggle()
+                    ->query(fn (Builder $query): Builder => $query
+                        ->where(fn (Builder $q) => $q->whereNull('valid_since')->orWhere('valid_since', '<=', now()))
+                        ->where(fn (Builder $q) => $q->whereNull('valid_until')->orWhere('valid_until', '>=', now()))
+                        ->where(fn (Builder $q) => $q
+                            ->whereNull('max_clicks')
+                            ->orWhereRaw('(select coalesce(sum(count), 0) from link_click_counters where link_id = links.id) < links.max_clicks'))),
             ])
             ->recordActions([
                 ViewAction::make(),

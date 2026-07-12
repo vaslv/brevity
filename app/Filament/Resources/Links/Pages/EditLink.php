@@ -24,7 +24,19 @@ class EditLink extends EditRecord
             ViewAction::make(),
             DeleteAction::make()
                 ->modalHeading(fn (Link $record): string => __('resources/link.delete.modal_heading', ['code' => $record->code]))
-                ->modalDescription(fn (Link $record): string => __('resources/link.delete.modal_description', ['code' => $record->code])),
+                // Deletion threshold (docs/07-plans.md §4): a link with real
+                // traffic gets an explicit warning so a busy link is not
+                // disabled by a mis-click.
+                ->modalDescription(function (Link $record): string {
+                    $description = __('resources/link.delete.modal_description', ['code' => $record->code]);
+                    $clicks = (int) $record->clickCounters()->sum('count');
+
+                    if ($clicks >= (int) config('link.delete_confirm_threshold')) {
+                        $description .= ' '.__('resources/link.delete.threshold_warning', ['count' => $clicks]);
+                    }
+
+                    return $description;
+                }),
             // No ForceDeleteAction: clicks.link_id is restrictOnDelete and
             // clicks/callbacks must outlive a link (see docs/01-architecture.md), so
             // force-deleting a link with clicks would raise a raw FK error.
