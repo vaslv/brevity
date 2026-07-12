@@ -26,6 +26,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/links', [LinkController::class, 'store']);
     });
 
+    Route::middleware(['auth:sanctum', 'abilities:links:read', 'throttle:api-read'])->group(function () {
+        Route::get('/links/{code}', [LinkController::class, 'show']);
+    });
+
     Route::middleware(['auth:sanctum', 'abilities:links:create', 'throttle:api-read'])->group(function () {
         Route::get('/domains', [DomainController::class, 'index']);
         Route::get('/domain-groups', [DomainGroupController::class, 'index']);
