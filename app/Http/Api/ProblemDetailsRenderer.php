@@ -65,7 +65,14 @@ class ProblemDetailsRenderer
                     404 => 'not-found',
                     default => 'http-error',
                 },
-                $e->getMessage() !== '' ? $e->getMessage() : 'HTTP error.',
+                match (true) {
+                    // A framework-produced 404 message may quote internals
+                    // (ModelNotFoundException wrapped into NotFoundHttpException
+                    // carries the model class name) — always a fixed title.
+                    $e->getStatusCode() === 404 => 'The requested resource does not exist.',
+                    $e->getMessage() !== '' => $e->getMessage(),
+                    default => 'HTTP error.',
+                },
                 [],
                 $e->getHeaders(),
             ],
