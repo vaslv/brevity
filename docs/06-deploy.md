@@ -54,6 +54,40 @@ curl -I https://brevity.example.com/up
 docker exec laravel-horizon php artisan horizon:status
 ```
 
+## Незакрытые пост-деплой шаги (этапы развития 1–2)
+
+Выполнить **один раз** при первом деплое веток с этими этапами; после —
+вычеркнуть отсюда. Миграции применяются автоматически (gated `migrate`).
+
+**Этап 1 (боты + счётчики)** — строго в этом порядке, после миграций:
+
+```bash
+docker exec laravel-web php artisan user-agents:detect-bots
+docker exec laravel-web php artisan clicks:rebuild-counters   # только ПОСЛЕ detect-bots
+```
+
+Порядок обязателен: `rebuild-counters` берёт флаг бота из `user_agents`,
+поэтому флаги должны быть проставлены раньше. `rebuild-counters`
+идемпотентен (TRUNCATE + пересчёт), можно повторять.
+
+**Этап 2 (жизненный цикл + API)** — новые env-ключи серверного `.env`
+(значения по умолчанию безопасны, можно не задавать сразу):
+
+- `TRACKING_IGNORED_SOURCES=` — офисные/мониторинговые IP и CIDR через
+  запятую (пусто = трекать всё);
+- `TRACKING_DISABLE_PARAM=` — имя query-параметра отключения трекинга
+  (пусто = выкл);
+- `TRACKING_IP_RETENTION_DAYS=90` — срок хранения сырых IP;
+- `LINK_DELETE_CONFIRM_THRESHOLD=15` — порог предупреждения при удалении.
+
+`ips:prune` включён в scheduler (daily) — при первом прогоне на старой
+базе обезличит все клики старше срока за один заход; специальных
+действий не требует.
+
+Контрактные изменения для интеграторов: метка `is_bot` в каждом колбеке
+(этап 1), пути перешли на `/api/v1` с RFC 7807-ошибками, legacy `/api/*`
+deprecated (этап 2). Уведомить партнёров — см. [03-api.md](./03-api.md).
+
 ## Секреты и конфиги вне git
 
 Серверный `.env`: `DB_PASSWORD`, `APP_KEY`, `HASHIDS_SALT` (независим от
