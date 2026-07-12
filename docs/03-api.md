@@ -51,10 +51,16 @@
 
 ```
 Базовый URL:   https://<технический-хост>
-Пути:          /api/links, /api/domains, /api/domain-groups
-Версионирование: нет
-Формат данных: application/json
+Пути:          /api/v1/links, /api/v1/domains, /api/v1/domain-groups
+Версионирование: v1 в пути
+Формат данных: application/json (ошибки v1 — application/problem+json)
 ```
+
+> **Legacy.** Старые пути без версии (`/api/links`, `/api/domains`,
+> `/api/domain-groups`) продолжают работать с прежним форматом ошибок,
+> но **deprecated**: новая функциональность появляется только под
+> `/api/v1`, ошибки v1 — в формате RFC 7807 (см. §11). Переводите
+> интеграции на `/api/v1`.
 
 Технический хост настраивается через `APP_TECHNICAL_HOST` (по умолчанию
 берётся из хоста `APP_URL`). Узнать актуальное значение для окружения
@@ -87,7 +93,7 @@ Content-Type: application/json
 Минимальный запрос — одно правило с одним целевым URL:
 
 ```bash
-curl -sS -X POST https://brevity.example.com/api/links \
+curl -sS -X POST https://brevity.example.com/api/v1/links \
   -H "Authorization: Bearer <ваш-токен>" \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
@@ -124,7 +130,7 @@ curl -sS -X POST https://brevity.example.com/api/links \
 
 ---
 
-## 5. Создание ссылки: `POST /api/links`
+## 5. Создание ссылки: `POST /api/v1/links`
 
 Создаёт короткую ссылку и её правила перехода за один запрос.
 
@@ -241,14 +247,14 @@ curl -sS -X POST https://brevity.example.com/api/links \
 - `domain` и `domain_strategy` нельзя передавать вместе (`422`).
 - `domain_group` без `domain_strategy` — ошибка (`422`).
 - `domain_group` — это `code` группы (всегда в нижнем регистре, сравнение
-  точное); берите значение из `GET /api/domain-groups`.
+  точное); берите значение из `GET /api/v1/domain-groups`.
 - Статистика для `round_robin`/`coldest` — общая по всем сервисам.
 - Если в пуле нет доменов (нет вообще или группа пуста) — `422`.
 
 Домен по кругу из группы `campaigns`:
 
 ```bash
-curl -sS -X POST https://brevity.example.com/api/links \
+curl -sS -X POST https://brevity.example.com/api/v1/links \
   -H "Authorization: Bearer <ваш-токен>" \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
@@ -269,7 +275,7 @@ curl -sS -X POST https://brevity.example.com/api/links \
 через API. Оба эндпоинта — только чтение, требуют тот же токен со
 способностью `links:create` и отдают данные в обёртке `data`.
 
-### `GET /api/domains` — список доменов
+### `GET /api/v1/domains` — список доменов
 
 Без параметров возвращает **все** домены. С параметром `group` (код группы)
 — только домены, входящие в указанную группу.
@@ -279,7 +285,7 @@ curl -sS -X POST https://brevity.example.com/api/links \
 | `group` | string\|null | нет | Код группы. Должен существовать (иначе `422`). Без него — все домены. |
 
 ```bash
-curl -sS https://brevity.example.com/api/domains \
+curl -sS https://brevity.example.com/api/v1/domains \
   -H "Authorization: Bearer <ваш-токен>" \
   -H "Accept: application/json"
 ```
@@ -298,7 +304,7 @@ curl -sS https://brevity.example.com/api/domains \
 Только домены из группы `campaigns`:
 
 ```bash
-curl -sS "https://brevity.example.com/api/domains?group=campaigns" \
+curl -sS "https://brevity.example.com/api/v1/domains?group=campaigns" \
   -H "Authorization: Bearer <ваш-токен>" \
   -H "Accept: application/json"
 ```
@@ -306,13 +312,13 @@ curl -sS "https://brevity.example.com/api/domains?group=campaigns" \
 Поля: `domain` — хост, `url` — он же в виде `https://`-адреса, `is_default`
 — используется ли домен по умолчанию. Сортировка — по `domain`.
 
-### `GET /api/domain-groups` — список групп
+### `GET /api/v1/domain-groups` — список групп
 
 Возвращает все группы доменов с числом доменов в каждой. Значение `code`
 используйте как `group` в запросе доменов.
 
 ```bash
-curl -sS https://brevity.example.com/api/domain-groups \
+curl -sS https://brevity.example.com/api/v1/domain-groups \
   -H "Authorization: Bearer <ваш-токен>" \
   -H "Accept: application/json"
 ```
@@ -421,27 +427,42 @@ curl -sS https://brevity.example.com/api/domain-groups \
 
 ## 11. Ошибки
 
-| Код | Когда | Тело |
-|---|---|---|
-| `401` | Нет токена или он невалиден | `{ "message": "Unauthenticated." }` |
-| `403` | У токена нет способности `links:create` | `{ "message": "Invalid ability provided." }` |
-| `404` | Запрос к API не на техническом хосте | стандартная страница 404 |
-| `422` | Ошибка валидации | `{ "message": "...", "errors": { "<поле>": ["..."] } }` |
-| `429` | Превышен лимит запросов | — |
+Под `/api/v1` каждая ошибка — JSON в формате RFC 7807
+(`Content-Type: application/problem+json`) со **стабильным машинным
+кодом** в поле `type`. Программируйте реакцию на `type`, а не на тексты
+`title`/`detail` — тексты могут меняться.
 
-`422` возвращает `message` (текст первой ошибки, не фиксированная строка)
-и `errors` — карту «поле → список сообщений»:
+| HTTP | `type` | Когда |
+|---|---|---|
+| `401` | `unauthenticated` | Нет токена или он невалиден |
+| `403` | `missing-ability` | У токена нет нужной способности |
+| `403` | `forbidden` | Действие запрещено по иной причине |
+| `404` | `not-found` | Ресурс не существует (или недоступен вашему токену) |
+| `422` | `validation-error` | Ошибка валидации; поле `errors` — карта «поле → сообщения[]» |
+| `429` | `too-many-requests` | Превышен лимит запросов (см. §12) |
+| прочие `4xx` | `http-error` | Другие HTTP-ошибки (битый JSON, неверный метод и т.п.) |
+| `5xx` | `server-error` | Внутренняя ошибка (без деталей) |
+
+Пример `422`:
 
 ```json
 {
-  "message": "The rules field is required.",
+  "type": "validation-error",
+  "title": "The request failed validation.",
+  "status": 422,
+  "detail": "The rules field is required.",
   "errors": {
-    "rules.0.condition.data.before": [
-      "The rules.0.condition.data.before field is required."
-    ]
+    "rules": ["The rules field is required."]
   }
 }
 ```
+
+Запрос к API не на техническом хосте отклоняется с `404` (см. §2); для
+путей `/api/v1/*` — в том же формате `problem+json` (`not-found`).
+
+**Legacy (`/api/*` без версии)** сохраняет прежний формат:
+`401/403` → `{ "message": "..." }`, `422` →
+`{ "message": "<первая ошибка>", "errors": { "<поле>": ["..."] } }`.
 
 ---
 
@@ -449,7 +470,7 @@ curl -sS https://brevity.example.com/api/domain-groups \
 
 Создание ссылок ограничено **120 запросами в минуту на сервис** (счётчик
 по сервису-владельцу токена, а не по IP). Чтение справочника
-(`/api/domains`, `/api/domain-groups`) лимитируется **отдельным** счётчиком
+(`/api/v1/domains`, `/api/v1/domain-groups`) лимитируется **отдельным** счётчиком
 — тоже 120 запросов в минуту на сервис, поэтому чтение не расходует бюджет
 создания ссылок. Каждый ответ несёт заголовки:
 
@@ -469,7 +490,7 @@ X-RateLimit-Remaining: 119
 ### curl — полный запрос
 
 ```bash
-curl -sS -X POST https://brevity.example.com/api/links \
+curl -sS -X POST https://brevity.example.com/api/v1/links \
   -H "Authorization: Bearer <ваш-токен>" \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
@@ -502,7 +523,7 @@ use Illuminate\Support\Facades\Http;
 
 $response = Http::withToken($token)
     ->acceptJson()
-    ->post('https://brevity.example.com/api/links', [
+    ->post('https://brevity.example.com/api/v1/links', [
         'domain' => 'short.example.com',
         'title' => 'Кампания весна-2026',
         'rules' => [
@@ -518,7 +539,7 @@ if ($response->created()) {
 ### JavaScript (fetch)
 
 ```js
-const res = await fetch("https://brevity.example.com/api/links", {
+const res = await fetch("https://brevity.example.com/api/v1/links", {
   method: "POST",
   headers: {
     Authorization: `Bearer ${token}`,
