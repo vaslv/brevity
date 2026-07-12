@@ -39,6 +39,9 @@ return new class extends Migration
             $table->foreignId('condition_id')->constrained('conditions')->restrictOnDelete();
 
             $table->unique(['rule_id', 'condition_id']);
+            // The unique index leads with rule_id and cannot serve the
+            // condition-side restrict check on a conditions delete.
+            $table->index('condition_id');
         });
 
         DB::statement(<<<'SQL'
