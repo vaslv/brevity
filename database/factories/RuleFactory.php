@@ -27,7 +27,6 @@ class RuleFactory extends Factory
         return [
             'link_id' => Link::factory(),
             'url_id' => Url::factory(),
-            'condition_id' => null,
             'transition_mode' => null,
             'priority' => 1,
         ];
@@ -44,12 +43,14 @@ class RuleFactory extends Factory
     }
 
     /**
-     * Attach a condition: an existing model, a factory, or a fresh default one.
+     * Attach a condition via the pivot (RUL-01): an existing model, a factory,
+     * or a fresh default one. Call more than once to build an AND-set.
      */
     public function withCondition(Condition|Factory|null $condition = null): static
     {
-        return $this->state([
-            'condition_id' => $condition instanceof Condition ? $condition->id : ($condition ?? Condition::factory()),
-        ]);
+        return $this->hasAttached(
+            $condition instanceof Condition ? $condition : ($condition ?? Condition::factory()),
+            relationship: 'conditions',
+        );
     }
 }

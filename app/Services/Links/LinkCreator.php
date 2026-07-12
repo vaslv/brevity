@@ -31,7 +31,7 @@ class LinkCreator
      *     domain_group?: ?string,
      *     rules: array<int, array{
      *         url: string,
-     *         condition?: ?array{type: string, data?: array<string, mixed>},
+     *         conditions?: array<int, array{type: string, data?: array<string, mixed>}>,
      *         transition_mode?: ?string,
      *     }>,
      *  }  $data
@@ -52,7 +52,7 @@ class LinkCreator
 
             $this->ruleSetWriter->replace($link, $data['rules']);
 
-            return $link->load('rules.condition', 'rules.url');
+            return $link->load('rules.conditions', 'rules.url');
         });
     }
 

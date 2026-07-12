@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use App\Models\Relations\BelongsToCondition;
 use App\Models\Relations\BelongsToLink;
+use App\Models\Relations\BelongsToManyConditions;
 use App\Models\Relations\BelongsToUrl;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -13,18 +14,17 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $link_id
  * @property int $url_id
- * @property int|null $condition_id
  * @property string|null $transition_mode
  * @property int $priority
  * @property Carbon $created_at
- * @property-read Condition|null $condition
+ * @property-read Collection<int, Condition> $conditions
+ * @property-read int|null $conditions_count
  * @property-read Link $link
  * @property-read Url $url
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule whereConditionId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rule whereLinkId($value)
@@ -36,8 +36,8 @@ use Illuminate\Support\Carbon;
  */
 class Rule extends Model
 {
-    use BelongsToCondition;
     use BelongsToLink;
+    use BelongsToManyConditions;
     use BelongsToUrl;
     use HasFactory;
 
@@ -46,7 +46,6 @@ class Rule extends Model
     protected $fillable = [
         'link_id',
         'url_id',
-        'condition_id',
         'transition_mode',
         'priority',
     ];

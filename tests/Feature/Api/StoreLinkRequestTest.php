@@ -112,7 +112,7 @@ class StoreLinkRequestTest extends TestCase
 
         $response
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['rules.0.condition.data.before']);
+            ->assertJsonValidationErrors(['rules.0.conditions.0.data.before']);
     }
 
     public function test_it_rejects_missing_before_in_time_before_condition(): void
@@ -131,7 +131,7 @@ class StoreLinkRequestTest extends TestCase
 
         $response
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['rules.0.condition.data.before']);
+            ->assertJsonValidationErrors(['rules.0.conditions.0.data.before']);
     }
 
     public function test_it_rejects_more_than_the_maximum_number_of_rules(): void

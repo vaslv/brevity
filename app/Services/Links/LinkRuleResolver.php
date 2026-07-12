@@ -17,15 +17,26 @@ readonly class LinkRuleResolver
     {
         /** @var Rule[] $rules */
         $rules = $link->rules()
-            ->with('url', 'condition')
+            ->with('url', 'conditions')
             ->get();
 
         foreach ($rules as $rule) {
-            if ($rule->condition === null) {
+            if ($this->ruleMatches($rule, $context, $link)) {
                 return $rule;
             }
+        }
 
-            $condition = $rule->condition;
+        return null;
+    }
+
+    /**
+     * AND semantics (RUL-01): a rule wins only when EVERY one of its conditions
+     * matches; a rule with no conditions is unconditional. An unknown condition
+     * type fails closed — the whole rule is skipped, never silently matched.
+     */
+    private function ruleMatches(Rule $rule, ConditionContext $context, Link $link): bool
+    {
+        foreach ($rule->conditions as $condition) {
             $handler = $this->registry->getHandlerFor($condition);
 
             if (! $handler) {
@@ -33,14 +44,14 @@ readonly class LinkRuleResolver
                     sprintf('Unknown condition type "%s" on link #%d', $condition->type, $link->id)
                 ));
 
-                continue;
+                return false;
             }
 
-            if ($handler->matches($condition, $context)) {
-                return $rule;
+            if (! $handler->matches($condition, $context)) {
+                return false;
             }
         }
 
-        return null;
+        return true;
     }
 }

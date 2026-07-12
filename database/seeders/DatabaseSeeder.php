@@ -280,7 +280,6 @@ class DatabaseSeeder extends Seeder
             Rule::create([
                 'link_id' => $link->id,
                 'url_id' => $primaryUrl->id,
-                'condition_id' => null,
                 'transition_mode' => $modes[$index % 3],
                 'priority' => 10,
             ]);
@@ -289,13 +288,13 @@ class DatabaseSeeder extends Seeder
                 $fallback = $urls[($index + 1) % count($urls)];
                 $condition = $conditions[['past', 'soon', 'far'][$index % 3]];
 
-                Rule::create([
+                $conditionalRule = Rule::create([
                     'link_id' => $link->id,
                     'url_id' => $fallback->id,
-                    'condition_id' => $condition->id,
                     'transition_mode' => 'direct',
                     'priority' => 1,
                 ]);
+                $conditionalRule->conditions()->attach($condition->id);
             }
         }
     }

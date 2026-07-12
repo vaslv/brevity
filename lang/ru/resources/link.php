@@ -49,8 +49,7 @@ return [
         'fields' => [
             'url_id' => 'URL',
             'url' => 'URL',
-            'condition_id' => 'Условие',
-            'condition' => 'Условие',
+            'conditions' => 'Условия (должны совпасть все)',
             'transition_mode' => 'Режим перехода',
             'transition_mode_help' => 'Как сервер отвечает при срабатывании правила. По умолчанию — Прямой (302 редирект).',
             'priority' => 'Приоритет',
