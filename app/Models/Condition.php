@@ -57,6 +57,10 @@ class Condition extends Model
                     ? Carbon::parse($this->data['after'])->isoFormat('D MMM YYYY, HH:mm')
                     : '—',
             ]),
+            'query_param' => __('resources/condition.describe.query_param', [
+                'key' => $this->data['key'] ?? '—',
+                'value' => $this->data['value'] ?? '—',
+            ]),
             default => __('resources/condition.types.'.$this->type),
         };
     }

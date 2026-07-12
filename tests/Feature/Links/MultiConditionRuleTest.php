@@ -118,6 +118,24 @@ class MultiConditionRuleTest extends TestCase
         $this->assertSame(1, $rule->conditions()->count());
     }
 
+    public function test_query_param_condition_routes_by_the_visit_query(): void
+    {
+        $code = $this->linkWithRules([
+            [
+                'url' => 'https://example.com/partner',
+                'conditions' => [
+                    Condition::query()->create(['type' => 'query_param', 'data' => ['key' => 'partner', 'value' => 'acme']]),
+                ],
+            ],
+            ['url' => 'https://example.com/default', 'conditions' => []],
+        ]);
+
+        $this->get(static::SHORT_LINK_HOST.'/'.$code.'?partner=acme')
+            ->assertRedirect('https://example.com/partner');
+        $this->get(static::SHORT_LINK_HOST.'/'.$code.'?partner=other')
+            ->assertRedirect('https://example.com/default');
+    }
+
     private function createLink(array $payload): TestResponse
     {
         $service = Service::query()->create(['name' => 'MC Service '.fake()->unique()->word()]);

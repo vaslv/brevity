@@ -18,11 +18,13 @@ return [
     'types' => [
         'time_before' => 'До указанного времени',
         'after_date' => 'После указанной даты',
+        'query_param' => 'Query-параметр',
     ],
 
     'describe' => [
         'time_before' => 'До :datetime',
         'after_date' => 'После :datetime',
+        'query_param' => 'Query :key=:value',
     ],
 
     'data_fields' => [
@@ -33,6 +35,11 @@ return [
         'after_date' => [
             'after' => 'Срабатывать, когда текущее время не раньше',
             'after_help' => 'Правило срабатывает, когда текущее время достигло указанного (включительно).',
+        ],
+        'query_param' => [
+            'key' => 'Имя query-параметра',
+            'key_help' => 'Правило срабатывает, когда в URL визита есть этот параметр с точным значением ниже.',
+            'value' => 'Ожидаемое значение',
         ],
     ],
 

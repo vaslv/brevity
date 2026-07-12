@@ -6,6 +6,7 @@ use App\Services\Links\Conditions\ConditionRegistry;
 use Carbon\CarbonImmutable;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Schema;
 use Filament\Support\Facades\FilamentTimezone;
@@ -56,6 +57,17 @@ class ConditionForm
                                         ? CarbonImmutable::parse($state, FilamentTimezone::get())->format('Y-m-d\TH:i:sP')
                                         : null,
                                 ),
+                        ],
+                        'query_param' => [
+                            TextInput::make('data.key')
+                                ->label(__('resources/condition.data_fields.query_param.key'))
+                                ->helperText(__('resources/condition.data_fields.query_param.key_help'))
+                                ->required()
+                                ->maxLength(255),
+                            TextInput::make('data.value')
+                                ->label(__('resources/condition.data_fields.query_param.value'))
+                                ->required()
+                                ->maxLength(255),
                         ],
                         default => [],
                     }),
