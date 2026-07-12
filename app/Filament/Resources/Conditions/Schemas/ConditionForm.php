@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Conditions\Schemas;
 
 use App\Services\Links\Conditions\ConditionRegistry;
+use App\Services\Links\Conditions\DeviceConditionHandler;
 use App\Services\Links\Conditions\IpAddressConditionHandler;
 use Carbon\CarbonImmutable;
 use Closure;
@@ -70,6 +71,15 @@ class ConditionForm
                                 ->label(__('resources/condition.data_fields.query_param.value'))
                                 ->required()
                                 ->maxLength(255),
+                        ],
+                        'device' => [
+                            Select::make('data.device')
+                                ->label(__('resources/condition.data_fields.device.device'))
+                                ->helperText(__('resources/condition.data_fields.device.device_help'))
+                                ->options(collect(DeviceConditionHandler::TYPES)
+                                    ->mapWithKeys(fn (string $t) => [$t => __('resources/condition.device_types.'.$t)])
+                                    ->all())
+                                ->required(),
                         ],
                         'ip_address' => [
                             TextInput::make('data.ip')

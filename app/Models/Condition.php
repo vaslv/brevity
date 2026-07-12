@@ -64,6 +64,11 @@ class Condition extends Model
             'ip_address' => __('resources/condition.describe.ip_address', [
                 'ip' => $this->data['ip'] ?? '—',
             ]),
+            'device' => __('resources/condition.describe.device', [
+                'device' => isset($this->data['device'])
+                    ? __('resources/condition.device_types.'.$this->data['device'])
+                    : '—',
+            ]),
             default => __('resources/condition.types.'.$this->type),
         };
     }

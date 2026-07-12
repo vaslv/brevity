@@ -20,6 +20,7 @@ return [
         'after_date' => 'After date',
         'query_param' => 'Query parameter',
         'ip_address' => 'IP address',
+        'device' => 'Device',
     ],
 
     'describe' => [
@@ -27,6 +28,18 @@ return [
         'after_date' => 'After :datetime',
         'query_param' => 'Query :key=:value',
         'ip_address' => 'IP :ip',
+        'device' => 'Device :device',
+    ],
+
+    'device_types' => [
+        'android' => 'Android',
+        'ios' => 'iOS',
+        'mobile' => 'Mobile',
+        'windows' => 'Windows',
+        'macos' => 'macOS',
+        'linux' => 'Linux',
+        'chromeos' => 'ChromeOS',
+        'desktop' => 'Desktop',
     ],
 
     'data_fields' => [
@@ -47,6 +60,10 @@ return [
             'ip' => 'IP address, CIDR or wildcard',
             'ip_help' => 'Exact IP (1.2.3.4), CIDR range (10.0.0.0/24) or IPv4 wildcard (11.22.*.*).',
             'invalid' => 'Enter an exact IP, a CIDR range, or an IPv4 wildcard.',
+        ],
+        'device' => [
+            'device' => 'Device type',
+            'device_help' => 'One user agent can match several types (an iPhone is both iOS and Mobile).',
         ],
     ],
 
