@@ -52,6 +52,11 @@ class Condition extends Model
                     ? Carbon::parse($this->data['before'])->isoFormat('D MMM YYYY, HH:mm')
                     : '—',
             ]),
+            'after_date' => __('resources/condition.describe.after_date', [
+                'datetime' => isset($this->data['after'])
+                    ? Carbon::parse($this->data['after'])->isoFormat('D MMM YYYY, HH:mm')
+                    : '—',
+            ]),
             default => __('resources/condition.types.'.$this->type),
         };
     }

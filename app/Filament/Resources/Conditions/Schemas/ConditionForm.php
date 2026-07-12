@@ -45,6 +45,18 @@ class ConditionForm
                                         : null,
                                 ),
                         ],
+                        'after_date' => [
+                            DateTimePicker::make('data.after')
+                                ->label(__('resources/condition.data_fields.after_date.after'))
+                                ->helperText(__('resources/condition.data_fields.after_date.after_help'))
+                                ->seconds(true)
+                                ->required()
+                                ->dehydrateStateUsing(
+                                    fn ($state) => $state
+                                        ? CarbonImmutable::parse($state, FilamentTimezone::get())->format('Y-m-d\TH:i:sP')
+                                        : null,
+                                ),
+                        ],
                         default => [],
                     }),
             ]);
