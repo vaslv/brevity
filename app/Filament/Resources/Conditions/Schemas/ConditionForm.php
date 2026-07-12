@@ -81,6 +81,17 @@ class ConditionForm
                                     ->all())
                                 ->required(),
                         ],
+                        'language' => [
+                            TextInput::make('data.language')
+                                ->label(__('resources/condition.data_fields.language.language'))
+                                ->helperText(__('resources/condition.data_fields.language.language_help'))
+                                ->required()
+                                ->rule('regex:/^[a-zA-Z]{2,3}$/'),
+                            TextInput::make('data.country')
+                                ->label(__('resources/condition.data_fields.language.country'))
+                                ->helperText(__('resources/condition.data_fields.language.country_help'))
+                                ->rule('regex:/^[a-zA-Z]{2}$/'),
+                        ],
                         'ip_address' => [
                             TextInput::make('data.ip')
                                 ->label(__('resources/condition.data_fields.ip_address.ip'))

@@ -21,6 +21,7 @@ return [
         'query_param' => 'Query-параметр',
         'ip_address' => 'IP-адрес',
         'device' => 'Устройство',
+        'language' => 'Язык',
     ],
 
     'describe' => [
@@ -29,6 +30,7 @@ return [
         'query_param' => 'Query :key=:value',
         'ip_address' => 'IP :ip',
         'device' => 'Устройство :device',
+        'language' => 'Язык :language',
     ],
 
     'device_types' => [
@@ -64,6 +66,12 @@ return [
         'device' => [
             'device' => 'Тип устройства',
             'device_help' => 'Один User-Agent может подойти под несколько типов (iPhone — это и iOS, и Мобильные).',
+        ],
+        'language' => [
+            'language' => 'Код языка',
+            'language_help' => 'ISO 639 (например, en). Срабатывает, когда Accept-Language уверенно его предпочитает (качество ≥ 0.9).',
+            'country' => 'Код страны (опционально)',
+            'country_help' => 'ISO 3166-1 alpha-2 (например, US). Если задан, требуется точное совпадение язык-страна.',
         ],
     ],
 

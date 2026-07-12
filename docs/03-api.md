@@ -258,6 +258,14 @@ curl -sS -X PATCH https://brevity.example.com/api/v1/links/AbC12345 \
 Типы `device`: `android`, `ios`, `mobile`, `windows`, `macos`,
 `linux`, `chromeos`, `desktop`.
 
+| `type` | Назначение | `data` |
+|---|---|---|
+| `language` | Срабатывает, когда `Accept-Language` уверенно (качество ≥ 0.9) предпочитает язык; опционально с точной страной | `{ "language": "en", "country": "US" }` |
+
+`language` — ISO 639 (2–3 буквы); `country` (опц.) — ISO 3166-1
+alpha-2. Без `country` матч по языку; с `country` — точное совпадение
+`язык-страна`. Пустой заголовок или `*` не матчатся.
+
 Формат `before`/`after` — `Y-m-d\TH:i:sP`, например
 `2026-03-05T10:00:00+00:00`. Поле обязательно для своего типа. Пара
 `after_date` + `time_before` в одном правиле (RUL-01) задаёт окно

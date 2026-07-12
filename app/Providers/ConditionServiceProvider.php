@@ -6,6 +6,7 @@ use App\Services\Links\Conditions\AfterDateConditionHandler;
 use App\Services\Links\Conditions\ConditionRegistry;
 use App\Services\Links\Conditions\DeviceConditionHandler;
 use App\Services\Links\Conditions\IpAddressConditionHandler;
+use App\Services\Links\Conditions\LanguageConditionHandler;
 use App\Services\Links\Conditions\QueryParamConditionHandler;
 use App\Services\Links\Conditions\TimeBeforeConditionHandler;
 use Illuminate\Support\ServiceProvider;
@@ -20,6 +21,7 @@ class ConditionServiceProvider extends ServiceProvider
             QueryParamConditionHandler::class,
             IpAddressConditionHandler::class,
             DeviceConditionHandler::class,
+            LanguageConditionHandler::class,
         ], 'condition.handler');
 
         $this->app->singleton(ConditionRegistry::class, function ($app) {
