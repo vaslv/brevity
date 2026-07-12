@@ -16,3 +16,18 @@ Route::middleware(['auth:sanctum', 'abilities:links:create', 'throttle:api-read'
     Route::get('/domains', [DomainController::class, 'index']);
     Route::get('/domain-groups', [DomainGroupController::class, 'index']);
 });
+
+// Versioned API (docs/08-decisions.md, 2026-07-12): RFC 7807 errors and all
+// new functionality live under /api/v1 (same controllers as legacy). The
+// unversioned routes above are frozen legacy — old error format, old feature
+// set, deprecated in docs/03-api.md — until clients migrate.
+Route::prefix('v1')->group(function () {
+    Route::middleware(['auth:sanctum', 'abilities:links:create', 'throttle:api-links'])->group(function () {
+        Route::post('/links', [LinkController::class, 'store']);
+    });
+
+    Route::middleware(['auth:sanctum', 'abilities:links:create', 'throttle:api-read'])->group(function () {
+        Route::get('/domains', [DomainController::class, 'index']);
+        Route::get('/domain-groups', [DomainGroupController::class, 'index']);
+    });
+});

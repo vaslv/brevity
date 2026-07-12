@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Api\ProblemDetailsRenderer;
 use App\Http\Middleware\EnsureTechnicalHost;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 use Sentry\Laravel\Integration;
@@ -41,4 +43,15 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
+
+        // /api/v1 speaks RFC 7807 (application/problem+json) with stable
+        // machine codes; legacy unversioned /api/* keeps Laravel's default
+        // JSON error shape until clients migrate (docs/08-decisions.md).
+        $exceptions->render(function (Throwable $e, Request $request) {
+            if ($request->is('api/v1', 'api/v1/*')) {
+                return ProblemDetailsRenderer::render($e);
+            }
+
+            return null;
+        });
     })->create();
