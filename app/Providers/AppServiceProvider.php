@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Services\Links\Clicks\BotDetector;
-use App\Services\Links\Clicks\CrawlerDetectBotDetector;
+use App\Services\Links\Clicks\DeviceDetectorBotDetector;
 use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -76,6 +76,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(BotDetector::class, CrawlerDetectBotDetector::class);
+        $this->app->singleton(BotDetector::class, DeviceDetectorBotDetector::class);
     }
 }

@@ -3,15 +3,15 @@
 namespace Tests\Unit\Clicks;
 
 use App\Services\Links\Clicks\BotDetector;
-use App\Services\Links\Clicks\CrawlerDetectBotDetector;
+use App\Services\Links\Clicks\DeviceDetectorBotDetector;
 use Tests\TestCase;
 
 /**
  * Stage 1 of docs/07-plans.md — bot detection behind our own interface.
  *
- * The concrete detector wraps jaybizzle/crawler-detect; the interface is the
- * single seam for swapping the library (planned: matomo/device-detector in
- * stage 3). A missing or blank user agent is never a bot.
+ * The concrete detector wraps matomo/device-detector (migrated from
+ * crawler-detect in stage 3); the interface is the single seam for swapping
+ * the library. A missing or blank user agent is never a bot.
  */
 class BotDetectorTest extends TestCase
 {
@@ -19,6 +19,15 @@ class BotDetectorTest extends TestCase
     {
         $this->assertTrue($this->detector()->isBot(
             'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+        ));
+    }
+
+    public function test_a_less_common_crawler_is_detected(): void
+    {
+        // device-detector's bot list is broader than crawler-detect's — this
+        // monitoring bot exercises the wider coverage after the migration.
+        $this->assertTrue($this->detector()->isBot(
+            'Mozilla/5.0 (compatible; UptimeRobot/2.0; http://www.uptimerobot.com/)'
         ));
     }
 
@@ -36,10 +45,10 @@ class BotDetectorTest extends TestCase
         ));
     }
 
-    public function test_container_resolves_the_interface_to_the_crawler_detect_wrapper(): void
+    public function test_container_resolves_the_interface_to_the_device_detector_wrapper(): void
     {
         $this->assertInstanceOf(
-            CrawlerDetectBotDetector::class,
+            DeviceDetectorBotDetector::class,
             $this->app->make(BotDetector::class),
         );
     }
