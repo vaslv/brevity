@@ -36,8 +36,14 @@ readonly class CallbackDataRenderer
 
     /**
      * The visit's own query params (GAP-03): {{click.query.<param>}} gives the
-     * partner its sub-ids back in the postback. Scalars only; a missing param
-     * renders as an empty string (handled in renderString).
+     * partner its sub-ids back in the postback. A missing param renders as an
+     * empty string (handled in renderString).
+     *
+     * Split by hand instead of parse_str: PHP variable-name rules make
+     * parse_str mangle `.`, space and `[` in param names into `_`, so a
+     * partner's `{{click.query.sub.id}}` could never match its stored
+     * `sub_id` key and would silently post '' forever. Names stay literal
+     * here; a repeated name keeps the last value (as parse_str did).
      *
      * @return array<string, string>
      */
@@ -47,21 +53,14 @@ readonly class CallbackDataRenderer
             return [];
         }
 
-        parse_str($click->visited_query, $params);
-
         $variables = [];
 
-        foreach ($params as $key => $value) {
-            if (is_scalar($value)) {
-                // The stored query string is byte-capped, so a percent-encoded
-                // multibyte sequence may be cut mid-way; after urldecode that
-                // yields invalid UTF-8, which Postgres jsonb (callbacks.data)
-                // rejects. Scrub every value the same way ClickRecorder does.
-                $variables['click.query.'.$key] = str_replace(
-                    "\0",
-                    '',
-                    mb_convert_encoding((string) $value, 'UTF-8', 'UTF-8'),
-                );
+        foreach (explode('&', $click->visited_query) as $pair) {
+            [$key, $value] = array_pad(explode('=', $pair, 2), 2, '');
+            $key = $this->scrub(urldecode($key));
+
+            if ($key !== '') {
+                $variables['click.query.'.$key] = $this->scrub(urldecode($value));
             }
         }
 
@@ -99,6 +98,17 @@ readonly class CallbackDataRenderer
         }
 
         return $value;
+    }
+
+    /**
+     * The stored query string is byte-capped, so a percent-encoded multibyte
+     * sequence may be cut mid-way; after urldecode that yields invalid UTF-8,
+     * which Postgres jsonb (callbacks.data) rejects. Scrub keys and values the
+     * same way ClickRecorder does.
+     */
+    private function scrub(string $value): string
+    {
+        return str_replace("\0", '', mb_convert_encoding($value, 'UTF-8', 'UTF-8'));
     }
 
     /**

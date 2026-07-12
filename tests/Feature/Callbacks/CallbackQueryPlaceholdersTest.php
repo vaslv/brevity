@@ -33,6 +33,22 @@ class CallbackQueryPlaceholdersTest extends TestCase
         $this->assertSame('', Callback::query()->firstOrFail()->data['sub']);
     }
 
+    public function test_an_oversized_visit_query_is_truncated_not_dropped(): void
+    {
+        $code = $this->setupLink(['x' => '{{click.id}}']);
+
+        // Over the 2000-byte cap, ending in a percent-encoded multibyte char
+        // that the byte cut may split: the click must persist with a truncated
+        // query, and the callback must still be created.
+        $this->get(static::SHORT_LINK_HOST.'/'.$code.'?q='.str_repeat('a', 2500).'%D0%AF')
+            ->assertRedirect();
+
+        $stored = (string) Click::query()->firstOrFail()->visited_query;
+        $this->assertLessThanOrEqual(2000, strlen($stored));
+        $this->assertStringStartsWith('q=aaa', $stored);
+        $this->assertNotNull(Callback::query()->first());
+    }
+
     public function test_array_params_are_skipped_safely(): void
     {
         $code = $this->setupLink(['sub' => '{{click.query.tag}}']);
@@ -63,6 +79,17 @@ class CallbackQueryPlaceholdersTest extends TestCase
         $this->get(static::SHORT_LINK_HOST.'/'.$code.'?a[b][c][d]=x')->assertRedirect();
 
         $this->assertSame('', Callback::query()->firstOrFail()->data['sub']);
+    }
+
+    public function test_dotted_param_names_stay_literal(): void
+    {
+        $code = $this->setupLink(['sub' => '{{click.query.sub.id}}']);
+
+        $this->get(static::SHORT_LINK_HOST.'/'.$code.'?sub.id=abc')->assertRedirect();
+
+        // parse_str would have mangled the stored key to `sub_id`, silently
+        // posting '' forever; names must stay literal.
+        $this->assertSame('abc', Callback::query()->firstOrFail()->data['sub']);
     }
 
     public function test_hyphenated_param_names_are_supported(): void
