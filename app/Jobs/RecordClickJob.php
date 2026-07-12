@@ -6,6 +6,7 @@ use App\Models\Link;
 use App\Services\Links\Callbacks\CallbackDispatcher;
 use App\Services\Links\Clicks\ClickRecorder;
 use App\Services\Links\Clicks\IgnoredSourceMatcher;
+use App\Services\Links\Geo\GeoDatabaseUpdater;
 use App\Services\Links\Geo\GeoLocator;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -48,6 +49,7 @@ class RecordClickJob implements ShouldQueue
         CallbackDispatcher $callbackDispatcher,
         IgnoredSourceMatcher $ignoredSourceMatcher,
         GeoLocator $geoLocator,
+        GeoDatabaseUpdater $geoUpdater,
     ): void {
         // Traffic hygiene: a visit from an ignored source (office IP,
         // monitoring) records no click and therefore sends no callback.
@@ -68,5 +70,9 @@ class RecordClickJob implements ShouldQueue
         $click = $clickRecorder->record($link, $this->clickUuid, $this->urlId, $this->ip, $this->referrer, $this->userAgent, $this->visitedQuery, $this->ruleVariantId, $geo);
 
         $callbackDispatcher->dispatchForClick($click);
+
+        // Keep the geo database fresh "by traffic": a real click occasionally
+        // triggers an async age check (throttled, never blocks, never throws).
+        $geoUpdater->pingFromTraffic();
     }
 }
