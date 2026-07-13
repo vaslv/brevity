@@ -39,6 +39,15 @@ class LocateClicks extends Command
 
     public function handle(GeoLocator $geoLocator, GeoLocationResolver $resolver): int
     {
+        // Without a database every lookup returns null, so a full keyset scan
+        // of a huge table would do nothing but burn IO. Bail early — run
+        // geo:download-db first. Not an error, just nothing to do.
+        if (! is_file((string) config('geo.database_path'))) {
+            $this->warn('Geo database not found; run geo:download-db first. Nothing to backfill.');
+
+            return self::SUCCESS;
+        }
+
         $lock = Cache::lock('geo:locate-clicks', self::LOCK_SECONDS);
 
         if (! $lock->get()) {
