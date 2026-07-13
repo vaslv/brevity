@@ -229,6 +229,27 @@ return [
             'timeout' => 60,
             'nice' => 0,
         ],
+
+        // Dedicated pool for the geo database auto-update. The download is a rare
+        // (hourly at most), long-running IO job that must not sit on the
+        // click-recording pool, and its worker timeout (330) must sit above the
+        // job's own timeout (300) and below the queue retry_after (360): a
+        // download still in flight when a deploy terminates Horizon then finishes
+        // within the shutdown grace instead of being SIGKILLed at supervisor-1's
+        // 60s (which would skip the finally that releases the download lock).
+        'supervisor-geo' => [
+            'connection' => 'redis',
+            'queue' => ['geo'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 128,
+            'tries' => 1,
+            'timeout' => 330,
+            'nice' => 0,
+        ],
     ],
 
     'environments' => [
@@ -243,6 +264,11 @@ return [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
+            'supervisor-geo' => [
+                'maxProcesses' => 1,
+                'balanceMaxShift' => 1,
+                'balanceCooldown' => 3,
+            ],
         ],
 
         'local' => [
@@ -251,6 +277,9 @@ return [
             ],
             'supervisor-callbacks' => [
                 'maxProcesses' => 2,
+            ],
+            'supervisor-geo' => [
+                'maxProcesses' => 1,
             ],
         ],
     ],
