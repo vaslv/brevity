@@ -25,6 +25,21 @@ class GeoDatabaseDownloaderTest extends TestCase
 
     private string $workDir;
 
+    public function test_a_corrupt_database_in_the_archive_leaves_the_existing_one(): void
+    {
+        // A previously installed, valid database must survive a bad download.
+        File::copy(base_path('tests/Fixtures/geo/GeoIP2-City-Test.mmdb'), $this->targetPath);
+        $originalHash = md5_file($this->targetPath);
+
+        Http::fake(['*' => Http::response($this->makeTarball(databaseContents: 'truncated / not a real mmdb'))]);
+
+        $result = app(GeoDatabaseDownloader::class)->download();
+
+        $this->assertSame(GeoDownloadStatus::Failed, $result->status);
+        // The install was rejected before overwriting the good database.
+        $this->assertSame($originalHash, md5_file($this->targetPath));
+    }
+
     public function test_a_failed_download_installs_nothing(): void
     {
         Http::fake(['*' => Http::response('nope', 500)]);
@@ -143,16 +158,19 @@ class GeoDatabaseDownloaderTest extends TestCase
 
     /**
      * Build a MaxMind-shaped tar.gz (a dated directory holding the .mmdb) and
-     * return its raw bytes.
+     * return its raw bytes. Pass $databaseContents to embed a specific (e.g.
+     * corrupt) .mmdb instead of the valid fixture.
      */
-    private function makeTarball(bool $withDatabase = true): string
+    private function makeTarball(bool $withDatabase = true, ?string $databaseContents = null): string
     {
         $scratch = $this->workDir.'/build-'.uniqid();
         $inner = $scratch.'/GeoLite2-City_20260712';
         File::ensureDirectoryExists($inner);
         File::put($inner.'/COPYRIGHT.txt', 'test');
 
-        if ($withDatabase) {
+        if ($withDatabase && $databaseContents !== null) {
+            File::put($inner.'/GeoLite2-City.mmdb', $databaseContents);
+        } elseif ($withDatabase) {
             File::copy(base_path('tests/Fixtures/geo/GeoIP2-City-Test.mmdb'), $inner.'/GeoLite2-City.mmdb');
         }
 
