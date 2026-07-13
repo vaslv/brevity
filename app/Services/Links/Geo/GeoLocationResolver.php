@@ -23,8 +23,19 @@ class GeoLocationResolver
             return null;
         }
 
+        // Normalize and guard the char(2) column: uppercase so 'de' and 'DE' do
+        // not split the tuple, and reject anything that is not exactly two ASCII
+        // letters (an unexpected source, empty, or an over-long value) rather
+        // than truncate it into a wrong country. An invalid code leaves the
+        // click unlocated, like a null location — not an error, so no warning.
+        $countryCode = mb_strtoupper($geo->countryCode);
+
+        if (preg_match('/^[A-Z]{2}$/', $countryCode) !== 1) {
+            return null;
+        }
+
         $attributes = [
-            'country_code' => $geo->countryCode,
+            'country_code' => $countryCode,
             'region' => mb_substr($geo->region, 0, self::MAX_NAME_CHARS),
             'city' => mb_substr($geo->city, 0, self::MAX_NAME_CHARS),
         ];

@@ -12,6 +12,7 @@ use App\Services\Links\Geo\GeoDatabaseUpdater;
 use App\Services\Links\Geo\GeoLocator;
 use App\Services\Links\Geo\ResolvedGeoLocation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -25,16 +26,18 @@ class ClickGeoLocationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_a_geo_dictionary_failure_leaves_the_click_unlocated(): void
+    public function test_a_dictionary_write_error_leaves_the_click_unlocated_with_a_warning(): void
     {
         Log::spy();
+        // Force an unexpected resolver write error the input guards don't catch:
+        // a CHECK the dictionary insert violates. It fails inside createOrFirst's
+        // savepoint (so it doesn't poison the surrounding test transaction). Geo
+        // is best-effort, so the click is still recorded unlocated and logged.
+        DB::statement("alter table geo_locations add constraint reject_test_city check (city <> 'London')");
+
         $link = Link::factory()->create();
         $url = Url::factory()->create();
-
-        // A country_code the char(2) column rejects: the dictionary insert
-        // throws, but geo is best-effort — the click must still be recorded,
-        // unlocated, with a warning.
-        $geo = new ResolvedGeoLocation('TOOLONG', 'Region', 'City');
+        $geo = new ResolvedGeoLocation('GB', 'England', 'London');
 
         $click = app(ClickRecorder::class)->record(
             $link,
@@ -50,7 +53,6 @@ class ClickGeoLocationTest extends TestCase
 
         $this->assertNull($click->geo_location_id);
         $this->assertSame(1, Click::query()->count());
-        $this->assertSame(0, GeoLocation::query()->count());
         Log::shouldHaveReceived('warning')->once();
     }
 
@@ -118,6 +120,35 @@ class ClickGeoLocationTest extends TestCase
         $this->assertSame($first->id, $second->id);
         $this->assertSame(1, Click::query()->count());
         $this->assertSame('GB', $second->fresh()->geoLocation->country_code);
+    }
+
+    public function test_an_invalid_country_code_leaves_the_click_unlocated(): void
+    {
+        Log::spy();
+        $link = Link::factory()->create();
+        $url = Url::factory()->create();
+
+        // A non-conforming country code is rejected cleanly (like a null
+        // location): the click is recorded unlocated, no dictionary row is
+        // created, and it is not treated as an exceptional failure (no warning).
+        $geo = new ResolvedGeoLocation('TOOLONG', 'Region', 'City');
+
+        $click = app(ClickRecorder::class)->record(
+            $link,
+            (string) Str::uuid(),
+            $url->id,
+            '81.2.69.142',
+            null,
+            'UA',
+            null,
+            null,
+            $geo,
+        );
+
+        $this->assertNull($click->geo_location_id);
+        $this->assertSame(1, Click::query()->count());
+        $this->assertSame(0, GeoLocation::query()->count());
+        Log::shouldNotHaveReceived('warning');
     }
 
     public function test_the_job_geolocates_from_the_visitor_ip(): void

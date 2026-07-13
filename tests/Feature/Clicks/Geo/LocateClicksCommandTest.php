@@ -48,6 +48,20 @@ class LocateClicksCommandTest extends TestCase
         $this->assertNull($click->refresh()->geo_location_id);
     }
 
+    public function test_it_aborts_early_when_the_database_is_absent(): void
+    {
+        config(['geo.database_path' => base_path('tests/Fixtures/geo/does-not-exist.mmdb')]);
+        $ip = IpAddress::query()->create(['value' => '81.2.69.142']);
+        $click = Click::factory()->create(['ip_address_id' => $ip->id]);
+
+        $this->artisan('geo:locate-clicks')
+            ->expectsOutputToContain('Geo database not found')
+            ->assertSuccessful();
+
+        // No scan happened: the known IP is left unlocated.
+        $this->assertNull($click->refresh()->geo_location_id);
+    }
+
     public function test_it_aborts_when_another_run_holds_the_lock(): void
     {
         $lock = Cache::lock('geo:locate-clicks', 60);
