@@ -2,11 +2,17 @@
 
 namespace Tests\Feature\Clicks\Geo;
 
+use App\Console\Commands\LocateClicks;
 use App\Models\Click;
 use App\Models\GeoLocation;
 use App\Models\IpAddress;
+use App\Services\Links\Geo\GeoLocationResolver;
+use App\Services\Links\Geo\GeoLocator;
+use App\Services\Links\Geo\ResolvedGeoLocation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use ReflectionClass;
+use ReflectionClassConstant;
 use Tests\TestCase;
 
 /**
@@ -80,6 +86,31 @@ class LocateClicksCommandTest extends TestCase
 
         $this->assertSame($a->refresh()->geo_location_id, $b->refresh()->geo_location_id);
         $this->assertSame(1, GeoLocation::query()->count());
+    }
+
+    public function test_the_ip_memo_is_capped_to_bound_memory(): void
+    {
+        $command = new LocateClicks;
+        $reflection = new ReflectionClass($command);
+        $cap = (new ReflectionClassConstant(LocateClicks::class, 'MEMO_CAP'))->getValue();
+
+        // Fill the memo to its cap, then resolve one more IP.
+        $memo = $reflection->getProperty('memo');
+        $memo->setValue($command, array_fill(0, $cap, null));
+
+        $locator = new class implements GeoLocator
+        {
+            public function locate(?string $ip): ?ResolvedGeoLocation
+            {
+                return null;
+            }
+        };
+
+        $reflection->getMethod('resolveForIp')
+            ->invoke($command, $locator, new GeoLocationResolver, '198.51.100.1');
+
+        // The memo was reset at the cap before adding the new entry.
+        $this->assertCount(1, $memo->getValue($command));
     }
 
     public function test_the_limit_option_bounds_a_run(): void
