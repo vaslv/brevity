@@ -23,6 +23,12 @@ class LocateClicks extends Command
     // long TTL just makes that unlikely.
     private const LOCK_SECONDS = 21600;
 
+    // Bound the ip->id memo so a full run over a high-cardinality clicks table
+    // cannot grow it without limit and OOM the CLI (which would leave the lock
+    // held until its TTL). IPs cluster temporally, so a reset at the cap only
+    // costs a few repeated dictionary lookups.
+    private const MEMO_CAP = 100_000;
+
     /**
      * @var array<string, int|null> Memo of ip value => geo_location_id for the
      *                              run: the same IPs recur heavily, so this
@@ -87,6 +93,10 @@ class LocateClicks extends Command
     {
         if (array_key_exists($ip, $this->memo)) {
             return $this->memo[$ip];
+        }
+
+        if (count($this->memo) >= self::MEMO_CAP) {
+            $this->memo = [];
         }
 
         return $this->memo[$ip] = $resolver->resolveId($geoLocator->locate($ip));
