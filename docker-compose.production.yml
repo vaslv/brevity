@@ -111,6 +111,12 @@ services:
   horizon:
     <<: *laravel
     container_name: laravel-horizon
+    # Give Horizon time to shut down gracefully on deploy: on SIGTERM it stops
+    # taking jobs and lets in-flight ones finish (up to their own timeout). The
+    # geo download runs up to 300s (supervisor-geo grace 330s), so Docker's
+    # default 10s stop grace would SIGKILL it mid-run — wedging the download
+    # lock. Above supervisor-geo's timeout so the graceful path always wins.
+    stop_grace_period: 360s
     depends_on:
       redis:
         condition: service_started
@@ -121,9 +127,12 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    # exec so `php artisan horizon` becomes PID 1 and receives SIGTERM directly;
+    # without it the sh wrapper eats the signal and Horizon never shuts down
+    # gracefully (the stop grace above would be moot).
     command: >
       sh -c "php artisan optimize --except=routes,views --no-interaction &&
-      php artisan horizon --no-interaction"
+      exec php artisan horizon --no-interaction"
 
 
   redis:
