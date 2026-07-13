@@ -35,7 +35,7 @@ return [
      * After a run of failed downloads, wait this many minutes before trying
      * again — traffic keeps arriving, so back off instead of hammering MaxMind.
      */
-    'download_backoff_minutes' => 360,
+    'download_backoff_minutes' => (int) env('GEOIP_DOWNLOAD_BACKOFF_MINUTES', 360),
 
     /*
      * MaxMind permalink endpoint; the edition and license key are appended as
