@@ -34,5 +34,11 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Geo is off by default in tests: no license key means no download is
+             ever dispatched (a real key in a dev/CI .env would otherwise reach
+             MaxMind mid-test), and an absent database path keeps the locator
+             inert. Tests that exercise geo set config('geo.*') explicitly. -->
+        <env name="GEOIP_LICENSE_KEY" value=""/>
+        <env name="GEOIP_DATABASE_PATH" value="storage/framework/testing/geoip-absent.mmdb"/>
     </php>
 </phpunit>
