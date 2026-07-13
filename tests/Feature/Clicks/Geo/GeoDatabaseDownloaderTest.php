@@ -7,6 +7,7 @@ use App\Services\Links\Geo\GeoDownloadStatus;
 use App\Services\Links\Geo\GeoLocator;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use PharData;
@@ -44,6 +45,30 @@ class GeoDatabaseDownloaderTest extends TestCase
 
         $this->assertSame(GeoDownloadStatus::Failed, $result->status);
         $this->assertFileDoesNotExist($this->targetPath);
+    }
+
+    public function test_a_transport_error_never_leaks_the_license_key(): void
+    {
+        Exceptions::fake();
+        config(['geo.license_key' => 'super-secret-key']);
+
+        // Guzzle embeds the full effective URL — including the license_key query
+        // parameter — in a transport-error message.
+        Http::fake(function () {
+            throw new ConnectionException(
+                'cURL error 28: timeout for https://download.maxmind.com/app/geoip_download'
+                .'?edition_id=GeoLite2-City&license_key=super-secret-key&suffix=tar.gz'
+            );
+        });
+
+        $result = app(GeoDatabaseDownloader::class)->download();
+
+        $this->assertSame(GeoDownloadStatus::Failed, $result->status);
+        $this->assertStringNotContainsString('super-secret-key', $result->message);
+        $this->assertStringContainsString('********', $result->message);
+        Exceptions::assertReported(
+            fn (\RuntimeException $e): bool => ! str_contains($e->getMessage(), 'super-secret-key')
+        );
     }
 
     public function test_an_archive_without_a_database_fails(): void

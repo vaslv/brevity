@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use PharData;
 use RecursiveIteratorIterator;
+use RuntimeException;
 
 /**
  * Downloads and atomically installs the MaxMind GeoLite2-City database
@@ -61,6 +62,13 @@ class GeoDatabaseDownloader
         return null;
     }
 
+    private function redactLicenseKey(string $message): string
+    {
+        $key = (string) config('geo.license_key');
+
+        return $key === '' ? $message : str_replace($key, '********', $message);
+    }
+
     private function run(): GeoDownloadResult
     {
         $targetPath = (string) config('geo.database_path');
@@ -102,10 +110,15 @@ class GeoDatabaseDownloader
             return GeoDownloadResult::success('Geo database installed at '.$targetPath.'.');
         } catch (\Throwable $e) {
             // Transport error, write failure, corrupt archive: never crash the
-            // command/job, and leave the existing database untouched.
-            report($e);
+            // command/job, and leave the existing database untouched. The license
+            // key rides in the request URL and Guzzle embeds the full effective
+            // URL in transport-error messages, so redact it before it can reach
+            // logs or the command output, and report a fresh exception so the
+            // original's message and trace cannot leak it either.
+            $message = $this->redactLicenseKey($e->getMessage());
+            report(new RuntimeException('Geo database download failed ('.$e::class.'): '.$message));
 
-            return GeoDownloadResult::failed('Geo database download failed: '.$e->getMessage());
+            return GeoDownloadResult::failed('Geo database download failed: '.$message);
         } finally {
             File::delete([$tarPath, $tmpDbPath]);
         }
