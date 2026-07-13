@@ -3,6 +3,8 @@
 namespace Tests\Feature\Clicks\Geo;
 
 use App\Services\Links\Geo\MaxMindGeoLocator;
+use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 /**
@@ -16,6 +18,29 @@ class MaxMindGeoLocatorTest extends TestCase
 {
     private const FIXTURE = 'tests/Fixtures/geo/GeoIP2-City-Test.mmdb';
 
+    public function test_a_corrupt_database_resolves_to_null_and_reports_once(): void
+    {
+        Exceptions::fake();
+        $path = sys_get_temp_dir().'/brevity-geo-corrupt-'.uniqid().'.mmdb';
+        File::put($path, 'this is not a maxmind database');
+        config(['geo.database_path' => $path]);
+
+        try {
+            $locator = new MaxMindGeoLocator;
+
+            // Three clicks against the same broken database.
+            $this->assertNull($locator->locate('81.2.69.142'));
+            $this->assertNull($locator->locate('81.2.69.142'));
+            $this->assertNull($locator->locate('81.2.69.142'));
+
+            // The open failure is reported once, not once per click (the negative
+            // cache suppresses the per-click report storm).
+            Exceptions::assertReportedCount(1);
+        } finally {
+            File::delete($path);
+        }
+    }
+
     public function test_a_known_ip_resolves_to_country_region_city(): void
     {
         $result = $this->locatorWithFixture()->locate('81.2.69.142');
@@ -24,6 +49,26 @@ class MaxMindGeoLocatorTest extends TestCase
         $this->assertSame('GB', $result->countryCode);
         $this->assertSame('England', $result->region);
         $this->assertSame('London', $result->city);
+    }
+
+    public function test_a_missing_database_is_not_cached_and_is_picked_up_once_installed(): void
+    {
+        $path = sys_get_temp_dir().'/brevity-geo-late-'.uniqid().'.mmdb';
+        config(['geo.database_path' => $path]);
+        $locator = new MaxMindGeoLocator;
+
+        // Absent at first: no location, and (unlike a corrupt file) not cached.
+        $this->assertNull($locator->locate('81.2.69.142'));
+
+        // Installed mid-life by geo:download-db: the same worker's locator opens
+        // it on the very next call.
+        File::copy(base_path(self::FIXTURE), $path);
+
+        try {
+            $this->assertSame('GB', $locator->locate('81.2.69.142')?->countryCode);
+        } finally {
+            File::delete($path);
+        }
     }
 
     public function test_a_missing_database_resolves_to_null(): void

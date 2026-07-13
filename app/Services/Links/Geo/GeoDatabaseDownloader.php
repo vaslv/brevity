@@ -2,6 +2,7 @@
 
 namespace App\Services\Links\Geo;
 
+use GeoIp2\Database\Reader;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -107,6 +108,14 @@ class GeoDatabaseDownloader
             }
 
             File::copy($entry, $tmpDbPath);
+
+            // A well-formed tar can still hold a truncated or corrupt .mmdb.
+            // Open it before installing so a bad download becomes a Failed result
+            // (the existing database stays in place, the backoff engages) instead
+            // of overwriting a good database with one that then throws on every
+            // click. Throws on a corrupt file — handled by the catch below.
+            (new Reader($tmpDbPath))->metadata();
+
             File::move($tmpDbPath, $targetPath);
 
             return GeoDownloadResult::success('Geo database installed at '.$targetPath.'.');

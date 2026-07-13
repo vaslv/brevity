@@ -18,6 +18,12 @@ use GeoIp2\Exception\AddressNotFoundException;
  */
 class MaxMindGeoLocator implements GeoLocator
 {
+    // After a failed open (corrupt/unreadable file), wait this long before
+    // retrying — otherwise a broken database reports on every single click.
+    private const REOPEN_BACKOFF_SECONDS = 300;
+
+    private ?int $openFailedAt = null;
+
     private ?Reader $reader = null;
 
     public function locate(?string $ip): ?ResolvedGeoLocation
@@ -66,7 +72,15 @@ class MaxMindGeoLocator implements GeoLocator
 
         $path = (string) config('geo.database_path');
 
+        // A missing file is cheap to re-check every call and lets a freshly
+        // installed database be picked up immediately, so it is not backed off.
         if (! is_file($path)) {
+            return null;
+        }
+
+        // A file that is present but failed to open is corrupt/unreadable:
+        // negative-cache the failure so we do not report() on every click.
+        if ($this->openFailedAt !== null && now()->timestamp - $this->openFailedAt < self::REOPEN_BACKOFF_SECONDS) {
             return null;
         }
 
@@ -74,6 +88,7 @@ class MaxMindGeoLocator implements GeoLocator
             return $this->reader = new Reader($path);
         } catch (\Throwable $e) {
             report($e);
+            $this->openFailedAt = now()->timestamp;
 
             return null;
         }
