@@ -34,6 +34,19 @@ class GeoDatabaseUpdaterTest extends TestCase
         Queue::assertPushed(UpdateGeoDatabaseJob::class, 1);
     }
 
+    public function test_a_database_at_exactly_the_max_age_is_not_refreshed(): void
+    {
+        $this->freezeTime();
+        Queue::fake();
+        File::put($this->targetPath, 'a database aged exactly to the threshold');
+        touch($this->targetPath, now()->subDays((int) config('geo.max_age_days'))->timestamp);
+
+        app(GeoDatabaseUpdater::class)->pingFromTraffic();
+
+        // Strict `<`: aged exactly to the threshold is not yet stale.
+        Queue::assertNothingPushed();
+    }
+
     public function test_a_successful_refresh_installs_the_database_and_clears_the_failure_backoff(): void
     {
         Cache::put('geo:update:failures', 2, now()->addDay());
@@ -45,6 +58,18 @@ class GeoDatabaseUpdaterTest extends TestCase
         $this->assertFileExists($this->targetPath);
         $this->assertNull(Cache::get('geo:update:failures'));
         $this->assertNull(Cache::get('geo:update:last-failure'));
+    }
+
+    public function test_an_aged_out_database_triggers_a_refresh(): void
+    {
+        $this->freezeTime();
+        Queue::fake();
+        File::put($this->targetPath, 'an old database');
+        touch($this->targetPath, now()->subDays((int) config('geo.max_age_days') + 1)->timestamp);
+
+        app(GeoDatabaseUpdater::class)->pingFromTraffic();
+
+        Queue::assertPushed(UpdateGeoDatabaseJob::class, 1);
     }
 
     public function test_it_backs_off_after_repeated_download_failures(): void
@@ -82,6 +107,30 @@ class GeoDatabaseUpdaterTest extends TestCase
         app(GeoDatabaseUpdater::class)->pingFromTraffic();
 
         Queue::assertNothingPushed();
+    }
+
+    public function test_the_backoff_releases_after_the_configured_wait(): void
+    {
+        $this->freezeTime();
+        // Three past failures, but the last one is older than the backoff window.
+        Cache::put('geo:update:failures', 3, now()->addDay());
+        Cache::put('geo:update:last-failure', now()->subMinutes((int) config('geo.download_backoff_minutes') + 1)->timestamp, now()->addDay());
+
+        // Database missing (stale) and configured: the expired backoff no longer
+        // blocks a refresh.
+        $this->assertTrue(app(GeoDatabaseUpdater::class)->shouldRefresh());
+    }
+
+    public function test_the_job_downloads_nothing_when_the_database_became_fresh(): void
+    {
+        // The job re-checks under execution: if the database was installed by
+        // another worker between the ping and now, it must not download again.
+        Http::fake();
+        File::put($this->targetPath, 'freshly installed by another worker');
+
+        (new UpdateGeoDatabaseJob)->handle(app(GeoDatabaseUpdater::class));
+
+        Http::assertNothingSent();
     }
 
     public function test_the_ping_is_throttled_to_one_dispatch_per_interval(): void

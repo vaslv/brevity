@@ -51,6 +51,18 @@ class MaxMindGeoLocatorTest extends TestCase
         $this->assertSame('London', $result->city);
     }
 
+    public function test_a_known_ipv6_address_resolves(): void
+    {
+        // Production traffic includes IPv6; 2001:218::/32 is a country-only
+        // (JP) network in the fixture, so region/city coalesce to ''.
+        $result = $this->locatorWithFixture()->locate('2001:218::1');
+
+        $this->assertNotNull($result);
+        $this->assertSame('JP', $result->countryCode);
+        $this->assertSame('', $result->region);
+        $this->assertSame('', $result->city);
+    }
+
     public function test_a_missing_database_is_not_cached_and_is_picked_up_once_installed(): void
     {
         $path = sys_get_temp_dir().'/brevity-geo-late-'.uniqid().'.mmdb';
