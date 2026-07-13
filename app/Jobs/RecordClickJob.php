@@ -26,8 +26,10 @@ class RecordClickJob implements ShouldQueue
         private readonly ?string $ip,
         private readonly ?string $referrer,
         private readonly ?string $userAgent,
-        // Default keeps in-flight serialized jobs from before this field
-        // deployable-safe.
+        // Added after this job first shipped. A payload serialized by the older
+        // code has no value for these, and constructor defaults do NOT apply on
+        // unserialize — the property stays uninitialized. handle() therefore
+        // reads them via ?? (isset-safe), never `$this->…` directly.
         private readonly ?string $visitedQuery = null,
         private readonly ?int $ruleVariantId = null,
     ) {}
@@ -67,7 +69,13 @@ class RecordClickJob implements ShouldQueue
         // simply leaves the click unlocated.
         $geo = $geoLocator->locate($this->ip);
 
-        $click = $clickRecorder->record($link, $this->clickUuid, $this->urlId, $this->ip, $this->referrer, $this->userAgent, $this->visitedQuery, $this->ruleVariantId, $geo);
+        // ?? (not $this->…): a payload queued by the pre-deploy code leaves these
+        // two later-added properties uninitialized, and reading such a typed
+        // property directly throws. ?? is isset-safe and yields null.
+        $visitedQuery = $this->visitedQuery ?? null;
+        $ruleVariantId = $this->ruleVariantId ?? null;
+
+        $click = $clickRecorder->record($link, $this->clickUuid, $this->urlId, $this->ip, $this->referrer, $this->userAgent, $visitedQuery, $ruleVariantId, $geo);
 
         $callbackDispatcher->dispatchForClick($click);
 
