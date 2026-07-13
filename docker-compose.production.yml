@@ -8,6 +8,14 @@ x-laravel: &laravel
   restart: always
   volumes:
     - ./.env:/app/.env
+    # Shared, persistent home for the MaxMind geo database. storage/ otherwise
+    # lives in the image layer (recreated every deploy), and geo lookups run in
+    # laravel-horizon while geo:download-db is run in laravel-web — without a
+    # shared named volume the download would never reach the reader, and each
+    # deploy would wipe the database and re-hit MaxMind (download limits). The
+    # redis lock in GeoDatabaseDownloader already serializes writers across
+    # containers, so a single shared volume is safe.
+    - geoip_data:/app/storage/app/geoip
   depends_on:
     - redis
   networks:
@@ -137,6 +145,7 @@ volumes:
   nginx_certs:
   nginx_acme:
   redis_data:
+  geoip_data:
 
 networks:
   proxy:
