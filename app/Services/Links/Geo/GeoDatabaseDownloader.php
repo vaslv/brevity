@@ -82,7 +82,11 @@ class GeoDatabaseDownloader
         $tmpDbPath = $dir.'/.geoip-download.mmdb';
 
         try {
-            $response = Http::timeout(120)->get((string) config('geo.download_url'), [
+            // sink streams the ~50 MB archive straight to disk instead of
+            // buffering the whole body in the worker's memory (which, on top of
+            // Guzzle's own buffer, risked an OOM that would leave the download
+            // lock wedged).
+            $response = Http::timeout(120)->sink($tarPath)->get((string) config('geo.download_url'), [
                 'edition_id' => (string) config('geo.edition'),
                 'license_key' => (string) config('geo.license_key'),
                 'suffix' => 'tar.gz',
@@ -91,8 +95,6 @@ class GeoDatabaseDownloader
             if ($response->failed()) {
                 return GeoDownloadResult::failed('Download failed: HTTP '.$response->status().'.');
             }
-
-            File::put($tarPath, $response->body());
 
             // Extract ONLY the .mmdb by streaming its archive entry to our own
             // temp path — other (attacker-controlled) entry paths are never
