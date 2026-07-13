@@ -31,16 +31,25 @@ class GeoDatabaseDownloader
             return GeoDownloadResult::notConfigured();
         }
 
-        $lock = Cache::lock(self::LOCK_KEY, self::LOCK_SECONDS);
-
-        if (! $lock->get()) {
-            return GeoDownloadResult::skipped('Another geo database download is in progress.');
-        }
-
         try {
-            return $this->run();
-        } finally {
-            $lock->release();
+            $lock = Cache::lock(self::LOCK_KEY, self::LOCK_SECONDS);
+
+            if (! $lock->get()) {
+                return GeoDownloadResult::skipped('Another geo database download is in progress.');
+            }
+
+            try {
+                return $this->run();
+            } finally {
+                $lock->release();
+            }
+        } catch (\Throwable $e) {
+            // A cache-backend failure (e.g. redis down) around the lock must not
+            // crash the command or the queued job — turn it into a Failed result
+            // like any other download failure. run() already fails safe itself.
+            report($e);
+
+            return GeoDownloadResult::failed('Geo database download failed (lock): '.$this->redactLicenseKey($e->getMessage()));
         }
     }
 

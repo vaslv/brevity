@@ -50,6 +50,21 @@ class GeoDatabaseDownloaderTest extends TestCase
         $this->assertFileDoesNotExist($this->targetPath);
     }
 
+    public function test_a_lock_backend_failure_becomes_a_failed_result(): void
+    {
+        Exceptions::fake();
+        // Redis unavailable when acquiring the download lock must not crash the
+        // command or the job.
+        Cache::shouldReceive('lock')->andThrow(new \RuntimeException('redis is down'));
+        Http::fake();
+
+        $result = app(GeoDatabaseDownloader::class)->download();
+
+        $this->assertSame(GeoDownloadStatus::Failed, $result->status);
+        Http::assertNothingSent();
+        Exceptions::assertReported(fn (\RuntimeException $e): bool => true);
+    }
+
     public function test_a_transport_error_is_handled_gracefully(): void
     {
         Http::fake(function () {
