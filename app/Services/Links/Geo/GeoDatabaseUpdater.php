@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Cache;
  */
 class GeoDatabaseUpdater
 {
+    // How long the failure/last-failure counters survive on their own, so the
+    // backoff self-clears if traffic dries up before a successful refresh.
+    private const FAILURE_STATE_TTL_DAYS = 7;
+
     // Retry a few times before backing off — a single failed download may be a
     // transient network blip, a run of them is a real problem (bad key, outage).
     private const FAILURE_THRESHOLD = 3;
@@ -111,8 +115,8 @@ class GeoDatabaseUpdater
         // failure — leave the backoff counters untouched.
         if ($result->status === GeoDownloadStatus::Failed) {
             $failures = (int) Cache::get(self::FAILURES_KEY, 0) + 1;
-            Cache::put(self::FAILURES_KEY, $failures, now()->addDays(7));
-            Cache::put(self::LAST_FAILURE_KEY, now()->timestamp, now()->addDays(7));
+            Cache::put(self::FAILURES_KEY, $failures, now()->addDays(self::FAILURE_STATE_TTL_DAYS));
+            Cache::put(self::LAST_FAILURE_KEY, now()->timestamp, now()->addDays(self::FAILURE_STATE_TTL_DAYS));
         }
     }
 }

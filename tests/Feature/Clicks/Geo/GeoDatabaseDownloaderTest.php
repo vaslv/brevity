@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
-use PharData;
+use Tests\Concerns\MakesGeoTarball;
 use Tests\TestCase;
 
 /**
@@ -21,9 +21,7 @@ use Tests\TestCase;
  */
 class GeoDatabaseDownloaderTest extends TestCase
 {
-    private string $targetPath;
-
-    private string $workDir;
+    use MakesGeoTarball;
 
     public function test_a_corrupt_database_in_the_archive_leaves_the_existing_one(): void
     {
@@ -148,54 +146,5 @@ class GeoDatabaseDownloaderTest extends TestCase
 
         $this->assertSame(GeoDownloadStatus::Skipped, $result->status);
         Http::assertNothingSent();
-    }
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->workDir = sys_get_temp_dir().'/brevity-geo-'.uniqid();
-        $this->targetPath = $this->workDir.'/GeoLite2-City.mmdb';
-        File::ensureDirectoryExists($this->workDir);
-
-        config([
-            'geo.license_key' => 'test-key',
-            'geo.database_path' => $this->targetPath,
-        ]);
-    }
-
-    protected function tearDown(): void
-    {
-        File::deleteDirectory($this->workDir);
-
-        parent::tearDown();
-    }
-
-    /**
-     * Build a MaxMind-shaped tar.gz (a dated directory holding the .mmdb) and
-     * return its raw bytes. Pass $databaseContents to embed a specific (e.g.
-     * corrupt) .mmdb instead of the valid fixture.
-     */
-    private function makeTarball(bool $withDatabase = true, ?string $databaseContents = null): string
-    {
-        $scratch = $this->workDir.'/build-'.uniqid();
-        $inner = $scratch.'/GeoLite2-City_20260712';
-        File::ensureDirectoryExists($inner);
-        File::put($inner.'/COPYRIGHT.txt', 'test');
-
-        if ($withDatabase && $databaseContents !== null) {
-            File::put($inner.'/GeoLite2-City.mmdb', $databaseContents);
-        } elseif ($withDatabase) {
-            File::copy(base_path('tests/Fixtures/geo/GeoIP2-City-Test.mmdb'), $inner.'/GeoLite2-City.mmdb');
-        }
-
-        $tar = $scratch.'/db.tar';
-        (new PharData($tar))->buildFromDirectory($scratch, '#GeoLite2-City_20260712#');
-        (new PharData($tar))->compress(\Phar::GZ);
-
-        $bytes = File::get($tar.'.gz');
-        File::deleteDirectory($scratch);
-
-        return $bytes;
     }
 }

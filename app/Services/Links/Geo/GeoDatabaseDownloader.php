@@ -21,6 +21,11 @@ use RuntimeException;
  */
 class GeoDatabaseDownloader
 {
+    // Well under LOCK_SECONDS so a slow download cannot outlive the lock, and
+    // matched by the queue timeout chain (UpdateGeoDatabaseJob timeout 300 >
+    // this; see config/horizon.php supervisor-geo).
+    private const DOWNLOAD_TIMEOUT_SECONDS = 120;
+
     private const LOCK_KEY = 'geo:download';
 
     private const LOCK_SECONDS = 1800;
@@ -86,17 +91,18 @@ class GeoDatabaseDownloader
         File::ensureDirectoryExists($dir);
 
         // Temp paths live beside the target so the final move is a same-filesystem
-        // rename (atomic). The lock guarantees a single writer, so fixed names are
-        // safe.
-        $tarPath = $dir.'/.geoip-download.tar.gz';
-        $tmpDbPath = $dir.'/.geoip-download.mmdb';
+        // rename (atomic). A unique suffix per run keeps a worker that downloads
+        // more than once from reusing a phar-cached manifest of a deleted tar.
+        $stem = $dir.'/.geoip-download-'.getmypid().'-'.uniqid();
+        $tarPath = $stem.'.tar.gz';
+        $tmpDbPath = $stem.'.mmdb';
 
         try {
             // sink streams the ~50 MB archive straight to disk instead of
             // buffering the whole body in the worker's memory (which, on top of
             // Guzzle's own buffer, risked an OOM that would leave the download
             // lock wedged).
-            $response = Http::timeout(120)->sink($tarPath)->get((string) config('geo.download_url'), [
+            $response = Http::timeout(self::DOWNLOAD_TIMEOUT_SECONDS)->sink($tarPath)->get((string) config('geo.download_url'), [
                 'edition_id' => (string) config('geo.edition'),
                 'license_key' => (string) config('geo.license_key'),
                 'suffix' => 'tar.gz',
