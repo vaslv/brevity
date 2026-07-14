@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Regressions;
 
+use App\Filament\Resources\Services\Pages\EditService;
 use App\Filament\Resources\Urls\Pages\CreateUrl;
 use App\Filament\Resources\Urls\Pages\ListUrls;
 use App\Models\Click;
@@ -57,6 +58,30 @@ class FilamentFriendlyErrorsTest extends TestCase
             ->fillForm(['value' => 'https://dup.example/landing'])
             ->call('create')
             ->assertHasFormErrors(['value' => 'unique']);
+    }
+
+    public function test_deleting_a_referenced_service_from_the_edit_page_is_blocked_without_a_500(): void
+    {
+        // r38-r48 (r39): links.service_id / clicks.service_id are restrictOnDelete,
+        // so the EditService header delete must report a friendly notification
+        // instead of a raw 23503 QueryException (500).
+        $service = Service::query()->create(['name' => 'Svc '.fake()->unique()->word()]);
+        Link::query()->create(['service_id' => $service->id, 'forward_query' => false]);
+
+        Livewire::test(EditService::class, ['record' => $service->id])
+            ->callAction('delete');
+
+        $this->assertDatabaseHas('services', ['id' => $service->id]);
+    }
+
+    public function test_deleting_an_unreferenced_service_from_the_edit_page_succeeds(): void
+    {
+        $service = Service::query()->create(['name' => 'Svc '.fake()->unique()->word()]);
+
+        Livewire::test(EditService::class, ['record' => $service->id])
+            ->callAction('delete');
+
+        $this->assertDatabaseMissing('services', ['id' => $service->id]);
     }
 
     protected function setUp(): void
