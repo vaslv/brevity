@@ -54,6 +54,10 @@ class SettingForm
                         'json' => [
                             Textarea::make('value')
                                 ->label(__('resources/setting.fields.value'))
+                                // The package casts this with JSON_THROW_ON_ERROR, so
+                                // an unvalidated typo would detonate every later read
+                                // (r40). Reject invalid JSON at the form.
+                                ->rules(['nullable', 'json'])
                                 ->rows(6),
                         ],
                         'markdown' => [
