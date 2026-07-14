@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Regressions;
 
+use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Models\User;
 use Filament\Facades\Filament;
@@ -31,5 +32,19 @@ class UsersNotDeletableTest extends TestCase
 
         Livewire::test(ListUsers::class)
             ->assertTableBulkActionDoesNotExist('delete');
+    }
+
+    public function test_users_cannot_be_deleted_from_the_edit_page(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Admin',
+            'email' => 'admin@example.test',
+            'password' => 'password',
+        ]);
+        $this->actingAs($admin);
+        Filament::setCurrentPanel('main');
+
+        Livewire::test(EditUser::class, ['record' => $admin->getRouteKey()])
+            ->assertActionDoesNotExist('delete');
     }
 }
