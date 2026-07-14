@@ -94,6 +94,24 @@ class StoreLinkRequestTest extends TestCase
             ->assertJsonValidationErrors(['title']);
     }
 
+    public function test_it_rejects_a_url_that_overflows_the_column_once_normalized(): void
+    {
+        // Review 2026-07-14 (r35): the byte cap must be measured on the
+        // NORMALIZED URL. A Cyrillic path is ~2 bytes/char raw but ~6 bytes/char
+        // once percent-encoded, so a raw-length cap would pass validation and
+        // then 500 on insert (urls.value varchar(2048), SQLSTATE 22001).
+        $url = 'https://example.com/'.str_repeat('я', 700);
+
+        // Sanity: the raw value is under the cap; only normalization overflows it.
+        $this->assertLessThan(2000, strlen($url));
+
+        $this->postLink([
+            'rules' => [['url' => $url]],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['rules.0.url']);
+    }
+
     public function test_it_rejects_invalid_before_date_format_in_time_before_condition(): void
     {
         $response = $this->postLink([
