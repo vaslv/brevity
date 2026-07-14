@@ -6,6 +6,7 @@ use App\Jobs\RecordClickJob;
 use App\Models\Link;
 use App\Services\Links\Conditions\ConditionContext;
 use App\Services\Links\LinkRuleResolver;
+use App\Services\Links\QueryString;
 use App\Services\Links\RuleVariantSelector;
 use App\Services\Links\TransitionMode;
 use Illuminate\Http\RedirectResponse;
@@ -48,7 +49,11 @@ class ResolveLink extends Controller
      */
     private function forwardQueryParams(string $targetUrl, Request $request): string
     {
-        $incoming = $request->query();
+        // Parse the raw query string, not $request->query(): parse_str/the query
+        // bag mangle a dotted/spaced param name (sub.id -> sub_id), which would
+        // silently corrupt a partner's tracking param on every forwarded click
+        // (r45). QueryString keeps names literal on both sides of the merge.
+        $incoming = QueryString::parse($request->getQueryString());
 
         // The tracking-disable parameter is service plumbing — never leak it
         // into the target URL.
@@ -58,7 +63,7 @@ class ResolveLink extends Controller
             unset($incoming[$disableParam]);
         }
 
-        if (! is_array($incoming) || $incoming === []) {
+        if ($incoming === []) {
             return $targetUrl;
         }
 
@@ -68,13 +73,9 @@ class ResolveLink extends Controller
             return $targetUrl;
         }
 
-        $existing = [];
-
-        if (! empty($parts['query'])) {
-            parse_str($parts['query'], $existing);
-        }
-
-        $parts['query'] = http_build_query($existing + $incoming);
+        // Target's own params win on duplicate keys (union with target first).
+        $existing = QueryString::parse($parts['query'] ?? null);
+        $parts['query'] = QueryString::build($existing + $incoming);
 
         return $this->buildUrl($parts);
     }

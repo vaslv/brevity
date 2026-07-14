@@ -100,6 +100,18 @@ class ResolveLinkResolutionTest extends TestCase
             ->assertRedirect('https://example.com/p?a=1&b=3');
     }
 
+    public function test_forward_query_preserves_a_dotted_param_name(): void
+    {
+        // r45: parse_str mangled ?sub.id into sub_id, breaking a partner's
+        // tracking param on every forwarded click. Dotted names now survive.
+        $link = Link::factory()->forwardingQuery()->create();
+        $url = Url::factory()->create(['value' => 'https://example.com/p']);
+        Rule::factory()->for($link)->state(['url_id' => $url->id])->create();
+
+        $this->get(static::SHORT_LINK_HOST.'/'.$link->code.'?sub.id=abc')
+            ->assertRedirect('https://example.com/p?sub.id=abc');
+    }
+
     public function test_incoming_query_is_ignored_when_forward_query_is_off(): void
     {
         $link = Link::factory()->create();
