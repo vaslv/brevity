@@ -6,19 +6,14 @@ use App\Models\Service;
 use App\Services\Links\Conditions\ConditionRegistry;
 use App\Services\Links\Domains\DomainSelectionStrategy;
 use App\Services\Links\TransitionMode;
+use App\Services\Links\UrlNormalizer;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use League\Uri\Exceptions\SyntaxError;
 
 class StoreLinkRequest extends FormRequest
 {
-    /**
-     * Max byte length for a destination URL. `urls.value` carries a UNIQUE btree
-     * index (~2704-byte key limit); an over-long URL is rejected (422) rather
-     * than truncated, since truncating a redirect target would corrupt it.
-     */
-    private const MAX_URL_BYTES = 2000;
-
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -151,7 +146,10 @@ class StoreLinkRequest extends FormRequest
 
     /**
      * A destination URL (rule target or A/B variant): a web scheme, byte-capped
-     * so it fits the urls.value UNIQUE index (see MAX_URL_BYTES).
+     * so it fits the urls.value UNIQUE index. The cap is measured on the
+     * NORMALIZED value (the form actually persisted), because percent-encoding
+     * an internationalized URL can multiply its byte length — a raw-length cap
+     * would let it pass validation and then overflow the column at write time.
      *
      * @return array<int, ValidationRule|string|\Closure>
      */
@@ -162,8 +160,19 @@ class StoreLinkRequest extends FormRequest
             'url:http,https',
             'max:2048',
             static function (string $attribute, mixed $value, \Closure $fail): void {
-                if (is_string($value) && strlen($value) > self::MAX_URL_BYTES) {
-                    $fail('The destination URL must not exceed '.self::MAX_URL_BYTES.' bytes.');
+                if (! is_string($value)) {
+                    return;
+                }
+
+                try {
+                    $normalized = UrlNormalizer::normalize($value);
+                } catch (SyntaxError) {
+                    // Not a parseable URL — the url:http,https rule already fails it.
+                    return;
+                }
+
+                if (strlen($normalized) > UrlNormalizer::MAX_BYTES) {
+                    $fail('The destination URL must not exceed '.UrlNormalizer::MAX_BYTES.' bytes once normalized.');
                 }
             },
         ];

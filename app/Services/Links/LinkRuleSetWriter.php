@@ -6,7 +6,7 @@ use App\Models\Condition;
 use App\Models\Link;
 use App\Models\Url;
 use App\Services\Links\Conditions\ConditionRegistry;
-use League\Uri\Modifier;
+use RuntimeException;
 
 /**
  * Writes a link's full ordered rule set (create and PATCH-replace share the
@@ -92,10 +92,13 @@ readonly class LinkRuleSetWriter
 
     private function resolveUrlId(string $rawUrl): int
     {
-        $normalized = Modifier::wrap($rawUrl)
-            ->normalize()
-            ->sortQuery()
-            ->toString();
+        $normalized = UrlNormalizer::normalize($rawUrl);
+
+        // Defense in depth: the request byte-caps the normalized value, but a
+        // non-API writer (or a future caller) must never overflow urls.value.
+        if (strlen($normalized) > UrlNormalizer::MAX_BYTES) {
+            throw new RuntimeException('Normalized destination URL exceeds '.UrlNormalizer::MAX_BYTES.' bytes.');
+        }
 
         return Url::firstOrCreate(['value' => $normalized])->id;
     }
