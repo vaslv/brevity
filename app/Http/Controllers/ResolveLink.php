@@ -161,6 +161,9 @@ class ResolveLink extends Controller
                 $request->userAgent(),
                 $request->getQueryString(),
                 $target['variant']?->id,
+                // Capture the visit instant now so clicks.created_at reflects when
+                // the visitor hit the link, not when the async job later runs (r43).
+                now()->toIso8601String(),
             );
         }
 

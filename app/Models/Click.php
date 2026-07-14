@@ -80,5 +80,9 @@ class Click extends Model
         'rule_variant_id',
         'geo_location_id',
         'visited_query',
+        // Set explicitly to the visit instant captured at redirect time, not the
+        // async job's run time (r43). Clicks are only ever created server-side by
+        // ClickRecorder, so this carries no mass-assignment surface.
+        'created_at',
     ];
 }

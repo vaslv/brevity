@@ -29,7 +29,7 @@ readonly class ClickRecorder
         private GeoLocationResolver $geoLocationResolver,
     ) {}
 
-    public function record(Link $link, string $uuid, int $urlId, ?string $ip, ?string $referrer, ?string $userAgent, ?string $visitedQuery = null, ?int $ruleVariantId = null, ?ResolvedGeoLocation $geo = null): Click
+    public function record(Link $link, string $uuid, int $urlId, ?string $ip, ?string $referrer, ?string $userAgent, ?string $visitedQuery = null, ?int $ruleVariantId = null, ?ResolvedGeoLocation $geo = null, ?string $visitedAt = null): Click
     {
         $ipValue = $this->normalizeIp($ip);
         $referrerValue = $this->normalizeString($referrer ?? '', self::MAX_REFERRER_BYTES);
@@ -59,7 +59,11 @@ readonly class ClickRecorder
         // itself. The counter increment is atomic with the click insert and runs
         // only when the click was actually created — a retry or a lost race
         // never double-counts.
-        return DB::transaction(function () use ($link, $uuid, $urlId, $referrerId, $userAgentRow, $ipAddressId, $variantId, $geoLocationId, $visitedQueryValue): Click {
+        // Prefer the visit instant captured at redirect time; an older queued
+        // payload without it falls back to the insert time (r43).
+        $createdAt = $visitedAt !== null ? ['created_at' => $visitedAt] : [];
+
+        return DB::transaction(function () use ($link, $uuid, $urlId, $referrerId, $userAgentRow, $ipAddressId, $variantId, $geoLocationId, $visitedQueryValue, $createdAt): Click {
             $click = Click::query()->firstOrCreate(
                 ['uuid' => $uuid],
                 [
@@ -72,6 +76,7 @@ readonly class ClickRecorder
                     'rule_variant_id' => $variantId,
                     'geo_location_id' => $geoLocationId,
                     'visited_query' => $visitedQueryValue,
+                    ...$createdAt,
                 ]
             );
 

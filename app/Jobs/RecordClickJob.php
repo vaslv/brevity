@@ -32,6 +32,9 @@ class RecordClickJob implements ShouldQueue
         // reads them via ?? (isset-safe), never `$this->…` directly.
         private readonly ?string $visitedQuery = null,
         private readonly ?int $ruleVariantId = null,
+        // ISO 8601 visit instant captured at redirect time (r43); an older queued
+        // payload has none and the click falls back to job-run time.
+        private readonly ?string $visitedAt = null,
     ) {}
 
     public function failed(Throwable $e): void
@@ -70,12 +73,13 @@ class RecordClickJob implements ShouldQueue
         $geo = $geoLocator->locate($this->ip);
 
         // ?? (not $this->…): a payload queued by the pre-deploy code leaves these
-        // two later-added properties uninitialized, and reading such a typed
-        // property directly throws. ?? is isset-safe and yields null.
+        // later-added properties uninitialized, and reading such a typed property
+        // directly throws. ?? is isset-safe and yields null.
         $visitedQuery = $this->visitedQuery ?? null;
         $ruleVariantId = $this->ruleVariantId ?? null;
+        $visitedAt = $this->visitedAt ?? null;
 
-        $click = $clickRecorder->record($link, $this->clickUuid, $this->urlId, $this->ip, $this->referrer, $this->userAgent, $visitedQuery, $ruleVariantId, $geo);
+        $click = $clickRecorder->record($link, $this->clickUuid, $this->urlId, $this->ip, $this->referrer, $this->userAgent, $visitedQuery, $ruleVariantId, $geo, $visitedAt);
 
         $callbackDispatcher->dispatchForClick($click);
 
