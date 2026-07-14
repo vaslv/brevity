@@ -206,7 +206,11 @@ return [
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
             'maxProcesses' => 1,
-            'maxTime' => 0,
+            // Recycle each worker hourly (r42). RecordClickJob resolves geo here
+            // and MaxMindGeoLocator caches the open Reader for the worker's whole
+            // life, so without recycling a freshly installed .mmdb is only picked
+            // up on the next deploy. An hourly restart bounds the adoption window.
+            'maxTime' => 3600,
             'maxJobs' => 0,
             'memory' => 128,
             'tries' => 1,
