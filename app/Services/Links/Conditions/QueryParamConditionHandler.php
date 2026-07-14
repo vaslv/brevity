@@ -3,6 +3,7 @@
 namespace App\Services\Links\Conditions;
 
 use App\Models\Condition;
+use App\Services\Links\QueryString;
 
 /**
  * Matches when the visit's query string carries an exact `key=value` pair —
@@ -20,8 +21,13 @@ final class QueryParamConditionHandler extends AbstractConditionHandler
             return false;
         }
 
-        // Array params (?key[]=x) and absent params never equal a scalar value.
-        return $context->request->query($key) === $value;
+        // Match the raw query string, not $request->query(): PHP's query bag
+        // mangles a dotted/spaced key (sub.id -> sub_id) so such a condition
+        // could never fire (r44). Array params (?key[]=x) and absent params
+        // still never equal a scalar value.
+        $params = QueryString::parse($context->request->getQueryString());
+
+        return ($params[$key] ?? null) === $value;
     }
 
     public static function rules(): array

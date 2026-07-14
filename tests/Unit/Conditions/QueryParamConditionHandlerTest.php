@@ -47,6 +47,14 @@ class QueryParamConditionHandlerTest extends TestCase
         $this->assertFalse($this->matchResult('partner', null, '/?partner=acme'));
     }
 
+    public function test_it_matches_a_key_containing_a_dot(): void
+    {
+        // r44: PHP mangles ?sub.id into the sub_id query bag key, so matching via
+        // the bag never fired. Matching the raw query string keeps it literal.
+        $this->assertTrue($this->matchResult('sub.id', 'abc', '/?sub.id=abc'));
+        $this->assertFalse($this->matchResult('sub.id', 'zzz', '/?sub.id=abc'));
+    }
+
     public function test_it_matches_an_exact_key_value_pair(): void
     {
         $this->assertTrue($this->matchResult('partner', 'acme', '/?partner=acme'));
