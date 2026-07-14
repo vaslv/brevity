@@ -29,6 +29,14 @@ readonly class RuleVariantSelector
         }
 
         $totalWeight = (int) $variants->sum('weight');
+
+        // Fail closed on a non-positive total (only reachable via the admin panel
+        // or raw SQL past the API's weight >= 1 rule and the DB CHECK): fall back
+        // to the rule's own url instead of a modulo-by-zero 500 on the hot path (r47).
+        if ($totalWeight <= 0) {
+            return ['url_id' => $rule->url_id, 'url_value' => $rule->url->value, 'variant' => null];
+        }
+
         $bucket = $this->stickyBucket($link, $request, $totalWeight);
 
         $cumulative = 0;
