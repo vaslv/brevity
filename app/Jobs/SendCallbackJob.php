@@ -82,11 +82,21 @@ class SendCallbackJob implements ShouldQueue
             'last_attempt_at' => now(),
         ]);
 
-        // Do not follow redirects: the send-time SSRF guard validated only the
-        // configured callback_url. A 3xx response could point Guzzle at an
-        // internal host (e.g. 169.254.169.254) that was never checked.
+        // SSRF hardening (r36):
+        // - allow_redirects=false: the send-time guard validated only the
+        //   configured callback_url; a 3xx could point Guzzle at an internal
+        //   host (e.g. 169.254.169.254) that was never checked.
+        // - force_ip_resolve=v4: the guard resolves and validates IPv4 only, so
+        //   pin the client to IPv4 too. This closes the cross-family rebinding
+        //   trick (guard sees a public A, client dials a private AAAA). It does
+        //   not fully close same-family DNS rebinding — a low-TTL host can still
+        //   flip its A record between check and connect; full IP pinning is the
+        //   deferred alternative (see docs/07-plans.md r36).
         $response = Http::timeout(self::HTTP_TIMEOUT_SECONDS)
-            ->withOptions(['allow_redirects' => false])
+            ->withOptions([
+                'allow_redirects' => false,
+                'force_ip_resolve' => 'v4',
+            ])
             ->post($callbackUrl, $callback->data);
 
         $status = $response->status();

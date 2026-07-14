@@ -49,6 +49,11 @@ class CallbackUrlGuardTest extends TestCase
             'aws metadata' => ['http://169.254.169.254/latest/meta-data/'],
             'link-local' => ['http://169.254.1.1/'],
             'unspecified' => ['http://0.0.0.0/hook'],
+            // r36: the callback client forces IPv4 (force_ip_resolve=v4), so the
+            // guard resolves/validates IPv4 only. A public IPv6 literal the
+            // client could never dial fails closed rather than passing a check
+            // for an address family that is never used.
+            'public ipv6 literal' => ['https://[2606:4700:4700::1111]/hook'],
         ];
     }
 }
