@@ -2,6 +2,7 @@
 
 use App\Http\Api\ProblemDetailsRenderer;
 use App\Http\Middleware\EnsureTechnicalHost;
+use App\Support\TrustedProxies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,15 +20,16 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Trust only the proxy / load-balancer subnets that actually front the
-        // app — never '*'. Trusting every client lets anyone spoof
+        // app — never blanket-trust. Trusting every client lets anyone spoof
         // X-Forwarded-For, forging the recorded click IP (and {{click.ip}} sent
         // to callbacks) and bypassing the per-IP link-resolve rate limiter.
-        // Narrow these CIDRs to your real reverse-proxy range in production.
-        $middleware->trustProxies(at: [
-            '10.0.0.0/8',
-            '172.16.0.0/12',
-            '192.168.0.0/16',
-        ]);
+        //
+        // Configured via TRUSTED_PROXIES (r37) so production narrows it to the
+        // real LB range without a code change: a comma-separated CIDR list, or
+        // '*' to trust any proxy (only valid when the app is not directly
+        // reachable). Unset falls back to the RFC 1918 ranges to preserve the
+        // prior behavior — production SHOULD override this with its LB subnet.
+        $middleware->trustProxies(at: TrustedProxies::fromEnv(env('TRUSTED_PROXIES')));
 
         // The API lives on the technical host only; reject other short-link
         // hosts before auth/throttle so a wrong-host call never burns the
