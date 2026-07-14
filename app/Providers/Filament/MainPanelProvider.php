@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\Auth\Login;
 use App\Http\Middleware\EnsureTechnicalHost;
 use Filament\Http\Middleware\Authenticate;
+use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -39,6 +40,10 @@ class MainPanelProvider extends PanelProvider
                 // Admin panel is reachable on the technical host only; every
                 // other short-link domain 404s before authentication.
                 EnsureTechnicalHost::class,
+                // Invalidate a user's other sessions when their password changes
+                // (r41). Stock Filament ships this in the panel stack; the bare
+                // 'web' group does not include it.
+                AuthenticateSession::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
