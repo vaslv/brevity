@@ -51,6 +51,13 @@ class CallbackUrlGuard
     }
 
     /**
+     * Resolve a hostname to IPv4 only. The callback HTTP client forces IPv4
+     * (force_ip_resolve=v4 in SendCallbackJob), so validating AAAA here would
+     * check addresses the client never connects to and open a cross-family
+     * rebinding trick (guard sees a public A, client connects a private AAAA).
+     * Keeping both to IPv4 aligns what is checked with what is dialed. A
+     * literal IP is returned as-is (its family is validated by isPublicIp).
+     *
      * @return array<int, string>
      */
     private function resolveIps(string $host): array
@@ -59,7 +66,7 @@ class CallbackUrlGuard
             return [$host];
         }
 
-        $records = @dns_get_record($host, DNS_A | DNS_AAAA);
+        $records = @dns_get_record($host, DNS_A);
 
         if ($records === false || $records === []) {
             return [];
@@ -70,10 +77,6 @@ class CallbackUrlGuard
         foreach ($records as $record) {
             if (! empty($record['ip'])) {
                 $ips[] = $record['ip'];
-            }
-
-            if (! empty($record['ipv6'])) {
-                $ips[] = $record['ipv6'];
             }
         }
 
