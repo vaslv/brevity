@@ -31,6 +31,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // prior behavior — production SHOULD override this with its LB subnet.
         $middleware->trustProxies(at: TrustedProxies::fromEnv(env('TRUSTED_PROXIES')));
 
+        // The browser-timezone script sets a plaintext `tz` cookie via
+        // document.cookie (r38). Without this exception EncryptCookies nulls it
+        // (it can't decrypt a plaintext value), so FilamentTimezone resolves to
+        // null and the panel renders every datetime — and parses admin-entered
+        // condition times — in UTC instead of the admin's local zone.
+        $middleware->encryptCookies(except: ['tz']);
+
         // The API lives on the technical host only; reject other short-link
         // hosts before auth/throttle so a wrong-host call never burns the
         // per-token rate-limit budget. Filament and Horizon are guarded by the
