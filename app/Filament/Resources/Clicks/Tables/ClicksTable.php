@@ -26,9 +26,13 @@ class ClicksTable
                     ->label(__('resources/click.fields.created_at'))
                     ->dateTime()
                     ->sortable(),
+                // Search is limited to link.code and ipAddress.value (r46): a
+                // searchable relation column compiles to an OR'd whereHas with a
+                // leading-wildcard ILIKE, and fanning that across six relations on
+                // the unbounded clicks table is a self-inflicted DoS at scale.
+                // Service and bot have dedicated filters instead.
                 TextColumn::make('service.name')
-                    ->label(__('resources/click.fields.service'))
-                    ->searchable(),
+                    ->label(__('resources/click.fields.service')),
                 TextColumn::make('link.code')
                     ->label(__('resources/click.fields.link'))
                     ->searchable()
@@ -37,17 +41,14 @@ class ClicksTable
                     ->label(__('resources/click.fields.url'))
                     ->limit(50)
                     ->tooltip(fn (?string $state): ?string => $state)
-                    ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('referrer.value')
                     ->label(__('resources/click.fields.referrer'))
-                    ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('userAgent.value')
                     ->label(__('resources/click.fields.user_agent'))
                     ->limit(60)
-                    ->tooltip(fn (?string $state): ?string => $state)
-                    ->searchable(),
+                    ->tooltip(fn (?string $state): ?string => $state),
                 // A click without a user agent has no flag to compute → not a bot.
                 IconColumn::make('userAgent.is_bot')
                     ->label(__('resources/click.fields.is_bot'))
