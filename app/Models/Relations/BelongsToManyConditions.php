@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 trait BelongsToManyConditions
 {
+    /**
+     * @return BelongsToMany<Condition, $this>
+     */
     public function conditions(): BelongsToMany
     {
         // Deterministic order: the API exposes conditions[] (and the deprecated

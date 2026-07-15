@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 trait BelongsToLink
 {
+    /**
+     * @return BelongsTo<Link, $this>
+     */
     public function link(): BelongsTo
     {
         // Include trashed links: clicks/callbacks/rules are historical facts that
