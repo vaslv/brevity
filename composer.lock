@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3d0b41719e8e6282c2b83547d371dd3c",
+    "content-hash": "13e074c0ed8bc4ca118c89885146a9f8",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -9331,6 +9331,69 @@
                 }
             ],
             "time": "2026-06-12T18:19:46+00:00"
+        },
+        {
+            "name": "vaslv/filament-topbar-menu",
+            "version": "v1.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/vaslv/filament-topbar-menu.git",
+                "reference": "f9a050187b9a842a75e9c0865efe7fb9db9793ce"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/vaslv/filament-topbar-menu/zipball/f9a050187b9a842a75e9c0865efe7fb9db9793ce",
+                "reference": "f9a050187b9a842a75e9c0865efe7fb9db9793ce",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^5.0",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.0",
+                "laravel/pint": "^1.18",
+                "orchestra/testbench": "^10.0|^11.0",
+                "phpunit/phpunit": "^11.5|^12.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Vaslv\\FilamentTopbarMenu\\TopbarMenuServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Vaslv\\FilamentTopbarMenu\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Andrei Vasilev",
+                    "email": "andrei@vaslv.ru"
+                }
+            ],
+            "description": "A configurable topbar menu plugin for Filament 5 — external and internal links, dropdowns, favicons, caching.",
+            "homepage": "https://github.com/vaslv/filament-topbar-menu",
+            "keywords": [
+                "filament",
+                "filament-plugin",
+                "laravel",
+                "menu",
+                "navigation",
+                "topbar"
+            ],
+            "support": {
+                "issues": "https://github.com/vaslv/filament-topbar-menu/issues",
+                "source": "https://github.com/vaslv/filament-topbar-menu/tree/v1.4.0"
+            },
+            "time": "2026-07-07T09:48:34+00:00"
         },
         {
             "name": "vaslv/laravel-settings",

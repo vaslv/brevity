@@ -12,6 +12,7 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
 use Filament\View\PanelsRenderHook;
+use Vaslv\FilamentTopbarMenu\TopbarMenuPlugin;
 
 class MainPanelProvider extends PanelProvider
 {
@@ -55,6 +56,15 @@ class MainPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::TOPBAR_LOGO_AFTER,
                 fn (): string => view('filament.version-chip')->render(),
+            )
+            // Registered after the TOPBAR_LOGO_AFTER version chip on purpose: the
+            // plugin renders its menu at that same hook, and same-hook output
+            // follows registration order, so this keeps the topbar layout
+            // logo → version → menu.
+            ->plugin(
+                TopbarMenuPlugin::make()
+                    ->resourceNavigationGroup(__('navigation.groups.system'))
+                    ->resourceNavigationSort(100),
             )
             ->renderHook(
                 PanelsRenderHook::BODY_START,
