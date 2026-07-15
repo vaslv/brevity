@@ -81,7 +81,7 @@ readonly class ClickRecorder
             );
 
             if ($click->wasRecentlyCreated) {
-                $this->clickCounterIncrementer->increment($link->id, $userAgentRow?->is_bot ?? false);
+                $this->clickCounterIncrementer->increment($link->id, $userAgentRow->is_bot ?? false);
             }
 
             return $click;

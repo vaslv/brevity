@@ -32,7 +32,7 @@ readonly class CallbackDispatcher
         // `is_bot` flag regardless of the client template, so the partner can
         // discount bot traffic themselves. The key is reserved — a
         // client-supplied `is_bot` is deliberately overridden.
-        $rendered['is_bot'] = $click->userAgent?->is_bot ?? false;
+        $rendered['is_bot'] = $click->userAgent->is_bot ?? false;
 
         // One callback per click: a retried RecordClickJob (same click) must not
         // create a second callback or enqueue a second delivery.

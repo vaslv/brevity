@@ -21,11 +21,11 @@ readonly class CallbackDataRenderer
         return [
             'click.id' => (string) $click->id,
             'click.created_at' => $click->created_at->toIso8601String(),
-            'click.is_bot' => ($click->userAgent?->is_bot ?? false) ? 'true' : 'false',
-            'click.ip' => $click->ipAddress?->value ?? '',
+            'click.is_bot' => ($click->userAgent->is_bot ?? false) ? 'true' : 'false',
+            'click.ip' => $click->ipAddress->value ?? '',
             'click.url' => $click->url->value,
-            'click.referrer' => $click->referrer?->value ?? '',
-            'click.user_agent' => $click->userAgent?->value ?? '',
+            'click.referrer' => $click->referrer->value ?? '',
+            'click.user_agent' => $click->userAgent->value ?? '',
             'click.variant' => $this->variantLabel($click),
             ...$this->queryVariables($click),
             'link.id' => (string) $click->link_id,
@@ -118,6 +118,6 @@ readonly class CallbackDataRenderer
      */
     private function variantLabel(Click $click): string
     {
-        return $click->ruleVariant?->label ?? '';
+        return $click->ruleVariant->label ?? '';
     }
 }

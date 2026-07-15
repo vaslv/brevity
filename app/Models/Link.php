@@ -95,7 +95,7 @@ class Link extends Model
 
     public function getUrlAttribute(): string
     {
-        $base = $this->domain?->url ?? config('app.url');
+        $base = $this->domain->url ?? config('app.url');
 
         return Uri::new($base)
             ->withPath('/'.$this->code)
