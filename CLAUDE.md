@@ -17,6 +17,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - laravel/prompts (PROMPTS) - v0
 - laravel/sanctum (SANCTUM) - v4
 - livewire/livewire (LIVEWIRE) - v4
+- larastan/larastan (LARASTAN) - v3
 - laravel/boost (BOOST) - v2
 - laravel/mcp (MCP) - v0
 - laravel/pail (PAIL) - v1
@@ -521,3 +522,9 @@ Key routing rules:
 - Save progress → invoke /context-save
 - Resume context → invoke /context-restore
 - Author a backlog-ready spec/issue → invoke /spec
+
+## Health Stack
+
+- typecheck: vendor/bin/sail bin phpstan analyse --memory-limit=1G
+- lint: vendor/bin/sail bin pint --test
+- test: vendor/bin/sail artisan test --compact
