@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 trait HasManyClicks
 {
+    /**
+     * @return HasMany<Click, $this>
+     */
     public function clicks(): HasMany
     {
         return $this->hasMany(Click::class);

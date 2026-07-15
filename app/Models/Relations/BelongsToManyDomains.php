@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 trait BelongsToManyDomains
 {
+    /**
+     * @return BelongsToMany<Domain, $this>
+     */
     public function domains(): BelongsToMany
     {
         return $this->belongsToMany(Domain::class);

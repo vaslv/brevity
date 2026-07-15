@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 trait HasManyRules
 {
+    /**
+     * @return HasMany<Rule, $this>
+     */
     public function rules(): HasMany
     {
         return $this->hasMany(Rule::class)
