@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Service;
 use App\Models\User;
 
 return [
@@ -42,6 +43,15 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Sanctum registers this guard itself; declaring it here (Sanctum
+        // merges its defaults under an existing entry) pins the provider so
+        // bearer tokens only resolve to Service tokenables, and the static
+        // type of Request::user() covers Service alongside User.
+        'sanctum' => [
+            'driver' => 'sanctum',
+            'provider' => 'services',
+        ],
     ],
 
     /*
@@ -65,6 +75,13 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        // Backs the sanctum guard: services authenticate through Sanctum
+        // bearer tokens (the token's tokenable is a Service).
+        'services' => [
+            'driver' => 'eloquent',
+            'model' => Service::class,
         ],
 
         // 'users' => [
