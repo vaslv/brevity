@@ -45,11 +45,11 @@ class StoreLinkRequest extends FormRequest
             // as condition dates; NULL = no limit. The window edges are
             // inclusive; a zero-length window (since == until) is allowed.
             'valid_since' => ['nullable', 'date_format:Y-m-d\TH:i:sP'],
-            'valid_until' => array_values(array_filter([
+            'valid_until' => [
                 'nullable',
                 'date_format:Y-m-d\TH:i:sP',
-                $this->filled('valid_since') ? 'after_or_equal:valid_since' : null,
-            ])),
+                ...($this->filled('valid_since') ? ['after_or_equal:valid_since'] : []),
+            ],
             // max: PG integer ceiling — an over-limit value must 422, not 500.
             'max_clicks' => ['nullable', 'integer', 'min:1', 'max:2147483647'],
             'rules' => ['required', 'array', 'min:1', 'max:50'],
