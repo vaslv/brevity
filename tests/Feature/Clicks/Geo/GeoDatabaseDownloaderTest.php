@@ -121,6 +121,27 @@ class GeoDatabaseDownloaderTest extends TestCase
         $this->assertSame('GB', app(GeoLocator::class)->locate('81.2.69.142')?->countryCode);
     }
 
+    public function test_it_raises_the_memory_limit_so_extraction_does_not_fatal(): void
+    {
+        // Prod incident: PharData extraction of the real ~60 MB database peaks
+        // above the 128M worker ceiling and fatals silently (display_errors=Off),
+        // skipping the finally that releases the download lock. Reproduce the
+        // 128M ceiling and assert the download lifts it before extracting.
+        $original = ini_get('memory_limit');
+        ini_set('memory_limit', '128M');
+
+        Http::fake(['*' => Http::response($this->makeTarball())]);
+
+        try {
+            $result = app(GeoDatabaseDownloader::class)->download();
+
+            $this->assertTrue($result->succeeded());
+            $this->assertSame('512M', ini_get('memory_limit'));
+        } finally {
+            ini_set('memory_limit', $original);
+        }
+    }
+
     public function test_it_reports_not_configured_without_a_license_key(): void
     {
         config(['geo.license_key' => '']);
