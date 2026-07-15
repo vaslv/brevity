@@ -86,6 +86,15 @@ class GeoDatabaseDownloader
 
     private function run(): GeoDownloadResult
     {
+        // PharData loads the ~60 MB GeoLite2-City .mmdb into memory to locate and
+        // copy it out of the archive, peaking above the default 128M memory_limit.
+        // In production (display_errors=Off) the resulting "allowed memory size
+        // exhausted" fatal is silent AND aborts before the finally that releases
+        // the download lock, wedging every later download on "already in
+        // progress". Give the extraction room; the rare job runs alone on the
+        // dedicated supervisor-geo worker, which recycles right after.
+        ini_set('memory_limit', '512M');
+
         $targetPath = (string) config('geo.database_path');
         $dir = dirname($targetPath);
         File::ensureDirectoryExists($dir);
