@@ -32,7 +32,6 @@ Thumbs.db
 frankenphp
 frankenphp-worker.php
 
-/app/Console/Commands/V.php
 /*.txt
 /*.sql
 /*.dump
