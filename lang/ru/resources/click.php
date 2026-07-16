@@ -14,6 +14,9 @@ return [
         'user_agent' => 'User agent',
         'is_bot' => 'Бот',
         'ip_address' => 'IP-адрес',
+        'country' => 'Страна',
+        'region' => 'Регион',
+        'city' => 'Город',
         'created_at' => 'Создан',
     ],
 
@@ -21,6 +24,7 @@ return [
         'service' => 'Сервис',
         'link' => 'Ссылка',
         'is_bot' => 'Бот',
+        'country' => 'Страна',
         'created_from' => 'С даты',
         'created_until' => 'По дату',
     ],

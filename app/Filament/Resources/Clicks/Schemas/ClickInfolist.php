@@ -29,6 +29,15 @@ class ClickInfolist
                     ->default(false),
                 TextEntry::make('ipAddress.value')
                     ->label(__('resources/click.fields.ip_address')),
+                TextEntry::make('geoLocation.country_code')
+                    ->label(__('resources/click.fields.country'))
+                    ->placeholder('-'),
+                TextEntry::make('geoLocation.region')
+                    ->label(__('resources/click.fields.region'))
+                    ->placeholder('-'),
+                TextEntry::make('geoLocation.city')
+                    ->label(__('resources/click.fields.city'))
+                    ->placeholder('-'),
                 TextEntry::make('created_at')
                     ->label(__('resources/click.fields.created_at'))
                     ->dateTime(),

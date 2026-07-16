@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Clicks\Tables;
 
+use App\Models\GeoLocation;
 use App\Models\Service;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -58,6 +59,17 @@ class ClicksTable
                     ->label(__('resources/click.fields.ip_address'))
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('geoLocation.country_code')
+                    ->label(__('resources/click.fields.country'))
+                    ->placeholder('-'),
+                TextColumn::make('geoLocation.region')
+                    ->label(__('resources/click.fields.region'))
+                    ->placeholder('-')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('geoLocation.city')
+                    ->label(__('resources/click.fields.city'))
+                    ->placeholder('-')
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('service_id')
@@ -83,6 +95,21 @@ class ClicksTable
                         ),
                         blank: fn (Builder $query): Builder => $query,
                     ),
+                // Options are distinct codes from the geo dictionary;
+                // ->relationship() would list one option per country/region/city
+                // tuple, duplicating every country.
+                SelectFilter::make('country')
+                    ->label(__('resources/click.filters.country'))
+                    ->options(fn () => GeoLocation::query()
+                        ->distinct()
+                        ->orderBy('country_code')
+                        ->pluck('country_code', 'country_code'))
+                    ->searchable()
+                    ->query(fn (Builder $query, array $data): Builder => $query
+                        ->when($data['value'] ?? null, fn (Builder $q, string $country) => $q->whereHas(
+                            'geoLocation',
+                            fn (Builder $geo) => $geo->where('country_code', $country),
+                        ))),
                 Filter::make('created_at')
                     ->schema([
                         DatePicker::make('created_from')

@@ -14,6 +14,9 @@ return [
         'user_agent' => 'User agent',
         'is_bot' => 'Bot',
         'ip_address' => 'IP address',
+        'country' => 'Country',
+        'region' => 'Region',
+        'city' => 'City',
         'created_at' => 'Created at',
     ],
 
@@ -21,6 +24,7 @@ return [
         'service' => 'Service',
         'link' => 'Link',
         'is_bot' => 'Bot',
+        'country' => 'Country',
         'created_from' => 'From date',
         'created_until' => 'Until date',
     ],
