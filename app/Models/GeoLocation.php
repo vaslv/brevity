@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $country_code
  * @property string $region
  * @property string $city
+ * @property float|null $latitude
+ * @property float|null $longitude
  * @property string $created_at
  * @property-read Collection<int, Click> $clicks
  * @property-read int|null $clicks_count
@@ -51,5 +53,18 @@ class GeoLocation extends Model
         'country_code',
         'region',
         'city',
+        'latitude',
+        'longitude',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'latitude' => 'float',
+            'longitude' => 'float',
+        ];
+    }
 }

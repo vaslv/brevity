@@ -19,6 +19,33 @@ class GeoLocationResolverTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_coordinates_are_stored_on_create_and_kept_on_later_resolves(): void
+    {
+        $resolver = app(GeoLocationResolver::class);
+
+        $id = $resolver->resolveId(new ResolvedGeoLocation('GB', 'England', 'London', 51.5142, -0.0931));
+
+        $row = GeoLocation::query()->findOrFail($id);
+        $this->assertEqualsWithDelta(51.5142, $row->latitude, 0.0001);
+        $this->assertEqualsWithDelta(-0.0931, $row->longitude, 0.0001);
+
+        // The tuple already exists: a later resolve with drifted coordinates
+        // (a MaxMind database update) reuses the row and keeps its coordinates.
+        $again = $resolver->resolveId(new ResolvedGeoLocation('GB', 'England', 'London', 51.5, -0.1));
+
+        $this->assertSame($id, $again);
+        $this->assertEqualsWithDelta(51.5142, $row->refresh()->latitude, 0.0001);
+    }
+
+    public function test_coordinates_may_be_absent(): void
+    {
+        $id = app(GeoLocationResolver::class)->resolveId(new ResolvedGeoLocation('JP'));
+
+        $row = GeoLocation::query()->findOrFail($id);
+        $this->assertNull($row->latitude);
+        $this->assertNull($row->longitude);
+    }
+
     public function test_country_only_locations_share_one_dictionary_row(): void
     {
         $resolver = app(GeoLocationResolver::class);

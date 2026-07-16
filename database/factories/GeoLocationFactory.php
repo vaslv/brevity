@@ -21,6 +21,8 @@ class GeoLocationFactory extends Factory
             'country_code' => fake()->countryCode(),
             'region' => fake()->state(),
             'city' => fake()->city(),
+            'latitude' => fake()->latitude(),
+            'longitude' => fake()->longitude(),
         ];
     }
 }

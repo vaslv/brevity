@@ -61,6 +61,8 @@ class MaxMindGeoLocator implements GeoLocator
             countryCode: $countryCode,
             region: $record->mostSpecificSubdivision->name ?? '',
             city: $record->city->name ?? '',
+            latitude: $record->location->latitude,
+            longitude: $record->location->longitude,
         );
     }
 

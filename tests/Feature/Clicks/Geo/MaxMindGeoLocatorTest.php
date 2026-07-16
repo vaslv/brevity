@@ -51,6 +51,15 @@ class MaxMindGeoLocatorTest extends TestCase
         $this->assertSame('London', $result->city);
     }
 
+    public function test_a_known_ip_resolves_with_coordinates(): void
+    {
+        $result = $this->locatorWithFixture()->locate('81.2.69.142');
+
+        $this->assertNotNull($result);
+        $this->assertEqualsWithDelta(51.5142, $result->latitude, 0.001);
+        $this->assertEqualsWithDelta(-0.0931, $result->longitude, 0.001);
+    }
+
     public function test_a_known_ipv6_address_resolves(): void
     {
         // Production traffic includes IPv6; 2001:218::/32 is a country-only

@@ -23,28 +23,22 @@ class GeoLocationResolver
             return null;
         }
 
-        // Normalize and guard the char(2) column: uppercase so 'de' and 'DE' do
-        // not split the tuple, and reject anything that is not exactly two ASCII
-        // letters (an unexpected source, empty, or an over-long value) rather
-        // than truncate it into a wrong country. An invalid code leaves the
-        // click unlocated, like a null location — not an error, so no warning.
-        $countryCode = mb_strtoupper($geo->countryCode);
+        $attributes = $this->tupleAttributes($geo);
 
-        if (preg_match('/^[A-Z]{2}$/', $countryCode) !== 1) {
+        if ($attributes === null) {
             return null;
         }
 
-        $attributes = [
-            'country_code' => $countryCode,
-            'region' => mb_substr($geo->region, 0, self::MAX_NAME_CHARS),
-            'city' => mb_substr($geo->city, 0, self::MAX_NAME_CHARS),
-        ];
-
         // SELECT-first (locations recur heavily across clicks); createOrFirst is
-        // race-safe on the UNIQUE tuple for the miss.
+        // race-safe on the UNIQUE tuple for the miss. Coordinates are stored
+        // only on create — an existing tuple keeps what it has, and rows
+        // predating coordinates are filled by geo:backfill-coordinates.
         try {
             return GeoLocation::query()->where($attributes)->value('id')
-                ?? GeoLocation::query()->createOrFirst($attributes)->id;
+                ?? GeoLocation::query()->createOrFirst($attributes, [
+                    'latitude' => $geo->latitude,
+                    'longitude' => $geo->longitude,
+                ])->id;
         } catch (\Throwable $e) {
             report($e);
             Log::warning('Failed to resolve click geolocation; leaving the click unlocated.', [
@@ -53,5 +47,30 @@ class GeoLocationResolver
 
             return null;
         }
+    }
+
+    /**
+     * Normalize a resolved location to its dictionary tuple, or null when the
+     * country code cannot form a valid tuple. Uppercases the code so 'de' and
+     * 'DE' do not split the tuple, and rejects anything that is not exactly two
+     * ASCII letters (an unexpected source, empty, or an over-long value) rather
+     * than truncate it into a wrong country. Shared by resolveId and
+     * geo:backfill-coordinates so both sides compare tuples identically.
+     *
+     * @return array{country_code: string, region: string, city: string}|null
+     */
+    public function tupleAttributes(ResolvedGeoLocation $geo): ?array
+    {
+        $countryCode = mb_strtoupper($geo->countryCode);
+
+        if (preg_match('/^[A-Z]{2}$/', $countryCode) !== 1) {
+            return null;
+        }
+
+        return [
+            'country_code' => $countryCode,
+            'region' => mb_substr($geo->region, 0, self::MAX_NAME_CHARS),
+            'city' => mb_substr($geo->city, 0, self::MAX_NAME_CHARS),
+        ];
     }
 }
