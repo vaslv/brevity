@@ -284,3 +284,19 @@ exception-safe, `withTrashed` в колбеках.
 | r54 | **P1** (смежно r16). `LinkRuleResolver` грузит правила и условия отдельными SELECT (READ COMMITTED): если между ними коммитится `LinkRuleSetWriter::replace` (`rules()->delete()` + пересоздание), старые правила возвращаются с **пустым** списком условий (pivot каскадно удалён) → `ruleMatches` трактует пусто как «безусловно» → в окне PATCH гейтированный оффер отдаётся всем визитёрам (для клоакера — утечка целевой аудитории). Окно — миллисекунды на каждую правку правил живой ссылки. **Решение:** обернуть resolve-чтение (rules+conditions+variants) в транзакцию REPEATABLE READ — единый снапшот, условия не исчезают между SELECT | Запланировано |
 | r55 | **P2.** `callbacks:redispatch-stale` считает, что Pending >2ч потерял джобу, но при бэклоге очереди >2ч исходный `SendCallbackJob` ещё в очереди, а джоба не `ShouldBeUnique` → партнёр получает дубль постбэка (двойной зачёт конверсии). Фикс: `ShouldBeUnique` по `callback_id` на окно доставки, либо атомарный claim (`where status=Pending → update`) перед редиспатчем | Запланировано |
 | r56 | **P3.** `forward_query` теряет повторные скалярные ключи (`b=1&b=2`→`b=2`) и переименовывает `[]`-ключи (`a[]`→`a[0]`): `Request::getQueryString()` нормализует (parseQuery+ksort+http_build_query) до `QueryString::parse`, а parse — last-wins. Тот же эффект на `visited_query` и матчинг условий `query_param`. Редкие формы параметров в афф-ссылках | Отложено |
+
+### Статанализ 2026-07-15 (внедрение larastan + чистка level 5)
+
+Внедрён larastan v3 (phpstan 2.2, level 5, paths: `app/`) как typecheck-измерение
+/health-дашборда; стек команд закреплён в `CLAUDE.md` § Health Stack
+(`a013d7b`). Первый прогон: 16 ошибок в 8 файлах, все разобраны и закрыты
+отдельными коммитами (`768fcbd`…`88306d0`); итог — phpstan чист, Pint чист,
+455 тестов зелёные. Ни одна находка не оказалась рантайм-багом; r59 попутно
+ужесточает auth. Подавлений (`@phpstan-ignore`, baseline) не вводили.
+
+| ID | Суть | Итог |
+|---|---|---|
+| r57 | 11× избыточный `?->` слева от `??` (nullsafe.neverNull): `??` и так проходит цепочку с isset()-семантикой, `?->` не добавляет ничего. В `SendCallbackJob` рантайм-защита от «исчезнувших» click/link/service (типы non-null по NOT NULL FK) сохранена как `?? null`-цепочка, коммент дополнен механикой. Поведение на всех путях идентично | Исправлено (`f885c68`, `1cc9fea`) |
+| r58 | method.notFound: трейты отношений (`app/Models/Relations/*`) не несли дженериков → результат `rules()->create()` типизировался базовым `Model` без `conditions()`/`variants()`. Всем 19 трейтам добавлены `@return BelongsTo<X, $this>`-аннотации; в `CreateLink::afterCreate` — `instanceof Link`-сужение (у Filament `$record` — базовый `Model`) | Исправлено (`768fcbd`, `88306d0`) |
+| r59 | instanceof.alwaysFalse в `StoreLinkRequest::authorize()`: larastan выводит тип `Request::user()` из провайдеров guard-ов `config/auth.php`, где значился только `User`, хотя Sanctum отдаёт tokenable=`Service`. Guard `sanctum` объявлен явно с провайдером `services` — заодно **ужесточение**: bearer-токены теперь резолвятся только в `Service` (дефолтный `provider=null` принимал любой tokenable; у `User` нет `HasApiTokens`, действующие потоки не затронуты) | Исправлено (`d983930`) |
+| r60 | arrayValues.list в `StoreLinkRequest::rules()`: `array_values(array_filter([...]))` пере-листивал список, у которого выпадать мог только хвостовой элемент. Заменён условным спредом | Исправлено (`b18d0ae`) |
