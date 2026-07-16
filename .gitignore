@@ -5,6 +5,9 @@
 .env.production
 .phpactor.json
 .phpunit.result.cache
+# Auto-generated IDE helpers (barryvdh/laravel-ide-helper), rebuilt on composer update
+/_ide_helper.php
+/.phpstorm.meta.php
 /.claude/settings.local.json
 /.fleet
 /.idea
