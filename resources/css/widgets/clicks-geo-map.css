@@ -1,0 +1,5 @@
+/* Invert only the tile images in dark mode so the map does not glare on a dark
+   dashboard; bubbles and controls live in other panes and keep their colors. */
+.dark [data-clicks-geo-map] .leaflet-tile {
+    filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
+}
