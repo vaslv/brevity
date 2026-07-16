@@ -1,0 +1,26 @@
+<x-filament-widgets::widget>
+    <x-filament::section
+        :heading="__('widgets.clicks_geo_map.heading', ['days' => \App\Filament\Widgets\ClicksGeoMap::DAYS])"
+    >
+        @php($markers = $this->getMarkers())
+
+        @if ($markers === [])
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ __('widgets.clicks_geo_map.empty') }}
+            </p>
+        @else
+            @assets
+                @vite('resources/js/widgets/clicks-geo-map.js')
+            @endassets
+
+            {{-- wire:ignore: Leaflet owns this subtree; a Livewire morph would
+                 wipe the map. --}}
+            <div
+                wire:ignore
+                data-clicks-geo-map
+                data-markers="{{ json_encode($markers) }}"
+                class="h-96 overflow-hidden rounded-xl"
+            ></div>
+        @endif
+    </x-filament::section>
+</x-filament-widgets::widget>

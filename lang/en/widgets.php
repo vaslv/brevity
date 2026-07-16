@@ -16,4 +16,8 @@ return [
         'heading' => 'Links per domain',
         'dataset' => 'Links',
     ],
+    'clicks_geo_map' => [
+        'heading' => 'Click geography (last :days days)',
+        'empty' => 'No located clicks yet.',
+    ],
 ];
