@@ -53,7 +53,7 @@ vendor/bin/sail bin pint --dirty --format agent
 1. Трогаешь админ-копирайт? Правь соответствующий
    `lang/en/resources/<x>.php` и `lang/ru/resources/<x>.php` — обе
    стороны.
-2. Меняешь термин? Сначала обнови [docs/02-glossary.md](./02-glossary.md).
+2. Меняешь термин? Сначала обнови [docs/02-glossary.md](../02-glossary.md).
 3. Обвязка Filament / строки ядра Laravel приходят из vendor-файлов —
    не изобретай заново.
 

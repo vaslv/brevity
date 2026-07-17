@@ -103,7 +103,7 @@ lang/
    `plural_label`, `navigation_label`, `fields.*`.
 4. Обвяжи каждый `->label()` в форме/таблице/инфолисте через
    `__('resources/<snake>.fields.<key>')`.
-5. Добавь термин в [02-glossary.md](./02-glossary.md).
+5. Добавь термин в [02-glossary.md](../02-glossary.md).
 6. Прогоняй `sail test` — без новых падений.
 
 ## Заметки по конкретным ресурсам

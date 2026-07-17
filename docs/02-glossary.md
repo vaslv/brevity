@@ -1,51 +1,51 @@
-# Глоссарий
+# Glossary
 
-Единый источник истины по терминологии. Идентификаторы в коде, таблицы
-БД, лейблы админки и пользовательский копирайт обязаны совпадать с этой
-таблицей.
+The single source of truth for terminology. Code identifiers, DB
+tables, admin panel labels, and user-facing copy must match this
+table.
 
-**Соглашение:**
-- **Код-термин** — используется в PHP (имена классов, таблиц, полей). Английский.
-- **EN label** — админ-UI на английском (`lang/en/...`).
-- **RU label** — админ-UI на русском (`lang/ru/...`). Каноническая
-  пользовательская форма.
-- **Заметки** — дизамбигуация, связанные понятия.
+**Convention:**
+- **Code term** — used in PHP (class, table, and field names). English.
+- **EN label** — the English admin UI (`lang/en/...`).
+- **RU label** — the Russian admin UI (`lang/ru/...`). The canonical
+  user-facing Russian form.
+- **Notes** — disambiguation, related concepts.
 
-## Основные сущности домена
+## Core domain entities
 
-| Код-термин | EN label | RU label | Заметки |
+| Code term | EN label | RU label | Notes |
 |---|---|---|---|
-| `Service` | Service | Сервис | Внешняя система, владеющая ссылками и получающая колбеки. |
-| `Link` | Link | Ссылка | Короткая ссылка. Имеет `code` (hashid), принадлежит `Service`. Опц. окно активности `valid_since`/`valid_until` и лимит `max_clicks` (см. «жизненный цикл»). |
-| `Domain` | Domain | Домен | Хост короткой ссылки (напр. `short.example.com`). Общий справочник. |
-| `DomainGroup` | Domain group | Группа доменов | Набор доменов (many-to-many); домен может входить в несколько групп. `name` — для админов, `code` — машинное имя для API. |
-| `Url` | URL | URL | Целевой URL. Общий справочник, нормализованный + с сортировкой query. |
-| `Rule` | Rule | Правило | Сопоставляет `Link` с `Url` по опциональному `Condition`. Упорядочено по приоритету. |
-| `Condition` | Condition | Условие | Переиспользуемый предикат (напр. `time_before`). Общий справочник. |
-| `Click` | Click | Клик | Зафиксированный визит, зарезолвивший ссылку. Аналитика. |
-| `Callback` | Callback | Колбек | Исходящий HTTP POST на `Service.callback_url` после клика. |
-| `Referrer` | Referrer | Реферер | Значение HTTP Referer. Общий справочник. |
-| `UserAgent` | User agent | User agent | Значение HTTP User-Agent. Общий справочник. Несёт флаг `is_bot` (детекция краулеров). Термин сохранён по-английски. |
-| `LinkClickCounter` | Click counter | Счётчик кликов | Слотовый предагрегат кликов ссылки, разрез бот/не бот; итог = сумма слотов. |
-| `IpAddress` | IP address | IP-адрес | IP посетителя. Общий справочник. |
-| `Setting` | Setting | Настройка | Key/value настройка приложения (vaslv/laravel-settings). |
-| `User` | User | Пользователь | Пользователь админки. |
+| `Service` | Service | Сервис | An external system that owns links and receives callbacks. |
+| `Link` | Link | Ссылка | A short link. Has a `code` (hashid), belongs to a `Service`. Optional activity window `valid_since`/`valid_until` and a `max_clicks` limit (see "lifecycle"). |
+| `Domain` | Domain | Домен | The short link's host (e.g. `short.example.com`). Shared dictionary. |
+| `DomainGroup` | Domain group | Группа доменов | A set of domains (many-to-many); a domain may belong to several groups. `name` is for admins, `code` is the machine name for the API. |
+| `Url` | URL | URL | The target URL. Shared dictionary, normalized + with sorted query. |
+| `Rule` | Rule | Правило | Maps a `Link` to a `Url` via an optional `Condition`. Ordered by priority. |
+| `Condition` | Condition | Условие | A reusable predicate (e.g. `time_before`). Shared dictionary. |
+| `Click` | Click | Клик | A recorded visit that resolved a link. Analytics. |
+| `Callback` | Callback | Колбек | An outgoing HTTP POST to `Service.callback_url` after a click. |
+| `Referrer` | Referrer | Реферер | The HTTP Referer value. Shared dictionary. |
+| `UserAgent` | User agent | User agent | The HTTP User-Agent value. Shared dictionary. Carries the `is_bot` flag (crawler detection). The term is kept in English. |
+| `LinkClickCounter` | Click counter | Счётчик кликов | A slotted pre-aggregate of a link's clicks, split by bot/non-bot; total = sum of slots. |
+| `IpAddress` | IP address | IP-адрес | The visitor's IP. Shared dictionary. |
+| `Setting` | Setting | Настройка | A key/value application setting (vaslv/laravel-settings). |
+| `User` | User | Пользователь | An admin panel user. |
 
-## Enum'ы / фиксированные значения
+## Enums / fixed values
 
 ### Transition mode (`Rule.transition_mode`)
 
-Как сервер отвечает при срабатывании правила.
+How the server responds when a rule fires.
 
-| Значение | EN label | RU label | Поведение |
+| Value | EN label | RU label | Behavior |
 |---|---|---|---|
-| `direct` | Direct | Прямой | HTTP 302 редирект. По умолчанию. |
-| `delayed` | Delayed | Отложенный | HTML-страница, авторедирект после обратного отсчёта. |
-| `manual` | Manual | Ручной | HTML-страница с кнопкой «продолжить». |
+| `direct` | Direct | Прямой | HTTP 302 redirect. The default. |
+| `delayed` | Delayed | Отложенный | An HTML page that auto-redirects after a countdown. |
+| `manual` | Manual | Ручной | An HTML page with a "continue" button. |
 
 ### Callback status (`Callback.status`)
 
-| Значение | EN label | RU label |
+| Value | EN label | RU label |
 |---|---|---|
 | `pending` | Pending | Ожидание |
 | `sent` | Sent | Отправлен |
@@ -53,62 +53,61 @@
 
 ### Condition type (`Condition.type`)
 
-| Значение | EN label | RU label | Форма `data` |
+| Value | EN label | RU label | `data` shape |
 |---|---|---|---|
 | `time_before` | Time before | До указанного времени | `{ before: ISO8601 }` |
 
-Новые типы условий добавляются через реализации `ConditionHandler`,
-зарегистрированные в `ConditionRegistry`. Каждый новый тип должен
-добавить лейбл в `lang/{en,ru}/resources/condition.php` под `types.*`
-и `data_fields.*`.
+New condition types are added via `ConditionHandler` implementations
+registered in the `ConditionRegistry`. Every new type must add a
+label to `lang/{en,ru}/resources/condition.php` under `types.*`
+and `data_fields.*`.
 
 ### Domain selection strategy (`domain_strategy`)
 
-Как сервер подбирает домен ссылки, если он не указан явно
-(`POST /api/links`). Подбор идёт по пулу: группа по коду `domain_group`
-либо все домены.
+How the server picks a link's domain when it is not given explicitly
+(`POST /api/links`). Selection runs over a pool: the group identified
+by the `domain_group` code, or all domains.
 
-| Значение | EN label | RU label | Поведение |
+| Value | EN label | RU label | Behavior |
 |---|---|---|---|
-| `random` | Random | Случайный | Случайный домен из пула. |
-| `round_robin` | Round robin | По кругу | Наименее недавно использованный — домены по кругу. |
-| `coldest` | Coldest | Самый холодный | Наименьшее число ссылок за период (`domains.coldest_period_days`). |
+| `random` | Random | Случайный | A random domain from the pool. |
+| `round_robin` | Round robin | По кругу | Least recently used — domains in rotation. |
+| `coldest` | Coldest | Самый холодный | The fewest links over the period (`domains.coldest_period_days`). |
 
-Новые стратегии добавляются через реализации `DomainSelectionStrategyHandler`,
-зарегистрированные в `DomainStrategyRegistry`.
+New strategies are added via `DomainSelectionStrategyHandler`
+implementations registered in the `DomainStrategyRegistry`.
 
-## Группы навигации (админка)
+## Navigation groups (admin panel)
 
-| Ключ | EN label | RU label | Содержимое |
+| Key | EN label | RU label | Contents |
 |---|---|---|---|
-| `main` | Main | Основное | Сервисы, Ссылки, Домены, Группы доменов |
-| `analytics` | Analytics | Аналитика | Клики, Колбеки |
-| `dictionaries` | Dictionaries | Справочники | URL, Условия, IP-адреса, Рефереры, User agent'ы |
-| `system` | System | Система | Пользователи, Настройки |
+| `main` | Main | Основное | Services, Links, Domains, Domain groups |
+| `analytics` | Analytics | Аналитика | Clicks, Callbacks |
+| `dictionaries` | Dictionaries | Справочники | URLs, Conditions, IP addresses, Referrers, User agents |
+| `system` | System | Система | Users, Settings |
 
-## Спорные термины — решено
+## Contested terms — settled
 
-Обсуждались при i18n-проходе. Зафиксировано здесь, чтобы не
-передоговариваться.
+Debated during the i18n pass. Recorded here so we don't re-litigate.
 
-| Термин | Выбрано | Отвергнуто |
+| Term | Chosen | Rejected |
 |---|---|---|
 | Callback (RU) | **Колбек** | Коллбэк, Вебхук |
 | Bot (RU) | **Бот** | Краулер, Робот |
 | Referrer (RU) | **Реферер** | Источник перехода |
-| User Agent (RU) | **User agent** (оставлено на английском) | Агент пользователя |
+| User Agent (RU) | **User agent** (kept in English) | Агент пользователя |
 | Click (RU) | **Клик** | Переход |
 
-## Антипаттерны — не использовать
+## Anti-patterns — do not use
 
-- «Переход» для `Click` — конфликтует с Transition mode.
-- «Токен» сам по себе для `PersonalAccessToken` — использовать «API-токен».
-- «Адрес» для `Url` — зарезервировано за IP-адресом / физическим адресом.
-- Смешивать «Callback» и «Webhook» — у нас только Callbacks.
+- «Переход» for `Click` — conflicts with Transition mode.
+- «Токен» on its own for `PersonalAccessToken` — use «API-токен».
+- «Адрес» for `Url` — reserved for the IP address / physical address.
+- Mixing "Callback" and "Webhook" — we only have Callbacks.
 
-## Процесс изменения
+## Change process
 
-1. Сначала правь этот файл.
-2. Обнови `lang/en/resources/*.php` и `lang/ru/resources/*.php`.
-3. Если меняется код-термин (редкость), планируй миграцию ренейма.
-4. Грепни кодбазу по старому термину, чтобы поймать хвосты.
+1. Edit this file first.
+2. Update `lang/en/resources/*.php` and `lang/ru/resources/*.php`.
+3. If a code term changes (rare), plan a rename migration.
+4. Grep the codebase for the old term to catch stragglers.
