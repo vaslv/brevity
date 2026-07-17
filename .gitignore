@@ -8,7 +8,19 @@
 # Auto-generated IDE helpers (barryvdh/laravel-ide-helper), rebuilt on composer update
 /_ide_helper.php
 /.phpstorm.meta.php
-/.claude/settings.local.json
+# AI-agent configs generated per-machine by Laravel Boost (boost:update);
+# AGENTS.md stays tracked as the canonical agent instructions
+/CLAUDE.md
+/GEMINI.md
+/boost.json
+/.mcp.json
+/.claude
+/.agents
+/.cursor
+/.ai
+/.gemini
+/.codex
+/.github/skills
 /.fleet
 /.idea
 /.nova
