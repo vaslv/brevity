@@ -23,7 +23,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - laravel/pail (PAIL) - v1
 - laravel/pint (PINT) - v1
 - laravel/sail (SAIL) - v1
-- phpunit/phpunit (PHPUNIT) - v12
+- phpunit/phpunit (PHPUNIT) - v13
 - rector/rector (RECTOR) - v2
 - tailwindcss (TAILWINDCSS) - v4
 
