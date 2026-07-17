@@ -1,7 +1,7 @@
 # Pin the base image to the PHP 8.4 tag + manifest-list digest for reproducible,
 # multi-arch builds (was an untagged `latest`, which could silently change the
 # bundled PHP version). Bump the tag and digest together when updating.
-# Build the Vite entries (the dashboard's Leaflet bundle, app css/js): the
+# Build the Vite entries (the dashboard's map bundle, app css/js): the
 # runtime image must carry public/build — .dockerignore keeps any local build
 # out of the context, and the panel dashboard loads a @vite entry at runtime.
 # Pinned tag + manifest-list digest, same convention as the base image below.
