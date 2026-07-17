@@ -66,9 +66,8 @@ vendor/bin/sail bin pint --dirty --format agent
 git-тег.
 
 Интерактивную команду релиза даёт dev-пакет
-[`example/release`](https://git.example.com/example/release) (composer-плагин,
-подключён через VCS-репозиторий `https://git.example.com/release.git`;
-общий для проектов Example, локального скрипта в репо больше нет):
+[`vaslv/composer-release`](https://github.com/vaslv/composer-release)
+(composer-плагин, ставится с Packagist; локального скрипта в репо нет):
 
 ```bash
 composer release
