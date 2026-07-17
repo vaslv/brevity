@@ -4,6 +4,66 @@
 переезда деплоя (выполнен 2026-06-10, пригодится при смене сервера или
 деплой-пользователя).
 
+## Развёртывание своего инстанса
+
+В репозитории есть всё, кроме PostgreSQL: `Dockerfile` собирает
+продовый образ (FrankenPHP + Octane, ассеты пресобраны), а
+`docker-compose.production.yml` поднимает весь стек — nginx-proxy +
+acme-companion (автоматический Let's Encrypt), one-shot мигратор, web,
+scheduler, Horizon и Redis.
+
+1. **Собрать и опубликовать образ** (любой registry, либо собрать
+   прямо на сервере):
+
+   ```bash
+   docker build -t registry.example.com/you/brevity:1.0.0 .
+   docker push registry.example.com/you/brevity:1.0.0
+   ```
+
+2. **Подготовить сервер**: Docker с Compose v2, свободные порты
+   80/443, DNS-записи всех обслуживаемых хостов указывают на него.
+   **PostgreSQL не входит в compose-файл** — используйте managed-базу
+   или свою, доступную из контейнеров.
+
+3. **Скопировать `docker-compose.production.yml` и продовый `.env`**
+   (за основу — `.env.example`) на сервер. Ключевые параметры:
+
+   - `APP_KEY` — сгенерировать `php artisan key:generate --show`;
+   - `APP_URL=https://<технический-хост>` — хост админки, API и
+     Horizon;
+   - `APP_HOST` — список **всех** хостов через запятую (технический +
+     каждый домен коротких ссылок); он подставляется в
+     `VIRTUAL_HOST`/`LETSENCRYPT_HOST` прокси, а `domains:sync` на
+     деплое заполняет из него справочник доменов;
+   - `LETSENCRYPT_EMAIL` — уведомления об истечении сертификатов;
+   - `DB_*` — ваш PostgreSQL; `REDIS_HOST=redis` (compose-сервис);
+   - `HASHIDS_SALT` — независим от `APP_KEY`, неизменяем после
+     появления ссылок (смена ломает все выданные короткие коды);
+   - опционально: SMTP-доступы, `GEOIP_LICENSE_KEY` (MaxMind) для
+     геолокации кликов.
+
+4. **Запустить стек**:
+
+   ```bash
+   export LARAVEL_IMAGE=registry.example.com/you/brevity:1.0.0
+   docker compose --env-file .env -f docker-compose.production.yml up -d
+   ```
+
+   One-shot `migrate` применяет миграции и синхронизирует домены; web,
+   scheduler и Horizon стартуют только после его успеха; прокси
+   получает сертификаты автоматически.
+
+5. **Создать первого админа**:
+
+   ```bash
+   docker exec -it laravel-web php artisan make:filament-user
+   ```
+
+6. **CI/CD (опционально)**: `.gitlab-ci.yml` — референсный пайплайн
+   для любого GitLab: сборка, пуш, деплой по SSH на пуш тега, ручной
+   rollback-джоб. Вся инфраструктурная специфика — через CI/CD
+   переменные; полный список — в шапке-комментарии самого файла.
+
 ## Топология
 
 - Прод: Docker Compose, проект **`brevity`** (имя зафиксировано в
