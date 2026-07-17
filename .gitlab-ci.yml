@@ -1,3 +1,15 @@
+# Reference build-and-deploy pipeline. Optional: the app builds and runs from
+# the Dockerfile + docker-compose.production.yml alone; this file automates
+# "build image -> push to registry -> deploy over SSH" on any GitLab instance.
+# Nothing infrastructure-specific is hardcoded — supply CI/CD variables:
+#   HARBOR_HOST / HARBOR_PROJECT / HARBOR_USERNAME / HARBOR_PASSWORD —
+#     any container registry (despite the name), e.g. registry.example.com;
+#   SERVER_IP, DEPLOY_USER — deploy target reached over SSH;
+#   SSH_PRIVATE_KEY_PATH (file), SSH_KNOWN_HOSTS — SSH credentials;
+#   DOT_ENV_PATH (file) — production .env copied to the server;
+#   HEALTHCHECK_URL — e.g. https://your-host/up, enables the smoke test;
+#   ROLLBACK_TAG — set when triggering the manual rollback job.
+# Pipelines run on tag pushes only; see docs/06-deploy.md for details.
 image: docker:27.5.1
 
 stages:
@@ -41,7 +53,7 @@ build:
     DOCKER_BUILDKIT: 1
   script:
     - echo $HARBOR_PASSWORD | docker login -u $HARBOR_USERNAME --password-stdin $HARBOR_HOST
-    - docker build --ssh default=$SSH_PRIVATE_KEY_PATH -f Dockerfile -t $HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA} .
+    - docker build -f Dockerfile -t $HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA} .
     - docker push $HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}
   only:
     - tags
