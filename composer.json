@@ -1,9 +1,9 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "vaslv/brevity",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Self-hosted link shortener with rule-based routing, click analytics, outgoing callbacks and multi-domain support.",
+    "keywords": ["url-shortener", "link-management", "laravel", "filament", "self-hosted"],
     "license": "MIT",
     "require": {
         "php": "^8.3",
