@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Restrict a route to the technical host (the host of APP_URL).
  *
  * Every hostname in APP_HOST resolves to the same app container, but only the
- * technical domain (brevity.example.com) may serve the admin panel, API and
+ * technical domain (the host of APP_URL) may serve the admin panel, API and
  * Horizon. The other hosts are short-link domains only. Requests for guarded
  * routes on any other host 404 — we hide the panel/API rather than reveal that
  * it exists elsewhere. When no technical host is configured the guard is a

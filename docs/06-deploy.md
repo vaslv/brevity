@@ -35,8 +35,8 @@
 
 Semver **без** префикса `v`; источник истины — `version` в
 `composer.json` + git-тег. Интерактивная команда — `composer release`
-(dev-пакет `example/release`); пуш тега запускает деплой. Детали —
-[05-development.md](./05-development.md).
+(dev-пакет `vaslv/composer-release`); пуш тега запускает деплой.
+Детали — [05-development.md](./05-development.md).
 
 ## Ручные операции на сервере
 
