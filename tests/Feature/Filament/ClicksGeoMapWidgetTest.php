@@ -100,6 +100,8 @@ class ClicksGeoMapWidgetTest extends TestCase
 
         Livewire::test(ClicksGeoMap::class)
             ->assertSee('data-clicks-geo-map', escape: false)
+            ->assertSee('data-wheel-hint', escape: false)
+            ->assertSee('data-touch-hint', escape: false)
             ->assertSee('London, GB');
     }
 }

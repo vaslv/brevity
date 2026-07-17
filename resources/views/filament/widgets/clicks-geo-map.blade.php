@@ -20,6 +20,8 @@
                 wire:ignore
                 data-clicks-geo-map
                 data-markers="{{ json_encode($markers) }}"
+                data-wheel-hint="{{ __('widgets.clicks_geo_map.wheel_zoom_hint') }}"
+                data-touch-hint="{{ __('widgets.clicks_geo_map.touch_pan_hint') }}"
             ></div>
         @endif
     </x-filament::section>
