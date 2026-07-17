@@ -19,5 +19,7 @@ return [
     'clicks_geo_map' => [
         'heading' => 'Click geography (last :days days)',
         'empty' => 'No located clicks yet.',
+        'wheel_zoom_hint' => 'Use :key + scroll to zoom the map',
+        'touch_pan_hint' => 'Use two fingers to move the map',
     ],
 ];

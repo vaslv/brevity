@@ -12,6 +12,34 @@
     fill: #374151; /* gray-700 */
 }
 
+/* The "use Ctrl + scroll / two fingers" overlay, shown briefly when a plain
+   wheel or a single finger tries to move the map. pointer-events: none — it
+   must never swallow the very gesture it explains. */
+[data-clicks-geo-map] .clicks-geo-map-hint {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    text-align: center;
+    font-size: 1rem;
+    color: #fff;
+    background-color: rgb(0 0 0 / 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        opacity 200ms ease,
+        visibility 200ms;
+    pointer-events: none;
+}
+
+[data-clicks-geo-map] .clicks-geo-map-hint.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
 /* Zoom controls, Google Maps style: a vertical group in the bottom-right
    corner, + above −. The library anchors each button separately at the
    top-left, so both are re-anchored here; the "one group" look comes from
