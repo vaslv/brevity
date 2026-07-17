@@ -56,4 +56,11 @@ function initClicksGeoMaps() {
 }
 
 initClicksGeoMaps();
-document.addEventListener('livewire:navigated', initClicksGeoMaps);
+
+// The widget is lazy: its HTML arrives in a Livewire update after this module
+// has already run, so watch the DOM for the container instead of relying on
+// load-time events.
+new MutationObserver(initClicksGeoMaps).observe(document.body, {
+    childList: true,
+    subtree: true,
+});

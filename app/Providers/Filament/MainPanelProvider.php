@@ -69,6 +69,14 @@ class MainPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::BODY_START,
                 fn (): string => view('filament.browser-timezone')->render(),
+            )
+            // Dashboard-scoped: the geo map widget is lazy, so its own @assets
+            // would arrive in a Livewire update that never executes module
+            // scripts; the layout must carry the Leaflet bundle instead.
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => view('filament.clicks-geo-map-assets')->render(),
+                scopes: Dashboard::class,
             );
     }
 }
