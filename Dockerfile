@@ -28,12 +28,9 @@ RUN apt update \
     && apt install -y \
     git \
     unzip \
-    openssh-client \
     && apt-get -y autoremove \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-RUN mkdir -p /root/.ssh && ssh-keyscan git.example.com >> /root/.ssh/known_hosts
 
 RUN install-php-extensions \
     bcmath \
@@ -47,4 +44,4 @@ COPY . /app
 
 COPY --from=assets /app/public/build /app/public/build
 
-RUN --mount=type=ssh composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist
