@@ -9,17 +9,17 @@
                 {{ __('widgets.clicks_geo_map.empty') }}
             </p>
         @else
-            @assets
-                @vite('resources/js/widgets/clicks-geo-map.js')
-            @endassets
-
+            {{-- The Leaflet bundle is loaded by a Dashboard-scoped render hook
+                 (MainPanelProvider): Livewire's @assets injection does not
+                 execute module scripts for a lazily-loaded widget. --}}
             {{-- wire:ignore: Leaflet owns this subtree; a Livewire morph would
                  wipe the map. --}}
+            {{-- Sized by the widget's own CSS (see clicks-geo-map.css) — the
+                 panel's precompiled styles carry no app Tailwind utilities. --}}
             <div
                 wire:ignore
                 data-clicks-geo-map
                 data-markers="{{ json_encode($markers) }}"
-                class="h-96 overflow-hidden rounded-xl"
             ></div>
         @endif
     </x-filament::section>

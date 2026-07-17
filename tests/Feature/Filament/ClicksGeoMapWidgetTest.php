@@ -88,8 +88,6 @@ class ClicksGeoMapWidgetTest extends TestCase
 
     public function test_the_widget_renders_an_empty_state_without_located_clicks(): void
     {
-        $this->withoutVite();
-
         Livewire::test(ClicksGeoMap::class)
             ->assertDontSee('data-clicks-geo-map', escape: false)
             ->assertSee(__('widgets.clicks_geo_map.empty'));
@@ -97,8 +95,6 @@ class ClicksGeoMapWidgetTest extends TestCase
 
     public function test_the_widget_renders_the_map_container_with_marker_data(): void
     {
-        $this->withoutVite();
-
         $geo = GeoLocation::factory()->create(['city' => 'London', 'country_code' => 'GB']);
         Click::factory()->create(['geo_location_id' => $geo->id]);
 

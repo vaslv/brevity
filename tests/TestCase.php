@@ -13,4 +13,14 @@ abstract class TestCase extends BaseTestCase
      * domain instead of the technical host.
      */
     protected const string SHORT_LINK_HOST = 'http://lnk.test';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Panel pages carry @vite entries (the dashboard loads the geo map
+        // bundle through a render hook): tests must pass without a built
+        // manifest, so Vite is faked for the whole suite.
+        $this->withoutVite();
+    }
 }

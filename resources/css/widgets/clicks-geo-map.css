@@ -1,3 +1,12 @@
+/* Sizing lives here, not in Blade utility classes: the panel ships Filament's
+   precompiled CSS, so app-side Tailwind utilities are not guaranteed to exist
+   on admin pages — and a zero-height container renders no map at all. */
+[data-clicks-geo-map] {
+    height: 24rem;
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
 /* Invert only the tile images in dark mode so the map does not glare on a dark
    dashboard; bubbles and controls live in other panes and keep their colors. */
 .dark [data-clicks-geo-map] .leaflet-tile {
