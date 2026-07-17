@@ -94,7 +94,7 @@
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
-    "version": "1.10.4",
+    "version": "1.10.5",
     "repositories": [{
         "name": "example-release",
         "type": "vcs",
