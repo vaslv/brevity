@@ -9,11 +9,11 @@
                 {{ __('widgets.clicks_geo_map.empty') }}
             </p>
         @else
-            {{-- The Leaflet bundle is loaded by a Dashboard-scoped render hook
+            {{-- The map bundle is loaded by a Dashboard-scoped render hook
                  (MainPanelProvider): Livewire's @assets injection does not
                  execute module scripts for a lazily-loaded widget. --}}
-            {{-- wire:ignore: Leaflet owns this subtree; a Livewire morph would
-                 wipe the map. --}}
+            {{-- wire:ignore: jsVectorMap owns this subtree; a Livewire morph
+                 would wipe the map. --}}
             {{-- Sized by the widget's own CSS (see clicks-geo-map.css) — the
                  panel's precompiled styles carry no app Tailwind utilities. --}}
             <div

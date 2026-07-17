@@ -72,7 +72,7 @@ class MainPanelProvider extends PanelProvider
             )
             // Dashboard-scoped: the geo map widget is lazy, so its own @assets
             // would arrive in a Livewire update that never executes module
-            // scripts; the layout must carry the Leaflet bundle instead.
+            // scripts; the layout must carry the map bundle instead.
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): string => view('filament.clicks-geo-map-assets')->render(),
