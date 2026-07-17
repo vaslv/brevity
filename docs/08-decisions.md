@@ -49,9 +49,7 @@
   `firstOrCreate` в Laravel 13 race-safe через `createOrFirst` + savepoint;
   Filament v5 `unique()` игнорирует текущую запись на edit по умолчанию.
 
-## Продуктовые решения 2026-07-11 (разбор каталога competitor)
-
-Обоснования — [10-competitor-catalog-review.md](./10-competitor-catalog-review.md).
+## Продуктовые решения 2026-07-11
 
 - **Колбеки по бот-кликам отправляются всегда, с меткой `is_bot` в корне
   payload** (клиентский ключ `is_bot` перекрывается). Партнёр решает сам;
