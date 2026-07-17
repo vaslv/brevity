@@ -11,3 +11,51 @@
 .dark [data-clicks-geo-map] .jvm-region {
     fill: #374151; /* gray-700 */
 }
+
+/* Zoom controls, Google Maps style: a vertical group in the bottom-right
+   corner, + above −. The library anchors each button separately at the
+   top-left, so both are re-anchored here; the "one group" look comes from
+   flush edges and a divider drawn as the top button's bottom border. */
+[data-clicks-geo-map] .jvm-zoom-btn {
+    top: auto;
+    left: auto;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    line-height: 1;
+    background-color: #fff;
+    color: #4b5563; /* gray-600 */
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.3);
+}
+
+[data-clicks-geo-map] .jvm-zoom-btn:hover {
+    color: #111827; /* gray-900 */
+}
+
+[data-clicks-geo-map] .jvm-zoom-btn.jvm-zoomin {
+    bottom: 40px; /* 12px offset + 28px zoomout: edges touch */
+    border-radius: 6px 6px 0 0;
+    border-bottom: 1px solid #e5e7eb; /* gray-200 divider */
+}
+
+[data-clicks-geo-map] .jvm-zoom-btn.jvm-zoomout {
+    bottom: 12px;
+    border-radius: 0 0 6px 6px;
+}
+
+.dark [data-clicks-geo-map] .jvm-zoom-btn {
+    background-color: #1f2937; /* gray-800 */
+    color: #9ca3af; /* gray-400 */
+}
+
+.dark [data-clicks-geo-map] .jvm-zoom-btn:hover {
+    color: #f9fafb; /* gray-50 */
+}
+
+.dark [data-clicks-geo-map] .jvm-zoom-btn.jvm-zoomin {
+    border-bottom-color: #374151; /* gray-700 */
+}
