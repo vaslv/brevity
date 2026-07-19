@@ -8,6 +8,12 @@ how to obtain an API token, authenticate, and create short links.
 > payloads for SDK authors. For terminology, see
 > [02-glossary.md](./02-glossary.md).
 
+> **Official PHP SDK** —
+> [vaslv/brevity-php-sdk](https://github.com/vaslv/brevity-php-sdk)
+> (`composer require vaslv/brevity-php-sdk`) covers this entire contract:
+> typed DTOs, RFC 7807 error mapping, retries. PHP ≥ 7.1, plain PHP or
+> Laravel (5.8+). See the PHP example in §13.
+
 ---
 
 ## 1. What you will need
@@ -681,6 +687,24 @@ curl -sS -X POST https://brevity.example.com/api/v1/links \
   }'
 ```
 
+### PHP (official SDK)
+
+The [official PHP SDK](https://github.com/vaslv/brevity-php-sdk)
+wraps the whole contract — typed DTOs, exception mapping per §11,
+retries per §15:
+
+```php
+use Vaslv\Brevity\BrevityClient;
+
+$client = new BrevityClient([
+    'base_uri' => 'https://brevity.example.com', // the technical host
+    'token' => getenv('BREVITY_TOKEN'),
+]);
+
+$link = $client->createSimpleLink('https://example.com/landing');
+echo $link->getUrl(); // https://short.example.com/AbC12345
+```
+
 ### PHP (Laravel HTTP client)
 
 ```php
@@ -764,6 +788,9 @@ Technical practices:
 - Retry only network errors and `5xx` (do not retry `4xx`).
 - Always send `Accept: application/json`.
 - Do not transform `condition.data` beyond JSON serialization.
+
+A reference implementation of these recommendations is the official
+[vaslv/brevity-php-sdk](https://github.com/vaslv/brevity-php-sdk).
 
 ---
 

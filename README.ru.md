@@ -26,6 +26,8 @@ Self-hosted сокращатель ссылок: маршрутизация по
 - **Админка** — Filament 5, двуязычная (EN/RU).
 - **HTTP API** — токен-аутентификация (Laravel Sanctum), рассчитан на
   программное создание ссылок; см. [docs/ru/03-api.md](./docs/ru/03-api.md).
+  Официальный PHP-клиент:
+  [vaslv/brevity-php-sdk](https://github.com/vaslv/brevity-php-sdk).
 
 ## Стек
 

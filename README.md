@@ -25,6 +25,8 @@ outgoing callbacks and multi-domain support.
 - **Admin panel** — Filament 5, bilingual (EN/RU).
 - **HTTP API** — token-authenticated (Laravel Sanctum), built for
   programmatic link creation; see [docs/03-api.md](./docs/03-api.md).
+  Official PHP client:
+  [vaslv/brevity-php-sdk](https://github.com/vaslv/brevity-php-sdk).
 
 ## Stack
 
