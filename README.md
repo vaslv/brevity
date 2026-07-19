@@ -58,13 +58,27 @@ deployment, plans and recorded decisions.
 
 ## Deployment
 
-The repository ships a production `Dockerfile` (FrankenPHP + Octane) and
-a fully parameterised `docker-compose.production.yml` (nginx-proxy +
-Let's Encrypt, one-shot migrator, web, scheduler, Horizon, Redis).
-`.gitlab-ci.yml` is a reference build-and-deploy pipeline that works
-with any GitLab instance and container registry — everything
-infrastructure-specific is supplied via CI variables. See
-[docs/06-deploy.md](./docs/06-deploy.md).
+Everything needed to self-host on any Docker server ships in the
+repository: a production `Dockerfile` (FrankenPHP + Octane), a fully
+parameterised `docker-compose.production.yml` (nginx-proxy + automatic
+Let's Encrypt, one-shot migrator, web, scheduler, Horizon, Redis), an
+optional `docker-compose.db.yml` overlay that adds PostgreSQL to the
+stack, and a production environment template
+(`.env.production.example`). In short:
+
+```bash
+docker build -t you/brevity:latest .
+cp .env.production.example .env   # fill in the blanks
+docker compose --env-file .env \
+    -f docker-compose.production.yml -f docker-compose.db.yml up -d
+docker exec -it laravel-web php artisan make:filament-user
+```
+
+The admin panel is served at the root of the technical host
+(`https://<your-host>/login`). `.gitlab-ci.yml` is a reference
+build-and-deploy pipeline for any GitLab instance and container
+registry — everything infrastructure-specific is supplied via CI
+variables. Full walkthrough: [docs/06-deploy.md](./docs/06-deploy.md).
 
 ## Intended use
 

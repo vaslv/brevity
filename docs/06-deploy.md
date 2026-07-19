@@ -22,11 +22,19 @@ scheduler, Horizon and Redis.
 
 2. **Prepare the server**: Docker with Compose v2, ports 80/443 free,
    DNS records for every hostname you plan to serve pointing at it.
-   **PostgreSQL is not part of the compose file** — bring a managed
-   database or run your own, reachable from the containers.
+   **PostgreSQL is not part of the base compose file** — bring a
+   managed database or run your own, reachable from the containers, OR
+   add the bundled one with the `docker-compose.db.yml` overlay (data
+   on a named volume; `DB_HOST=pgsql`). One instance per server: the
+   compose project name is pinned to `brevity` and container names are
+   fixed; pass `docker compose -p <name>` to run it alongside another
+   compose project.
 
-3. **Copy `docker-compose.production.yml` and a production `.env`**
-   (start from `.env.example`) to the server. The load-bearing keys:
+3. **Copy `docker-compose.production.yml` (plus
+   `docker-compose.db.yml` if used) and a production `.env`** (start
+   from **`.env.production.example`** — it carries the production
+   profile: Redis-backed queue/cache/session for Horizon, stderr
+   logging, debug off) to the server. The load-bearing keys:
 
    - `APP_KEY` — generate with `php artisan key:generate --show`;
    - `APP_URL=https://<technical-host>` — the host that serves the
@@ -43,7 +51,9 @@ scheduler, Horizon and Redis.
    - optional: SMTP credentials, `GEOIP_LICENSE_KEY` (MaxMind) for
      click geolocation.
 
-4. **Start the stack**:
+4. **Start the stack** (`LARAVEL_IMAGE` may live in `.env` instead of
+   the export; add `-f docker-compose.db.yml` when using the bundled
+   PostgreSQL):
 
    ```bash
    export LARAVEL_IMAGE=registry.example.com/you/brevity:1.0.0
@@ -59,6 +69,11 @@ scheduler, Horizon and Redis.
    ```bash
    docker exec -it laravel-web php artisan make:filament-user
    ```
+
+   The admin panel lives at the **root of the technical host** — sign
+   in at `https://<technical-host>/login`. Every other configured
+   hostname serves short links only and returns 404 for the panel,
+   API and Horizon.
 
 6. **CI/CD (optional)**: `.gitlab-ci.yml` is a reference pipeline for
    any GitLab instance — build, push, deploy over SSH on tag push,
@@ -256,7 +271,9 @@ Contract changes for integrators: the `is_bot` flag in every callback
 Server `.env`: `DB_PASSWORD`, `APP_KEY`, `HASHIDS_SALT` (independent
 of `APP_KEY` — see [08-decisions.md](./08-decisions.md)), SMTP
 credentials. Convention: the keys (not the values) of `.env` /
-`.env.example` / `.env.production` are kept in sync.
+`.env.example` / `.env.production` are kept in sync;
+`.env.production.example` (the public template) follows whenever a new
+key is production-relevant.
 
 ## Runbook: moving the deployment (new server / deploy user)
 
