@@ -7,6 +7,12 @@
 > правила валидации, колбеки и готовые тестовые payload'ы для авторов SDK.
 > Терминология — в [02-glossary.md](../02-glossary.md).
 
+> **Официальный PHP SDK** —
+> [vaslv/brevity-php-sdk](https://github.com/vaslv/brevity-php-sdk)
+> (`composer require vaslv/brevity-php-sdk`) покрывает весь этот контракт:
+> типизированные DTO, маппинг ошибок RFC 7807, ретраи. PHP ≥ 7.1, чистый
+> PHP или Laravel (5.8+). Пример на PHP — в §13.
+
 ---
 
 ## 1. Что вам понадобится
@@ -654,6 +660,24 @@ curl -sS -X POST https://brevity.example.com/api/v1/links \
   }'
 ```
 
+### PHP (официальный SDK)
+
+[Официальный PHP SDK](https://github.com/vaslv/brevity-php-sdk)
+оборачивает весь контракт — типизированные DTO, маппинг исключений по
+§11, ретраи по §15:
+
+```php
+use Vaslv\Brevity\BrevityClient;
+
+$client = new BrevityClient([
+    'base_uri' => 'https://brevity.example.com', // технический хост
+    'token' => getenv('BREVITY_TOKEN'),
+]);
+
+$link = $client->createSimpleLink('https://example.com/landing');
+echo $link->getUrl(); // https://short.example.com/AbC12345
+```
+
 ### PHP (Laravel HTTP-клиент)
 
 ```php
@@ -735,6 +759,9 @@ if (res.status === 201) {
 - Ретраить только сетевые ошибки и `5xx` (не ретраить `4xx`).
 - Всегда слать `Accept: application/json`.
 - Не преобразовывать `condition.data`, кроме JSON-сериализации.
+
+Референсная реализация этих рекомендаций — официальный
+[vaslv/brevity-php-sdk](https://github.com/vaslv/brevity-php-sdk).
 
 ---
 
