@@ -1,0 +1,34 @@
+# Optional overlay: run PostgreSQL inside the same compose stack instead of
+# bringing an external database. Data lives on the named pgsql_data volume.
+# Usage:
+#   docker compose --env-file .env \
+#     -f docker-compose.production.yml -f docker-compose.db.yml up -d
+# The app reaches it at DB_HOST=pgsql (the service name below).
+services:
+  pgsql:
+    image: postgres:17-alpine
+    container_name: pgsql
+    restart: always
+    environment:
+      POSTGRES_DB: "${DB_DATABASE}"
+      POSTGRES_USER: "${DB_USERNAME}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - pgsql_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - proxy
+
+  # The one-shot migrator must not start before the database accepts
+  # connections; web/scheduler/horizon already wait for the migrator.
+  migrate:
+    depends_on:
+      pgsql:
+        condition: service_healthy
+
+volumes:
+  pgsql_data:

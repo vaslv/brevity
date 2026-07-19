@@ -22,11 +22,19 @@ scheduler, Horizon и Redis.
 
 2. **Подготовить сервер**: Docker с Compose v2, свободные порты
    80/443, DNS-записи всех обслуживаемых хостов указывают на него.
-   **PostgreSQL не входит в compose-файл** — используйте managed-базу
-   или свою, доступную из контейнеров.
+   **PostgreSQL не входит в базовый compose-файл** — используйте
+   managed-базу или свою, доступную из контейнеров, ЛИБО добавьте
+   встроенную оверлеем `docker-compose.db.yml` (данные на named
+   volume; `DB_HOST=pgsql`). Один инстанс на сервер: имя
+   compose-проекта запинено (`brevity`), имена контейнеров
+   фиксированы; для соседства с другим проектом задайте
+   `docker compose -p <имя>`.
 
-3. **Скопировать `docker-compose.production.yml` и продовый `.env`**
-   (за основу — `.env.example`) на сервер. Ключевые параметры:
+3. **Скопировать `docker-compose.production.yml` (плюс
+   `docker-compose.db.yml`, если используется) и продовый `.env`**
+   (за основу — **`.env.production.example`**: в нём продовый профиль —
+   очередь/кэш/сессии на Redis под Horizon, логи в stderr, debug
+   выключен) на сервер. Ключевые параметры:
 
    - `APP_KEY` — сгенерировать `php artisan key:generate --show`;
    - `APP_URL=https://<технический-хост>` — хост админки, API и
@@ -42,7 +50,9 @@ scheduler, Horizon и Redis.
    - опционально: SMTP-доступы, `GEOIP_LICENSE_KEY` (MaxMind) для
      геолокации кликов.
 
-4. **Запустить стек**:
+4. **Запустить стек** (`LARAVEL_IMAGE` можно задать в `.env` вместо
+   export; при встроенном PostgreSQL добавьте
+   `-f docker-compose.db.yml`):
 
    ```bash
    export LARAVEL_IMAGE=registry.example.com/you/brevity:1.0.0
@@ -58,6 +68,11 @@ scheduler, Horizon и Redis.
    ```bash
    docker exec -it laravel-web php artisan make:filament-user
    ```
+
+   Админка живёт в **корне технического хоста** — вход на
+   `https://<технический-хост>/login`. Остальные настроенные хосты
+   обслуживают только короткие ссылки и отдают 404 для панели, API и
+   Horizon.
 
 6. **CI/CD (опционально)**: `.gitlab-ci.yml` — референсный пайплайн
    для любого GitLab: сборка, пуш, деплой по SSH на пуш тега, ручной
@@ -232,7 +247,8 @@ deprecated (этап 2). Уведомить партнёров — см. [03-api
 Серверный `.env`: `DB_PASSWORD`, `APP_KEY`, `HASHIDS_SALT` (независим от
 `APP_KEY` — см. [08-decisions.md](./08-decisions.md)), SMTP-креды.
 Конвенция: ключи (не значения) `.env` / `.env.example` / `.env.production`
-держатся синхронными.
+держатся синхронными; `.env.production.example` (публичный шаблон)
+пополняется, когда новый ключ актуален для прода.
 
 ## Ранбук: переезд деплоя (новый сервер / деплой-пользователь)
 

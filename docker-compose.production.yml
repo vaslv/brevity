@@ -4,7 +4,7 @@
 name: brevity
 
 x-laravel: &laravel
-  image: "${LARAVEL_IMAGE}"
+  image: "${LARAVEL_IMAGE:?set LARAVEL_IMAGE to the app image, e.g. registry.example.com/you/brevity:1.0.0}"
   restart: always
   volumes:
     - ./.env:/app/.env

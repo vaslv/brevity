@@ -60,13 +60,27 @@ HTTP API, админка, разработка, деплой, планы и пр
 
 ## Деплой
 
-В репозитории есть продовый `Dockerfile` (FrankenPHP + Octane) и
-полностью параметризованный `docker-compose.production.yml`
-(nginx-proxy + Let's Encrypt, one-shot мигратор, web, scheduler,
-Horizon, Redis). `.gitlab-ci.yml` — референсный пайплайн сборки и
-деплоя, работающий с любым GitLab и любым container registry: вся
-инфраструктурная специфика передаётся через CI-переменные. См.
-[docs/ru/06-deploy.md](./docs/ru/06-deploy.md).
+Для self-hosted запуска на любом сервере с Docker в репозитории есть
+всё: продовый `Dockerfile` (FrankenPHP + Octane), полностью
+параметризованный `docker-compose.production.yml` (nginx-proxy +
+автоматический Let's Encrypt, one-shot мигратор, web, scheduler,
+Horizon, Redis), опциональный оверлей `docker-compose.db.yml`,
+добавляющий PostgreSQL в стек, и шаблон продового окружения
+(`.env.production.example`). Кратко:
+
+```bash
+docker build -t you/brevity:latest .
+cp .env.production.example .env   # заполнить пропуски
+docker compose --env-file .env \
+    -f docker-compose.production.yml -f docker-compose.db.yml up -d
+docker exec -it laravel-web php artisan make:filament-user
+```
+
+Админка отдаётся в корне технического хоста
+(`https://<ваш-хост>/login`). `.gitlab-ci.yml` — референсный пайплайн
+сборки и деплоя для любого GitLab и container registry: вся
+инфраструктурная специфика передаётся через CI-переменные. Полный
+разбор: [docs/ru/06-deploy.md](./docs/ru/06-deploy.md).
 
 ## Назначение
 
