@@ -6,10 +6,22 @@ import '../../css/widgets/clicks-geo-map.css';
 // teal-600, matching the panel's primary color.
 const BUBBLE_COLOR = '#0d9488';
 
+// Zoom per pixel of wheel travel. The library's own formula throws the delta
+// away (its `>> 10` collapses to a fixed step), so a trackpad pinch — which
+// fires a stream of tiny deltas — applied a full mouse notch each time and the
+// zoom jumped. Scaling by the actual delta keeps the pinch smooth; the clamp
+// keeps one coarse mouse notch (~100px, or a whole "page" on some drivers) to
+// about 13% instead of a leap.
+const ZOOM_SENSITIVITY = 0.002;
+const MAX_WHEEL_DELTA = 60;
+
+// deltaMode 1 counts lines, 2 counts pages — normalize both to pixels.
+const WHEEL_LINE_HEIGHT = 16;
+
 // Google Maps-like gestures. Mouse: a plain wheel keeps scrolling the page
 // (the map is dashboard-wide — grabbing the wheel would trap the scroll) and
-// briefly shows a hint; Ctrl/⌘ + wheel zooms with the library's own
-// scroll-zoom formula, anchored at the cursor. Touch: single-finger events
+// briefly shows a hint; Ctrl/⌘ + wheel zooms proportionally to the wheel
+// delta, anchored at the cursor. Touch: single-finger events
 // are hidden from the library in the capture phase so a finger scrolls the
 // page instead of panning the map (the library would preventDefault it), and
 // two fingers pinch-zoom (library) + pan (added here — the library's
@@ -44,10 +56,19 @@ function attachMapGestures(el, map) {
             event.preventDefault();
             hint.classList.remove('is-visible');
 
-            // The library's zoomOnScroll math verbatim (it is disabled on the
-            // instance, so it cannot double-fire).
-            const deltaY = ((event.deltaY || -event.wheelDelta || event.detail) >> 10 || 1) * 75;
-            const factor = Math.pow(1 + map.params.zoomOnScrollSpeed / 1000, -1.5 * deltaY);
+            // Zooming is driven here rather than by the library (zoomOnScroll
+            // is disabled on the instance, so it cannot double-fire).
+            let delta = event.deltaY;
+
+            if (event.deltaMode === 1) {
+                delta *= WHEEL_LINE_HEIGHT;
+            } else if (event.deltaMode === 2) {
+                delta *= el.clientHeight;
+            }
+
+            delta = Math.max(-MAX_WHEEL_DELTA, Math.min(MAX_WHEEL_DELTA, delta));
+
+            const factor = Math.exp(-delta * ZOOM_SENSITIVITY);
             const rect = el.getBoundingClientRect();
 
             map._tooltip?.hide();
