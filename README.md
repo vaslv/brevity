@@ -1,4 +1,4 @@
-# Brevity
+<img src="./public/images/logo.svg" alt="Brevity" width="280">
 
 Self-hosted link shortener with rule-based routing, click analytics,
 outgoing callbacks and multi-domain support.
