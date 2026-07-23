@@ -438,3 +438,17 @@ livewire(ListUsers::class)
   - `$view`: `protected string` (not `protected static string`) on `Page` and `Widget` classes
 
 </laravel-boost-guidelines>
+
+# Working Agreement
+
+- **Agree the scope with the repository owner before acting.** Do exactly what
+  was asked — nothing beyond it. Extra files, extra variants, extra languages,
+  refactors, renames, "while I was in there" improvements, and edits to files
+  outside the request all need an explicit OK first.
+- If you spot something worth doing beyond the request, **propose it in one or
+  two sentences and wait** — do not implement it speculatively and report it
+  afterwards.
+- The same applies to anything hard to reverse: pushes, deploys, dependency
+  changes, deleting or moving tracked files, history rewrites.
+- When a decision is genuinely ambiguous, ask before writing code rather than
+  picking a default and explaining it later.
