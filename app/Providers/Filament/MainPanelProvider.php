@@ -28,7 +28,7 @@ class MainPanelProvider extends PanelProvider
                 'primary' => Color::Teal,
             ])
             ->brandLogo(asset('images/logo.svg'))
-            ->brandLogoHeight('1.75rem')
+            ->brandLogoHeight('2.25rem')
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('16rem')
             ->maxContentWidth(Width::Full)
