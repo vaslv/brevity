@@ -1,4 +1,4 @@
-# Brevity
+<img src="./public/images/logo.svg" alt="Brevity" width="280">
 
 Self-hosted сокращатель ссылок: маршрутизация по правилам, аналитика
 кликов, исходящие колбеки и мультидоменность.
