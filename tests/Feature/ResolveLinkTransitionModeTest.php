@@ -31,6 +31,17 @@ class ResolveLinkTransitionModeTest extends TestCase
             ->assertRedirect($targetUrl);
     }
 
+    public function test_it_declares_the_site_icons_on_the_transition_page(): void
+    {
+        $code = $this->createRuleForCode('https://example.com/icons', 'manual');
+
+        $this->get(static::SHORT_LINK_HOST.'/'.$code)
+            ->assertOk()
+            ->assertSee('rel="icon" href="'.asset('images/favicon.svg').'"', false)
+            ->assertSee('rel="alternate icon" href="'.asset('favicon.ico').'"', false)
+            ->assertSee('rel="apple-touch-icon" href="'.asset('apple-touch-icon.png').'"', false);
+    }
+
     public function test_it_keeps_nullable_dictionaries_empty_when_headers_are_missing(): void
     {
         $targetUrl = 'https://example.com/no-headers';

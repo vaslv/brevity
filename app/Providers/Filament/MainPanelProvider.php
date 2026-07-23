@@ -29,6 +29,7 @@ class MainPanelProvider extends PanelProvider
             ])
             ->brandLogo(asset('images/logo.svg'))
             ->brandLogoHeight('2.25rem')
+            ->favicon(asset('images/favicon.svg'))
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('16rem')
             ->maxContentWidth(Width::Full)
@@ -51,6 +52,10 @@ class MainPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => view('filament.head-icons')->render(),
+            )
             ->renderHook(
                 PanelsRenderHook::SIDEBAR_LOGO_AFTER,
                 fn (): string => view('filament.version-chip')->render(),
