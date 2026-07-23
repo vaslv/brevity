@@ -94,5 +94,5 @@
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
-    "version": "1.10.7"
+    "version": "1.10.8"
 }
