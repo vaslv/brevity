@@ -114,6 +114,26 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        // Optional secondary connection, off by default. Every value falls back
+        // to the primary DB_* settings, so when no SHARED_DB_* variables are set
+        // this connection mirrors the default one and stays harmless. Point the
+        // SHARED_DB_* variables at another database to share data (e.g. a common
+        // admin menu) across several services.
+        'shared' => [
+            'driver' => env('SHARED_DB_CONNECTION', env('DB_CONNECTION', 'pgsql')),
+            'url' => env('SHARED_DB_URL', env('DB_URL')),
+            'host' => env('SHARED_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('SHARED_DB_PORT', env('DB_PORT', '5432')),
+            'database' => env('SHARED_DB_DATABASE', env('DB_DATABASE', 'laravel')),
+            'username' => env('SHARED_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('SHARED_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => env('SHARED_DB_CHARSET', env('DB_CHARSET', 'utf8')),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('SHARED_DB_SSLMODE', env('DB_SSLMODE', 'prefer')),
+        ],
+
     ],
 
     /*
