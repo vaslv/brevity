@@ -9,7 +9,8 @@ return [
         'clicks_week' => 'Clicks (7 days)',
     ],
     'clicks_chart' => [
-        'heading' => 'Clicks over the last 14 days',
+        'heading' => 'Clicks over the last :days days',
+        'filter' => ':days days',
         'dataset' => 'Clicks',
     ],
     'links_per_domain_chart' => [

@@ -8,6 +8,11 @@ use Illuminate\Support\Carbon;
 
 class ClicksChart extends ChartWidget
 {
+    /** @var list<int> */
+    private const array PERIOD_DAYS = [30, 60, 90];
+
+    public ?string $filter = '30';
+
     /**
      * Follow the panel palette instead of hardcoding a hex pair, so a theme
      * change (e.g. the primary color) restyles the chart automatically.
@@ -22,12 +27,12 @@ class ClicksChart extends ChartWidget
 
     public function getHeading(): ?string
     {
-        return __('widgets.clicks_chart.heading');
+        return __('widgets.clicks_chart.heading', ['days' => $this->periodDays()]);
     }
 
     protected function getData(): array
     {
-        $days = 14;
+        $days = $this->periodDays();
         $start = Carbon::today()->subDays($days - 1);
 
         // Grouped by calendar day in the DB session timezone, which matches the
@@ -62,8 +67,32 @@ class ClicksChart extends ChartWidget
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    protected function getFilters(): ?array
+    {
+        $filters = [];
+
+        foreach (self::PERIOD_DAYS as $days) {
+            $filters[(string) $days] = __('widgets.clicks_chart.filter', ['days' => $days]);
+        }
+
+        return $filters;
+    }
+
     protected function getType(): string
     {
         return 'line';
+    }
+
+    /**
+     * The selected period, guarded against unexpected filter values.
+     */
+    private function periodDays(): int
+    {
+        $days = (int) $this->filter;
+
+        return in_array($days, self::PERIOD_DAYS, true) ? $days : self::PERIOD_DAYS[0];
     }
 }
