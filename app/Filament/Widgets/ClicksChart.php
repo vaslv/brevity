@@ -68,14 +68,17 @@ class ClicksChart extends ChartWidget
     }
 
     /**
-     * @return array<string, string>
+     * PHP coerces the numeric string keys to int; Livewire round-trips the
+     * selected one back into `$filter` as a string.
+     *
+     * @return array<int, string>
      */
     protected function getFilters(): ?array
     {
         $filters = [];
 
         foreach (self::PERIOD_DAYS as $days) {
-            $filters[(string) $days] = __('widgets.clicks_chart.filter', ['days' => $days]);
+            $filters[$days] = (string) __('widgets.clicks_chart.filter', ['days' => $days]);
         }
 
         return $filters;
