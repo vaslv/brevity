@@ -3,7 +3,6 @@
 namespace Tests\Feature\Filament;
 
 use App\Filament\Resources\Links\Pages\ListLinks;
-use App\Filament\Widgets\StatsOverview;
 use App\Models\Link;
 use App\Models\LinkClickCounter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -13,9 +12,10 @@ use Tests\TestCase;
 /**
  * Stage 1 of docs/07-plans.md — counter consumers in the admin panel.
  *
- * Link click totals in lists and dashboard cards read the pre-aggregated slot
- * counters (SUM over slots), never COUNT over the clicks table. A link's cell
- * shows the total with a non-bot breakdown; sorting uses the same aggregate.
+ * Link click totals in lists read the pre-aggregated slot counters (SUM over
+ * slots), never COUNT over the clicks table. A link's cell shows the total
+ * with a non-bot breakdown; sorting uses the same aggregate. (The dashboard
+ * cards moved to period-scoped counts — see StatsOverviewTest.)
  */
 class LinksClickCountersColumnTest extends TestCase
 {
@@ -61,30 +61,5 @@ class LinksClickCountersColumnTest extends TestCase
         Livewire::test(ListLinks::class)
             ->sortTable('click_counters_sum_count', 'asc')
             ->assertCanSeeTableRecords([$zero, $quiet, $busy], inOrder: true);
-    }
-
-    public function test_stats_overview_reads_totals_from_counters(): void
-    {
-        $link = Link::factory()->create();
-        LinkClickCounter::query()->create(['link_id' => $link->id, 'is_bot' => false, 'slot' => 1, 'count' => 7]);
-        LinkClickCounter::query()->create(['link_id' => $link->id, 'is_bot' => true, 'slot' => 1, 'count' => 3]);
-
-        Livewire::test(StatsOverview::class)
-            ->assertSee(__('widgets.stats.clicks_total'))
-            ->assertSee('10')
-            ->assertSee(__('widgets.stats.clicks_total_non_bots', ['count' => 7]));
-    }
-
-    public function test_time_windowed_cards_stay_on_the_clicks_table(): void
-    {
-        // Counters without matching clicks: the all-time card must show them,
-        // while «today» must stay at zero — proving the windowed cards still
-        // COUNT over clicks(created_at) and did not silently move to counters.
-        $link = Link::factory()->create();
-        LinkClickCounter::query()->create(['link_id' => $link->id, 'is_bot' => false, 'slot' => 1, 'count' => 10]);
-
-        Livewire::test(StatsOverview::class)
-            ->assertSeeInOrder([__('widgets.stats.clicks_total'), '10'])
-            ->assertSeeInOrder([__('widgets.stats.clicks_today'), '0']);
     }
 }

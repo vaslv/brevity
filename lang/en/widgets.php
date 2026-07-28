@@ -2,11 +2,11 @@
 
 return [
     'stats' => [
-        'links_total' => 'Links',
-        'clicks_total' => 'Clicks (all time)',
-        'clicks_total_non_bots' => 'Non-bots: :count',
-        'clicks_today' => 'Clicks today',
-        'clicks_week' => 'Clicks (7 days)',
+        'links' => 'Links',
+        'clicks' => 'Clicks',
+        'callbacks' => 'Callbacks',
+        'vs_previous_period' => ':change vs previous period (:previous)',
+        'previous_period_empty' => 'No data for the previous period',
     ],
     'clicks_chart' => [
         'heading' => 'Clicks over the last :days days',

@@ -2,11 +2,11 @@
 
 return [
     'stats' => [
-        'links_total' => 'Ссылки',
-        'clicks_total' => 'Кликов всего',
-        'clicks_total_non_bots' => 'Без ботов: :count',
-        'clicks_today' => 'Кликов сегодня',
-        'clicks_week' => 'Кликов за 7 дней',
+        'links' => 'Ссылки',
+        'clicks' => 'Клики',
+        'callbacks' => 'Колбеки',
+        'vs_previous_period' => ':change к прошлому периоду (:previous)',
+        'previous_period_empty' => 'Нет данных за прошлый период',
     ],
     'clicks_chart' => [
         'heading' => 'Клики за последние :days дней',
