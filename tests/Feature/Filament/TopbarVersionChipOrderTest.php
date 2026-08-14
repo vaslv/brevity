@@ -9,9 +9,9 @@ use Tests\TestCase;
 use Vaslv\FilamentTopbarMenu\Models\TopbarMenuItem;
 
 /**
- * The version chip and the TopbarMenuPlugin both render at TOPBAR_LOGO_AFTER,
+ * The AppVersionPlugin and the TopbarMenuPlugin both render at TOPBAR_LOGO_AFTER,
  * where same-hook output follows registration order. MainPanelProvider must
- * register the chip before the plugin so the topbar reads logo → version → menu.
+ * register the chip plugin first so the topbar reads logo → version → menu.
  */
 class TopbarVersionChipOrderTest extends TestCase
 {
