@@ -45,3 +45,27 @@ COPY . /app
 COPY --from=assets /app/public/build /app/public/build
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist
+
+# The application version, baked into the image. The git tag is the single
+# source of truth: CI passes it here as a build argument (.gitlab-ci.yml), and
+# .dockerignore keeps .git out of the image, so an environment variable is the
+# only channel a running container has. The mounted /app/.env cannot override
+# it — Laravel's dotenv is immutable and leaves an already-set process
+# variable alone — so the version always describes the image, never the run.
+# The `dev` default keeps a hand-built image honest instead of blank.
+#
+# Deliberately the last layer: a version bump then invalidates nothing above it.
+ARG APP_VERSION=dev
+ARG VCS_REF=
+ARG BUILD_DATE=
+
+ENV APP_VERSION=${APP_VERSION} \
+    SENTRY_RELEASE=${APP_VERSION}
+
+LABEL org.opencontainers.image.title="Brevity" \
+      org.opencontainers.image.description="Self-hosted link shortener with rule-based routing, click analytics, outgoing callbacks and multi-domain support." \
+      org.opencontainers.image.source="https://github.com/vaslv/brevity" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}"
