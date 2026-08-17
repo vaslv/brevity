@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "15b0b1f9ad9cf6ab77bb7bc74349f3ab",
+    "content-hash": "e0d0deaa39d40d21e3ca2e77237b9500",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -13044,16 +13044,16 @@
         },
         {
             "name": "vaslv/composer-release",
-            "version": "0.2.0",
+            "version": "0.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vaslv/composer-release.git",
-                "reference": "a983a888038e03bb5460da96a11035e59ec4f818"
+                "reference": "84f5ea3fad629df4cf51830fd79d5b49b30b0973"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vaslv/composer-release/zipball/a983a888038e03bb5460da96a11035e59ec4f818",
-                "reference": "a983a888038e03bb5460da96a11035e59ec4f818",
+                "url": "https://api.github.com/repos/vaslv/composer-release/zipball/84f5ea3fad629df4cf51830fd79d5b49b30b0973",
+                "reference": "84f5ea3fad629df4cf51830fd79d5b49b30b0973",
                 "shasum": ""
             },
             "require": {
@@ -13098,9 +13098,9 @@
             ],
             "support": {
                 "issues": "https://github.com/vaslv/composer-release/issues",
-                "source": "https://github.com/vaslv/composer-release/tree/0.2.0"
+                "source": "https://github.com/vaslv/composer-release/tree/0.3.0"
             },
-            "time": "2026-08-16T08:01:18+00:00"
+            "time": "2026-08-17T07:50:19+00:00"
         }
     ],
     "aliases": [],
