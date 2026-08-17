@@ -51,6 +51,16 @@ build:
   stage: build
   variables:
     DOCKER_BUILDKIT: 1
+  # The build reaches out to Docker Hub, npm and Packagist/GitHub, and any of
+  # them can answer with a rate limit or a reset connection that has nothing to
+  # do with this commit — an anonymous HTTP 429 from codeload.github.com during
+  # `composer install` is the one actually seen. Those are cured by running
+  # again, so retry rather than making a human press the button. Scoped to
+  # script_failure: a runner that dies or a job that times out is a different
+  # problem, and retrying it just hides the infrastructure fault.
+  retry:
+    max: 2
+    when: script_failure
   script:
     # The image tag doubles as the application version: it is baked into the
     # image as APP_VERSION (see Dockerfile), so the version the panel reports

@@ -40,11 +40,36 @@ RUN install-php-extensions \
     redis \
     zip
 
+# Dependencies before the source tree, so that editing application code does not
+# re-download all 130-odd packages: this layer's cache key is the two manifests
+# alone, and a release that leaves composer.lock untouched reuses it wholesale.
+# Anonymous dist downloads are rate-limited per IP by GitHub, and a shared CI
+# runner that refetches everything on every tag eventually collects an HTTP 429
+# mid-install — so the cheapest fix for a flaky build is to not download at all.
+COPY composer.json composer.lock ./
+
+# --no-scripts / --no-autoloader because both need the application code, which
+# arrives only in the next layer: post-autoload-dump runs `package:discover` and
+# `filament:upgrade`, and the PSR-4 roots point at app/ and database/. The
+# autoloader is generated further down instead, once the tree is in place.
+#
+# The BuildKit cache mount keeps Composer's archive cache on the runner between
+# builds (DOCKER_BUILDKIT=1 is set in .gitlab-ci.yml), so even a lock bump only
+# fetches what actually changed. COMPOSER_CACHE_DIR has to be pointed at the
+# mount explicitly — the default lives under HOME and would be baked into the
+# layer rather than cached outside it.
+RUN --mount=type=cache,target=/tmp/composer-cache \
+    COMPOSER_CACHE_DIR=/tmp/composer-cache \
+    composer install --no-dev --no-scripts --no-autoloader --no-interaction --no-progress --prefer-dist
+
 COPY . /app
 
 COPY --from=assets /app/public/build /app/public/build
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist
+# Deferred from the install above. `dump-autoload` also fires
+# post-autoload-dump, so `package:discover` and `filament:upgrade` still run —
+# and it needs no network, because vendor/ is already complete.
+RUN composer dump-autoload --no-dev --optimize --no-interaction
 
 # The application version, baked into the image. The git tag is the single
 # source of truth: CI passes it here as a build argument (.gitlab-ci.yml), and
