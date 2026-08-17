@@ -20,20 +20,23 @@ return [
     | Application Version
     |--------------------------------------------------------------------------
     |
-    | Pulled from composer.json at config-build time. Run `composer release`
-    | to bump it together with a matching git tag.
+    | The git tag is the only source of truth. CI passes it into the image
+    | build as the APP_VERSION build argument, and the Dockerfile bakes it in
+    | as an environment variable — .dockerignore keeps .git out of the image,
+    | so that is the only channel a running container has.
+    |
+    | env() is called HERE, inside the config file, not at runtime: under
+    | `php artisan config:cache` Laravel does not load .env at all, and a
+    | runtime env() would return null silently and only in production.
+    |
+    | Null outside a built image on purpose — an empty build argument counts
+    | as absent too. That is what lets the resolver chain in
+    | config/filament-app-version.php fall through to the commit SHA from
+    | .git, which is the useful answer during development.
     |
     */
 
-    'version' => (static function (): string {
-        $path = base_path('composer.json');
-        if (! is_file($path)) {
-            return 'dev';
-        }
-        $data = json_decode((string) file_get_contents($path), true);
-
-        return is_array($data) && isset($data['version']) ? (string) $data['version'] : 'dev';
-    })(),
+    'version' => env('APP_VERSION') ?: null,
 
     /*
     |--------------------------------------------------------------------------
