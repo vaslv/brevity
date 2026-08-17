@@ -24,7 +24,6 @@
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^4.2",
-        "barryvdh/laravel-ide-helper": "^3.6",
         "fakerphp/faker": "^1.23",
         "filament/upgrade": "^5.0",
         "larastan/larastan": "^3.10",
@@ -57,8 +56,6 @@
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
-            "@php artisan ide-helper:generate",
-            "@php artisan ide-helper:meta",
             "@php artisan boost:update --ansi"
         ],
         "post-root-package-install": [
