@@ -54,6 +54,11 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progre
 # variable alone — so the version always describes the image, never the run.
 # The `dev` default keeps a hand-built image honest instead of blank.
 #
+# VCS_REF and BUILD_DATE default to EMPTY rather than to a placeholder: only CI
+# knows the commit and the build time, and an empty label reads as "not
+# supplied", while a made-up one would read as a fact. So a hand-built image
+# carries blank `revision` and `created` labels — that is the honest answer.
+#
 # Deliberately the last layer: a version bump then invalidates nothing above it.
 ARG APP_VERSION=dev
 ARG VCS_REF=
@@ -62,6 +67,9 @@ ARG BUILD_DATE=
 ENV APP_VERSION=${APP_VERSION} \
     SENTRY_RELEASE=${APP_VERSION}
 
+# The static labels mirror composer.json — `description`, `license` and
+# `support.source` — so the image and the package cannot end up describing two
+# different projects. Update them together.
 LABEL org.opencontainers.image.title="Brevity" \
       org.opencontainers.image.description="Self-hosted link shortener with rule-based routing, click analytics, outgoing callbacks and multi-domain support." \
       org.opencontainers.image.source="https://github.com/vaslv/brevity" \

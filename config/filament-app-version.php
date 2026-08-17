@@ -32,8 +32,12 @@ return [
     | The package ships `filament-app-version.version` → `app.version` →
     | composer.json. Both changes here are deliberate:
     |
-    | - the package's own `version` key is dropped, so APP_VERSION enters the
-    |   application through exactly one place, config/app.php;
+    | - the package's own `filament-app-version.version` entry is dropped from
+    |   the CHAIN, so APP_VERSION reaches the application through exactly one
+    |   place, config/app.php. The key itself is not deleted and cannot be: the
+    |   provider's mergeConfigFrom refills it from the shipped config whenever
+    |   the application config is not cached. It is simply never read, because
+    |   nothing but this chain reads it;
     | - composer.json is dropped, because it no longer carries a `version`
     |   field — the git tag is the source of truth and `composer release`
     |   creates a tag only, without a release commit.

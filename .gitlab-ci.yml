@@ -54,8 +54,12 @@ build:
   script:
     # The image tag doubles as the application version: it is baked into the
     # image as APP_VERSION (see Dockerfile), so the version the panel reports
-    # and the tag the image was pulled by can never disagree. Pipelines run on
-    # tags only; the short SHA is a fallback for a manually triggered run.
+    # and the tag the image was pulled by can never disagree.
+    #
+    # `only: tags` below means CI_COMMIT_TAG is always set here, so the short-SHA
+    # fallback never fires today. It stays as a guard: relaxing `only:` would
+    # otherwise build an image whose tag is the empty string, and `docker push`
+    # would happily publish it as `:latest`-adjacent garbage.
     - export APP_VERSION="${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}"
     - export IMAGE="$HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:$APP_VERSION"
     - echo $HARBOR_PASSWORD | docker login -u $HARBOR_USERNAME --password-stdin $HARBOR_HOST
@@ -108,6 +112,11 @@ deploy:
     # Pipe the registry password over ssh stdin so it never appears in a command
     # string or process arguments (mirrors the build stage's --password-stdin).
     - echo "$HARBOR_PASSWORD" | ssh $DEPLOY_USER@$SERVER_IP "docker login -u $HARBOR_USERNAME --password-stdin $HARBOR_HOST"
+    # The tag expression is repeated from the build job on purpose: jobs do not
+    # share shell state, and it cannot be hoisted into global `variables:`
+    # because GitLab's own interpolation does not understand `${VAR:-default}`.
+    # So it is duplicated — keep the two in sync, or this job pulls a tag the
+    # build stage never pushed.
     - ssh $DEPLOY_USER@$SERVER_IP "
       export LARAVEL_IMAGE=\"$HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}\" &&
       docker pull \"\$LARAVEL_IMAGE\" &&
