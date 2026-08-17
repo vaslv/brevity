@@ -111,10 +111,22 @@ scheduler, Horizon and Redis.
 
 ## Releases
 
-Semver **without** the `v` prefix; the source of truth is `version` in
-`composer.json` + the git tag. The interactive command is
-`composer release` (the `vaslv/composer-release` dev package); pushing
-the tag triggers the deploy. Details —
+Semver **without** the `v` prefix; the git tag is the single source of
+truth. The interactive command is `composer release` (the
+`vaslv/composer-release` dev package) and it creates a tag only, no
+release commit; pushing the tag triggers the deploy.
+
+The build passes the tag into the image as the `APP_VERSION` build
+argument, so the image tag, the version the panel reports, the
+`org.opencontainers.image.version` label and `SENTRY_RELEASE` are all
+the same string. What a running container actually is:
+
+```bash
+docker inspect laravel-web --format '{{index .Config.Labels "org.opencontainers.image.version"}}'
+```
+
+`APP_VERSION` must **not** be set in the server `.env`: the value baked
+into the image always wins over the mounted file. Details —
 [05-development.md](./05-development.md).
 
 ## Manual operations on the server

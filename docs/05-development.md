@@ -63,8 +63,9 @@ For the full i18n layout, see [docs/04-admin.md](./04-admin.md).
 ## Releases
 
 Versioning: semver **without** the `v` prefix (`1.4.1`, not `v1.4.1`).
-Source of truth: the `version` field in `composer.json` plus the
-matching git tag.
+The git tag is the **single** source of truth — nothing in the working
+tree records the version, and `composer.json` deliberately carries no
+`version` field.
 
 The interactive release command is provided by the
 [`vaslv/composer-release`](https://github.com/vaslv/composer-release)
@@ -83,13 +84,42 @@ prompt and push from the host
 The command:
 1. Checks that the tree is clean and on the expected branch.
 2. Shows the current tag and offers patch / minor / major / custom.
-3. Updates the version in `composer.json` (via `composer config version`).
-4. Creates the release commit and an annotated tag.
-5. Asks before pushing.
+3. Creates an annotated tag — **no release commit**, nothing in the
+   tree changes.
+4. Asks before pushing.
 
-The version chip in the admin topbar reads `config('app.version')`,
-which pulls from `composer.json` — bumping the version is enough, no
-application rebuild is needed.
+### How the version reaches the application
+
+```
+git tag 1.4.1
+   └─ CI: --build-arg APP_VERSION=$CI_COMMIT_TAG   (.gitlab-ci.yml)
+        └─ Dockerfile: ENV APP_VERSION + OCI image labels
+             └─ config/app.php: 'version' => env('APP_VERSION')
+                  └─ config/filament-app-version.php → the topbar chip
+```
+
+The same value also becomes `SENTRY_RELEASE`, so every Sentry issue is
+attributed to the release it came from.
+
+Outside a built image `APP_VERSION` is unset and the resolver chain
+falls through to `GitVersionResolver`, which reads the short commit SHA
+straight out of `.git`. So locally the chip shows something like
+`ad2f26b` — the commit you are actually running, which is more useful
+than a tag you have not cut yet. A production image has no `.git`
+(see `.dockerignore`), so the fallback there is the literal `dev`,
+which only happens if the image was built by hand without the build
+argument.
+
+Consequences worth knowing:
+
+- **A version bump now requires a rebuild.** The value lives in the
+  image, not in a file the running app rereads.
+- **Do not put `APP_VERSION` in `.env`.** Laravel's dotenv is immutable
+  and leaves an already-set process variable alone, so the value from
+  the image always wins and the `.env` entry would be silently ignored.
+- The image tag, `APP_VERSION` and the
+  `org.opencontainers.image.version` label are the same string by
+  construction, so they cannot disagree.
 
 ## Git conventions
 

@@ -108,10 +108,23 @@ scheduler, Horizon и Redis.
 
 ## Релиз
 
-Semver **без** префикса `v`; источник истины — `version` в
-`composer.json` + git-тег. Интерактивная команда — `composer release`
-(dev-пакет `vaslv/composer-release`); пуш тега запускает деплой.
-Детали — [05-development.md](./05-development.md).
+Semver **без** префикса `v`; единственный источник истины — git-тег.
+Интерактивная команда — `composer release` (dev-пакет
+`vaslv/composer-release`), она создаёт только тег, без релизного
+коммита; пуш тега запускает деплой.
+
+Сборка прокидывает тег в образ build-аргументом `APP_VERSION`, поэтому
+тег образа, версия в панели, лейбл `org.opencontainers.image.version` и
+`SENTRY_RELEASE` — одна и та же строка. Что реально крутится в
+контейнере:
+
+```bash
+docker inspect laravel-web --format '{{index .Config.Labels "org.opencontainers.image.version"}}'
+```
+
+`APP_VERSION` **нельзя** задавать в серверном `.env`: вшитое в образ
+значение всегда перебивает смонтированный файл. Детали —
+[05-development.md](./05-development.md).
 
 ## Ручные операции на сервере
 
