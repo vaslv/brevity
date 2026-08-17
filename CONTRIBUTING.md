@@ -49,8 +49,11 @@ docs, chore, build, style, refactor, test — as appropriate
 
 Maintainers cut releases with `composer release` (the
 [`vaslv/composer-release`](https://github.com/vaslv/composer-release)
-plugin): it bumps `version` in `composer.json`, creates an annotated
-semver tag (no `v` prefix) and offers to push.
+plugin): it creates an annotated semver tag (no `v` prefix) and offers
+to push. The tag is the only place the version is recorded — there is no
+release commit, nothing in the working tree changes, and `composer.json`
+deliberately carries no `version` field. How the tag reaches the running
+application: [docs/05-development.md](./docs/05-development.md).
 
 ## Security issues
 

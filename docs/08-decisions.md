@@ -53,6 +53,17 @@ everything essential from them is here.
   trade-off; a strict guarantee would require a cursor table with
   `lockForUpdate`. Rotation statistics are global (across all
   services): a domain is a shared resource.
+- **The git tag is the single source of truth for the version.**
+  `composer.json` deliberately carries no `version` field and
+  `composer release` creates a tag only, with no release commit: two
+  sources could drift with nothing to catch it, and the field conflicted
+  on every merge. The price is accepted knowingly — **a version bump now
+  requires an image rebuild**, because the value travels as the
+  `APP_VERSION` build argument and lives in the image, not in a file the
+  running app rereads. `APP_VERSION` must therefore never be set in the
+  server `.env`; the mounted file loses to the image's process variable
+  and the entry would be silently ignored.
+  Details: [05-development.md](./05-development.md).
 - **Verified at runtime** (do not change "just in case"):
   `firstOrCreate` in Laravel 13 is race-safe via `createOrFirst` +
   savepoint; Filament v5 `unique()` ignores the current record on edit

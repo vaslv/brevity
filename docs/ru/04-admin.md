@@ -126,9 +126,22 @@ lang/
 
 ## Чип версии
 
-`resources/views/filament/version-chip.blade.php` рендерит бейдж с
-`config('app.version')` (источник — `composer.json`). Инжектится через
-render hooks в `MainPanelProvider`:
+Бейдж рядом с логотипом рендерит плагин
+[`vaslv/filament-app-version`](https://github.com/vaslv/filament-app-version),
+зарегистрированный в `MainPanelProvider` со стилем `->neutral()`. Хуки
+плагин приносит свои:
 
-- `PanelsRenderHook::SIDEBAR_LOGO_AFTER`
 - `PanelsRenderHook::TOPBAR_LOGO_AFTER`
+- `PanelsRenderHook::SIDEBAR_LOGO_AFTER`
+
+Порядок регистрации важен: `TopbarMenuPlugin` рендерит в тот же хук
+топбара, а вывод в одном хуке идёт в порядке `->plugin()`, поэтому чип
+регистрируется первым — иначе топбар читается не как логотип → версия →
+меню. Страхует `TopbarVersionChipOrderTest`.
+
+Само значение приходит из цепочки резолверов в
+`config/filament-app-version.php`: сначала `config('app.version')`, куда
+попадает вшитая в образ из git-тега `APP_VERSION`, затем короткий SHA
+коммита, прочитанный прямо из `.git`, затем литерал `dev`. Полный путь
+от тега до чипа и что из него следует — в
+[05-development.md](./05-development.md).

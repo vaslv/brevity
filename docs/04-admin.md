@@ -129,9 +129,22 @@ edited when needed.
 
 ## Version chip
 
-`resources/views/filament/version-chip.blade.php` renders a badge with
-`config('app.version')` (sourced from `composer.json`). It is injected
-via render hooks in `MainPanelProvider`:
+The badge next to the logo is rendered by the
+[`vaslv/filament-app-version`](https://github.com/vaslv/filament-app-version)
+plugin, registered in `MainPanelProvider` with `->neutral()` styling.
+The plugin brings its own hooks:
 
-- `PanelsRenderHook::SIDEBAR_LOGO_AFTER`
 - `PanelsRenderHook::TOPBAR_LOGO_AFTER`
+- `PanelsRenderHook::SIDEBAR_LOGO_AFTER`
+
+Registration order matters: `TopbarMenuPlugin` renders on the same
+topbar hook, and same-hook output follows `->plugin()` order, so the
+chip has to be registered first for the topbar to read logo → version →
+menu. `TopbarVersionChipOrderTest` guards it.
+
+The value itself comes from the resolver chain in
+`config/filament-app-version.php`: `config('app.version')` first, which
+carries the `APP_VERSION` baked into the image from the git tag, then
+the short commit SHA read straight out of `.git`, then the literal
+`dev`. The full path from tag to chip, and what follows from it, is in
+[05-development.md](./05-development.md).
