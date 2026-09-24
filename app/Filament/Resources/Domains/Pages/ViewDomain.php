@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Domains\Pages;
 
 use App\Filament\Resources\Domains\DomainResource;
+use App\Filament\Resources\Domains\RelationManagers\DomainGroupsRelationManager;
 use App\Models\Domain;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -16,6 +17,11 @@ class ViewDomain extends ViewRecord
     public function getTitle(): string
     {
         return __('resources/domain.pages.view_title');
+    }
+
+    protected function getAllRelationManagers(): array
+    {
+        return [DomainGroupsRelationManager::class];
     }
 
     protected function getHeaderActions(): array

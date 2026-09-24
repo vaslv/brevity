@@ -19,6 +19,11 @@ return [
     ],
 
     'actions' => [
+        'attach_to_group' => [
+            'label' => 'Attach to group',
+            'group' => 'Group',
+            'notification' => 'Domains attached to group.',
+        ],
         'set_as_default' => [
             'label' => 'Set as default',
             'modal_heading' => 'Set default domain',
@@ -26,5 +31,12 @@ return [
             'modal_submit' => 'Set as default',
             'notification' => 'Domain :domain is now the default.',
         ],
+    ],
+
+    'groups' => [
+        'title' => 'Groups',
+        'empty' => 'This domain does not belong to any groups',
+        'detach' => 'Detach group',
+        'detach_hint' => 'Only this membership will be removed. The domain, group and other memberships will be preserved.',
     ],
 ];

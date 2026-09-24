@@ -21,4 +21,11 @@ return [
         'edit_title' => 'Edit domain group',
         'view_title' => 'View domain group',
     ],
+
+    'actions' => [
+        'detach_domain' => [
+            'label' => 'Detach domain',
+            'hint' => 'The domain will be removed from this group only. The domain and its other memberships will be preserved.',
+        ],
+    ],
 ];

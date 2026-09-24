@@ -17,10 +17,6 @@ class DomainGroupInfolist
                     ->label(__('resources/domain-group.fields.code'))
                     ->badge()
                     ->color('gray'),
-                TextEntry::make('domains.value')
-                    ->label(__('resources/domain-group.fields.domains'))
-                    ->badge()
-                    ->placeholder(__('resources/domain-group.fields.domains_empty')),
                 TextEntry::make('created_at')
                     ->label(__('resources/domain-group.fields.created_at'))
                     ->dateTime(),

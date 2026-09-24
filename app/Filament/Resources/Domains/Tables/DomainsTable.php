@@ -3,11 +3,15 @@
 namespace App\Filament\Resources\Domains\Tables;
 
 use App\Filament\Support\RestrictedDeleteBulkAction;
+use App\Models\DomainGroup;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 
 class DomainsTable
 {
@@ -35,6 +39,27 @@ class DomainsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    BulkAction::make('attachToGroup')
+                        ->label(__('resources/domain.actions.attach_to_group.label'))
+                        ->modalHeading(__('resources/domain.actions.attach_to_group.label'))
+                        ->modalSubmitActionLabel(__('resources/domain.actions.attach_to_group.label'))
+                        ->schema([
+                            Select::make('group_id')
+                                ->label(__('resources/domain.actions.attach_to_group.group'))
+                                ->options(fn (): array => DomainGroup::query()->orderBy('name')->pluck('name', 'id')->all())
+                                ->searchable()
+                                ->required()
+                                ->exists(DomainGroup::class, 'id'),
+                        ])
+                        ->databaseTransaction()
+                        ->deselectRecordsAfterCompletion()
+                        ->successNotificationTitle(__('resources/domain.actions.attach_to_group.notification'))
+                        ->action(function (array $data, Collection $records, BulkAction $action): void {
+                            $group = DomainGroup::query()->findOrFail($data['group_id']);
+                            $group->domains()->syncWithoutDetaching($records->modelKeys());
+
+                            $action->success();
+                        }),
                     RestrictedDeleteBulkAction::make(),
                 ]),
             ]);
