@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\HttpHost;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,7 +28,7 @@ class EnsureTechnicalHost
     {
         $technicalHost = config('app.technical_host');
 
-        if ($technicalHost !== null && strcasecmp($request->host(), (string) $technicalHost) !== 0) {
+        if ($technicalHost !== null && HttpHost::tryNormalize($request->host()) !== HttpHost::normalize((string) $technicalHost)) {
             abort(404);
         }
 

@@ -8,6 +8,7 @@ use App\Models\Rule;
 use App\Models\Service;
 use App\Models\Url;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -23,6 +24,18 @@ class TechnicalHostRestrictionTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function ipTechnicalHosts(): array
+    {
+        return [
+            'IPv4' => ['127.0.0.1', '127.0.0.1'],
+            'IPv6 loopback' => ['[::1]', '[::1]'],
+            'IPv6 equivalent spelling' => ['[2001:0DB8:0:0:0:0:0:1]', '[2001:db8::1]'],
+        ];
+    }
+
     public function test_admin_login_404s_on_a_short_link_host(): void
     {
         $this->get(self::SHORT_LINK_HOST.'/login')->assertNotFound();
@@ -36,6 +49,32 @@ class TechnicalHostRestrictionTest extends TestCase
     public function test_horizon_404s_on_a_short_link_host(): void
     {
         $this->get(self::SHORT_LINK_HOST.'/horizon')->assertNotFound();
+    }
+
+    #[DataProvider('ipTechnicalHosts')]
+    public function test_ip_technical_hosts_preserve_admin_api_and_short_link_boundaries(string $configuredHost, string $requestHost): void
+    {
+        $appUrl = 'http://'.$configuredHost;
+        config([
+            'app.url' => $appUrl,
+            'app.technical_host' => parse_url($appUrl, PHP_URL_HOST),
+            'app.hosts' => [$requestHost, 'lnk.test'],
+        ]);
+        $target = 'https://example.com/landing';
+        $code = $this->createDomainlessLink($target);
+
+        $this->get('http://'.$requestHost.'/login')->assertOk();
+        $this->get(self::SHORT_LINK_HOST.'/login')->assertNotFound();
+        $this->get('http://[2001:db8::2]/login')->assertNotFound();
+        $this->get(self::SHORT_LINK_HOST.'/'.$code)->assertRedirect($target);
+        $this->get('http://'.$requestHost.'/'.$code)->assertNotFound();
+        $this->get('http://[2001:db8::2]/'.$code)->assertNotFound();
+
+        $this->withToken($this->serviceToken())
+            ->postJson('http://'.$requestHost.'/api/links', ['rules' => [['url' => $target]]])
+            ->assertCreated();
+        $this->postJson(self::SHORT_LINK_HOST.'/api/links', ['rules' => [['url' => $target]]])
+            ->assertNotFound();
     }
 
     public function test_short_links_404_on_an_unknown_host_not_in_app_host(): void

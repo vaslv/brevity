@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DomainGroups\Schemas;
 
+use App\Models\Domain;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
@@ -45,6 +46,8 @@ class DomainGroupForm
                     // Many-to-many: a domain can belong to several groups, so the
                     // same domain may be picked here and in any other group.
                     ->relationship('domains', 'value')
+                    ->getOptionLabelFromRecordUsing(fn (Domain $record): string => $record->display_domain)
+                    ->getSearchResultsUsing(fn (string $search): array => Domain::query()->matchingName($search)->limit(50)->get()->pluck('display_domain', 'id')->all())
                     ->multiple()
                     ->preload()
                     ->searchable(),

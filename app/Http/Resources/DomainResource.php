@@ -20,6 +20,7 @@ class DomainResource extends JsonResource
     {
         return [
             'domain' => $this->resource->value,
+            'display_domain' => $this->resource->display_domain,
             'url' => $this->resource->url,
             'is_default' => $this->resource->is_default,
         ];

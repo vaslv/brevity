@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\Domain;
+use App\Services\Links\Domains\DomainName;
+use App\Support\HttpHost;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -14,18 +16,20 @@ class SyncDomainsFromEnv extends Command
     public function handle(): int
     {
         $technicalHost = config('app.technical_host');
+        $technicalHost = $technicalHost !== null ? HttpHost::normalize((string) $technicalHost) : null;
 
         $shortLinkHosts = collect(config('app.hosts'))
-            ->reject(fn (string $host): bool => $technicalHost !== null && strcasecmp($host, (string) $technicalHost) === 0)
+            ->map(fn (string $host): string => HttpHost::normalize($host))
+            ->reject(fn (string $host): bool => $host === $technicalHost)
+            ->map(fn (string $host): string => DomainName::toAscii($host))
+            ->unique()
             ->values();
 
         $created = 0;
 
         foreach ($shortLinkHosts as $host) {
-            // Match case-insensitively so a manually added domain isn't
-            // duplicated, but store the host verbatim from APP_HOST.
             $exists = Domain::query()
-                ->whereRaw('lower(value) = ?', [strtolower($host)])
+                ->where('value', $host)
                 ->exists();
 
             if ($exists) {

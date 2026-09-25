@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Models\Service;
+use App\Rules\ValidDomain;
 use App\Services\Links\Conditions\ConditionRegistry;
+use App\Services\Links\Domains\DomainName;
 use App\Services\Links\Domains\DomainSelectionStrategy;
 use App\Services\Links\TransitionMode;
 use App\Services\Links\UrlNormalizer;
@@ -33,7 +35,7 @@ class StoreLinkRequest extends FormRequest
 
         return [
             // An explicit domain is mutually exclusive with automatic selection.
-            'domain' => ['nullable', 'string', 'max:255', 'exists:domains,value', 'prohibits:domain_strategy,domain_group'],
+            'domain' => ['bail', 'nullable', 'string', new ValidDomain, 'max:253', 'exists:domains,value', 'prohibits:domain_strategy,domain_group'],
             // Auto-select a domain by strategy; required when a group scopes it.
             'domain_strategy' => ['nullable', 'string', 'required_with:domain_group', Rule::in(DomainSelectionStrategy::values())],
             // Optional scope for the strategy (group code); without it selection spans all domains.
@@ -88,6 +90,12 @@ class StoreLinkRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        $domain = $this->input('domain');
+
+        if (is_string($domain)) {
+            $this->merge(['domain' => DomainName::tryToAscii($domain) ?? $domain]);
+        }
+
         $rules = $this->input('rules');
 
         if (! is_array($rules)) {

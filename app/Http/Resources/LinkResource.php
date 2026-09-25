@@ -21,6 +21,7 @@ class LinkResource extends JsonResource
         return [
             'url' => $this->resource->url,
             'domain' => $this->resource->domain->value ?? null,
+            'display_domain' => $this->resource->domain?->display_domain,
             'code' => $this->resource->code,
             'title' => $this->resource->title,
             'forward_query' => $this->resource->forward_query,

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Domains\Tables;
 
 use App\Filament\Support\RestrictedDeleteBulkAction;
+use App\Models\Domain;
 use App\Models\DomainGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
@@ -11,6 +12,7 @@ use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class DomainsTable
@@ -21,7 +23,8 @@ class DomainsTable
             ->columns([
                 TextColumn::make('value')
                     ->label(__('resources/domain.fields.value'))
-                    ->searchable(),
+                    ->formatStateUsing(fn (Domain $record): string => $record->display_domain)
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $query->whereIn('domains.id', Domain::query()->matchingName($search)->select('id'))),
                 IconColumn::make('is_default')
                     ->label(__('resources/domain.fields.is_default'))
                     ->boolean(),

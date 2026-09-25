@@ -7,9 +7,16 @@ return [
 
     'fields' => [
         'value' => 'Value',
+        'value_hint' => 'Enter a domain in Unicode or Punycode, without a protocol, port or path. Search accepts the full domain in either form.',
+        'ascii' => 'Technical domain (ASCII / Punycode)',
+        'url' => 'Technical URL',
         'is_default' => 'Default',
         'is_default_hint' => 'Used when a link is created without an explicit domain.',
         'created_at' => 'Created at',
+    ],
+
+    'validation' => [
+        'invalid' => 'Enter a valid domain without a protocol, port or path.',
     ],
 
     'pages' => [

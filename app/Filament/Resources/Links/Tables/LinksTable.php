@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Links\Tables;
 
+use App\Models\Domain;
+use App\Services\Links\Domains\DomainName;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -59,7 +61,8 @@ class LinksTable
                         : __('resources/link.fields.forward_query_no')),
                 TextColumn::make('domain.value')
                     ->label(__('resources/link.fields.domain'))
-                    ->searchable()
+                    ->formatStateUsing(fn (string $state): string => DomainName::toUnicode($state))
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $query->whereIn('domain_id', Domain::query()->matchingName($search)->select('id')))
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('code')
                     ->label(__('resources/link.fields.code'))

@@ -45,7 +45,7 @@ class ViewDomain extends ViewRecord
 
                     Notification::make()
                         ->title(__('resources/domain.actions.set_as_default.notification', [
-                            'domain' => $record->value,
+                            'domain' => $record->display_domain,
                         ]))
                         ->success()
                         ->send();

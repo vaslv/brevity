@@ -21,7 +21,7 @@ class LinkInfolist
                     ->copyMessage(__('resources/link.fields.short_url_copied'))
                     ->url(fn (Link $record): string => $record->url, shouldOpenInNewTab: true)
                     ->placeholder('-'),
-                TextEntry::make('domain.value')
+                TextEntry::make('domain.display_domain')
                     ->label(__('resources/link.fields.domain'))
                     ->placeholder('-'),
                 TextEntry::make('code')

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\RecordClickJob;
 use App\Models\Link;
 use App\Services\Links\Conditions\ConditionContext;
+use App\Services\Links\Domains\DomainName;
 use App\Services\Links\LinkRuleResolver;
 use App\Services\Links\QueryString;
 use App\Services\Links\RuleVariantSelector;
@@ -93,7 +94,7 @@ class ResolveLink extends Controller
             return false;
         }
 
-        return strcasecmp($link->domain->value, $request->host()) !== 0;
+        return $link->domain->value !== DomainName::tryToAscii($request->host());
     }
 
     private function trackingDisabled(Request $request): bool

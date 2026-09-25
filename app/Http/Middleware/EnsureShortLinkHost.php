@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\HttpHost;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -30,7 +31,7 @@ class EnsureShortLinkHost
     {
         $shortLinkHosts = $this->shortLinkHosts();
 
-        if ($shortLinkHosts !== [] && ! in_array(strtolower($request->host()), $shortLinkHosts, true)) {
+        if ($shortLinkHosts !== [] && ! in_array(HttpHost::tryNormalize($request->host()), $shortLinkHosts, true)) {
             abort(404);
         }
 
@@ -39,17 +40,17 @@ class EnsureShortLinkHost
 
     /**
      * The short-link allowlist: every APP_HOST entry except the technical host,
-     * lower-cased for a case-insensitive host comparison.
+     * normalized for comparison of IDNs and IP literals.
      *
      * @return list<string>
      */
     private function shortLinkHosts(): array
     {
         $technicalHost = config('app.technical_host');
-        $technicalHost = $technicalHost !== null ? strtolower((string) $technicalHost) : null;
+        $technicalHost = $technicalHost !== null ? HttpHost::normalize((string) $technicalHost) : null;
 
         return Collection::make(config('app.hosts'))
-            ->map(fn (string $host): string => strtolower($host))
+            ->map(fn (string $host): string => HttpHost::normalize($host))
             ->reject(fn (string $host): bool => $host === $technicalHost)
             ->values()
             ->all();

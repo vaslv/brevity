@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Links\Schemas;
 
+use App\Models\Domain;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -24,6 +25,8 @@ class LinkForm
                 Select::make('domain_id')
                     ->label(__('resources/link.fields.domain_id'))
                     ->relationship('domain', 'value')
+                    ->getOptionLabelFromRecordUsing(fn (Domain $record): string => $record->display_domain)
+                    ->getSearchResultsUsing(fn (string $search): array => Domain::query()->matchingName($search)->limit(50)->get()->pluck('display_domain', 'id')->all())
                     ->searchable()
                     ->preload(),
                 TextInput::make('title')

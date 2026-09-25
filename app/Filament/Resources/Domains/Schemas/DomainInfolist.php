@@ -12,8 +12,15 @@ class DomainInfolist
     {
         return $schema
             ->components([
+                TextEntry::make('display_domain')
+                    ->label(__('resources/domain.fields.value'))
+                    ->copyable(),
                 TextEntry::make('value')
-                    ->label(__('resources/domain.fields.value')),
+                    ->label(__('resources/domain.fields.ascii'))
+                    ->copyable(),
+                TextEntry::make('url')
+                    ->label(__('resources/domain.fields.url'))
+                    ->copyable(),
                 IconEntry::make('is_default')
                     ->label(__('resources/domain.fields.is_default'))
                     ->boolean(),

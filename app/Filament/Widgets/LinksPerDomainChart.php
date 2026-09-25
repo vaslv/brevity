@@ -51,7 +51,7 @@ class LinksPerDomainChart extends ChartWidget
                     'borderWidth' => 1,
                 ],
             ],
-            'labels' => $domains->pluck('value')->all(),
+            'labels' => $domains->pluck('display_domain')->all(),
         ];
     }
 

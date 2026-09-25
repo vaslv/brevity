@@ -10,6 +10,22 @@ class SyncDomainsFromEnvTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_it_excludes_the_ipv6_technical_host_before_validating_domains(): void
+    {
+        config([
+            'app.technical_host' => '[0:0:0:0:0:0:0:1]',
+            'app.hosts' => ['[::1]', 'пример.рф', 'lnk.test'],
+        ]);
+
+        $this->artisan('domains:sync')->assertSuccessful();
+        $this->artisan('domains:sync')->assertSuccessful();
+
+        $this->assertEqualsCanonicalizing(
+            ['xn--e1afmkfd.xn--p1ai', 'lnk.test'],
+            Domain::query()->pluck('value')->all(),
+        );
+    }
+
     public function test_it_handles_an_empty_host_list(): void
     {
         config([
@@ -53,7 +69,7 @@ class SyncDomainsFromEnvTest extends TestCase
 
         // No second row created for the differently-cased host.
         $this->assertSame(1, Domain::query()->count());
-        $this->assertTrue(Domain::query()->where('value', 'S1.EXAMPLE')->exists());
+        $this->assertTrue(Domain::query()->where('value', 's1.example')->exists());
     }
 
     public function test_it_seeds_short_link_hosts_and_skips_the_technical_host(): void
