@@ -23,30 +23,6 @@ variables:
   # server has one (docs/08-decisions.md (audit 2026-06) — Low / CI, block B).
   DEPLOY_USER: "root"
 
-# Reusable shell snippet, referenced from deploy/rollback via *smoke_test.
-# Post-deploy health check against the /up route so a broken image fails the
-# pipeline. Skipped (with a warning) until HEALTHCHECK_URL is set, mirroring the
-# SSH_KNOWN_HOSTS fallback below.
-.scripts:
-  smoke_test: &smoke_test |
-    if [ -z "$HEALTHCHECK_URL" ]; then
-      echo "WARNING: HEALTHCHECK_URL is not set; skipping post-deploy smoke test."
-    else
-      command -v curl >/dev/null 2>&1 || apk add --no-cache curl >/dev/null
-      echo "Smoke test: GET $HEALTHCHECK_URL"
-      ok=0
-      for i in $(seq 1 12); do
-        code=$(curl -sS -m 10 -o /dev/null -w '%{http_code}' "$HEALTHCHECK_URL" || true)
-        if [ "$code" = "200" ]; then echo "Health OK (HTTP 200) on attempt $i."; ok=1; break; fi
-        echo "Attempt $i/12: HTTP ${code:-000}; retrying in 5s..."
-        sleep 5
-      done
-      if [ "$ok" -ne 1 ]; then
-        echo "Smoke test FAILED: $HEALTHCHECK_URL never returned HTTP 200."
-        exit 1
-      fi
-    fi
-
 build:
   stage: build
   variables:
@@ -86,6 +62,7 @@ build:
 # Shared SSH bootstrap for the deploy and rollback jobs.
 .deploy_base:
   stage: deploy
+  resource_group: production
   before_script:
     - eval $(ssh-agent -s)
     - mkdir -p ~/.ssh
@@ -117,8 +94,9 @@ deploy:
   #     manual `rollback` job has a known-good tag to roll back to.
   script:
     - ssh $DEPLOY_USER@$SERVER_IP "ls -lh"
-    - scp $DOT_ENV_PATH $DEPLOY_USER@$SERVER_IP:./.env
+    - scp "$DOT_ENV_PATH" "$DEPLOY_USER@$SERVER_IP:./.deploy-input.env"
     - scp docker-compose.production.yml $DEPLOY_USER@$SERVER_IP:./docker-compose.production.yml
+    - scp deploy.sh deploy-proxy.sh "$DEPLOY_USER@$SERVER_IP:./"
     # Pipe the registry password over ssh stdin so it never appears in a command
     # string or process arguments (mirrors the build stage's --password-stdin).
     - echo "$HARBOR_PASSWORD" | ssh $DEPLOY_USER@$SERVER_IP "docker login -u $HARBOR_USERNAME --password-stdin $HARBOR_HOST"
@@ -128,11 +106,8 @@ deploy:
     # So it is duplicated — keep the two in sync, or this job pulls a tag the
     # build stage never pushed.
     - ssh $DEPLOY_USER@$SERVER_IP "
-      export LARAVEL_IMAGE=\"$HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}\" &&
-      docker pull \"\$LARAVEL_IMAGE\" &&
-      docker compose --env-file .env -f docker-compose.production.yml up -d --remove-orphans
+      HEALTHCHECK_URL=\"$HEALTHCHECK_URL\" sh deploy.sh deploy \"$HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}\" .deploy-input.env
       "
-    - *smoke_test
 
 # Manual rollback: re-deploy a known-good image tag. Trigger from the pipeline
 # UI with the ROLLBACK_TAG variable set to a previously built tag (e.g. an older
@@ -141,14 +116,10 @@ rollback:
   extends: .deploy_base
   when: manual
   script:
-    - test -n "$ROLLBACK_TAG" || { echo "ROLLBACK_TAG is required (set it to a known-good image tag to roll back to)."; exit 1; }
-    - 'echo "Rolling back to image tag: $ROLLBACK_TAG"'
-    - scp $DOT_ENV_PATH $DEPLOY_USER@$SERVER_IP:./.env
+    - 'echo "Rolling back to: ${ROLLBACK_TAG:-saved working release}"'
     - scp docker-compose.production.yml $DEPLOY_USER@$SERVER_IP:./docker-compose.production.yml
+    - scp deploy.sh deploy-proxy.sh "$DEPLOY_USER@$SERVER_IP:./"
     - echo "$HARBOR_PASSWORD" | ssh $DEPLOY_USER@$SERVER_IP "docker login -u $HARBOR_USERNAME --password-stdin $HARBOR_HOST"
     - ssh $DEPLOY_USER@$SERVER_IP "
-      export LARAVEL_IMAGE=\"$HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:$ROLLBACK_TAG\" &&
-      docker pull \"\$LARAVEL_IMAGE\" &&
-      docker compose --env-file .env -f docker-compose.production.yml up -d --remove-orphans
+      HEALTHCHECK_URL=\"$HEALTHCHECK_URL\" sh deploy.sh rollback \"${ROLLBACK_TAG:+$HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:$ROLLBACK_TAG}\"
       "
-    - *smoke_test

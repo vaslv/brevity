@@ -11,6 +11,8 @@
 .env
 .env.*
 auth.json
+.deploy
+.deploy-input.env
 
 # Dependencies (installed inside the image by `composer install`)
 /vendor
