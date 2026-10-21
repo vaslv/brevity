@@ -23,6 +23,9 @@ WORKDIR /app
 
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
+# Disable upload progress before PHP parses request bodies (including workers).
+RUN printf '%s\n' 'session.upload_progress.enabled = Off' > "$PHP_INI_DIR/conf.d/zz-upload-progress.ini"
+
 RUN apt update \
     && apt upgrade -y \
     && apt install -y \

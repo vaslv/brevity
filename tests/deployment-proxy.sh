@@ -51,10 +51,26 @@ assert_response() {
     done
     for attempt in 1 2 3 4 5; do test "$(request)" = "$expected"; done
 }
+assert_multipart_blocked() {
+    for method in POST PUT PATCH; do
+        for content_type in 'multipart/form-data; boundary=test' 'Multipart/Form-Data; boundary="test"' 'multipart/form-data'; do
+            status=$(curl -sS --max-time 3 -o /dev/null -w '%{http_code}' \
+                -X "$method" -H 'Host: deploy.test' -H "Content-Type: $content_type" \
+                --data-binary 'blocked-before-upstream' "http://127.0.0.1:$port/upload")
+            test "$status" = 403
+        done
+    done
+    # The upstream always returns 200, so a 403 can only come from the proxy.
+    test "$(curl -fsS --max-time 3 -H 'Host: deploy.test' \
+        -H 'Content-Type: application/json' -d '{}' "http://127.0.0.1:$port/")" = old
+    test "$(curl -fsS --max-time 3 -H 'Host: deploy.test' \
+        -d 'field=value' "http://127.0.0.1:$port/")" = old
+}
 compose up -d
 old=$(docker inspect -f '{{.Id}}' "$project-legacy")
 configure_proxy
 assert_response old
+assert_multipart_blocked
 (
     while ! test -f "$directory/stop"; do
         request >> "$directory/responses" 2>/dev/null || echo failure >> "$directory/errors"
@@ -107,4 +123,6 @@ touch "$directory/stop"
 wait "$watcher"
 watcher=
 test ! -s "$directory/errors"
+assert_multipart_blocked
 echo 'PASS: legacy web preserved, unready candidate excluded, switch and rollback verified.'
+echo 'PASS: multipart blocked before upstream, JSON and URL-encoded forms preserved after rollback.'
