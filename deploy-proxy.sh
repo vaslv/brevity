@@ -11,18 +11,8 @@ grep -F 'range $container := $containers }}' "$baseline" >/dev/null || {
     echo 'Unsupported nginx-proxy template; keeping the existing web version.' >&2
     exit 1
 }
-grep -E '^server \{' "$baseline" >/dev/null || {
-    echo 'Unsupported nginx-proxy server template; cannot block multipart requests.' >&2
-    exit 1
-}
 cp "$template" "$template.previous"
 awk -v draining="$draining" '
-    /^server \{/ {
-        print
-        print "    # Temporary mitigation: blocks legitimate file uploads too."
-        print "    if ($http_content_type ~* multipart/form-data) { return 403; }"
-        next
-    }
     /range \$container := \$containers }}/ {
         print
         print "{{- if or (eq $container.State.Health.Status \"starting\") (eq $container.State.Health.Status \"unhealthy\") }}{{ continue }}{{ end }}"

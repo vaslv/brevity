@@ -1,4 +1,4 @@
-# Pin the base image to the PHP 8.4 tag + manifest-list digest for reproducible,
+# Pin the base image to the PHP 8.4.27 tag + manifest-list digest for reproducible,
 # multi-arch builds (was an untagged `latest`, which could silently change the
 # bundled PHP version). Bump the tag and digest together when updating.
 # Build the Vite entries (the dashboard's map bundle, app css/js): the
@@ -17,14 +17,11 @@ COPY . .
 
 RUN npm run build
 
-FROM dunglas/frankenphp:php8.4@sha256:b153e1d6d869d26986e3091738a006f9fde2ee9fb66f7e8b8cfc5a75ec640984
+FROM dunglas/frankenphp:1.13.2-php8.4.27@sha256:0de5a32944f72c13b45d183e8e6c53546b8172cec21cc8599e24b12e0661506d
 
 WORKDIR /app
 
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
-
-# Disable upload progress before PHP parses request bodies (including workers).
-RUN printf '%s\n' 'session.upload_progress.enabled = Off' > "$PHP_INI_DIR/conf.d/zz-upload-progress.ini"
 
 RUN apt update \
     && apt upgrade -y \
