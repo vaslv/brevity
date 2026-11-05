@@ -3,6 +3,7 @@
 .env
 .env.backup
 .env.production
+.env.production*
 .phpactor.json
 .phpunit.result.cache
 # Auto-generated IDE helper stubs. Written by the Laravel Idea plugin on demand

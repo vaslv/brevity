@@ -4,6 +4,76 @@ Operational facts that cannot be derived from the code, plus the
 runbook for moving the deployment (performed 2026-06-10; useful when
 changing the server or the deploy user).
 
+## Host-managed Nginx and PostgreSQL
+
+When sharing a server with another service, combine
+`docker-compose.production.yml` with `docker-compose.host.yml`.
+The overlay disables bundled Nginx/ACME, exposes web only on
+`127.0.0.1:8081`, and connects the application to the existing
+`services_database` Docker network. Redis stays on Brevity's own network.
+This deployment does not manage PostgreSQL or the other service.
+
+Copy both Compose files and `deploy-host.sh` to `/opt/brevity`.
+Keep the server `.env` at mode `600`, starting from `.env.production.example`.
+Configure the host deployment settings:
+
+```dotenv
+DB_HOST=172.18.0.1
+DB_PORT=5432
+DATABASE_NETWORK=services_database
+BREVITY_HTTP_PORT=8081
+```
+
+The database address must match PostgreSQL's listener on the existing
+network gateway. Set `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` for
+Brevity's own database. Preserve the original `APP_KEY` and `HASHIDS_SALT`
+when migrating an installation. Restore and verify the backup first, then
+allow startup:
+
+```bash
+cd /opt/brevity
+mkdir -p .deploy
+chmod 700 .deploy
+touch .deploy/database-ready
+```
+
+Create this marker **only after the database is ready**. Without it, both
+the script and GitHub workflow refuse to start the application or migrations.
+Backup restoration is separate from routine deployment and is never automatic.
+
+Use `nginx.brevity.conf.example`, replacing the domains and local port as
+needed. Configure host TLS for every served domain, validate with `nginx -t`,
+then activate the virtual host. Set `APP_URL` to the technical domain's HTTPS
+URL and `APP_HOST` to all technical/short-link domains. Set `TRUSTED_PROXIES`
+to the actual application-network gateway address used by the host proxy.
+The Nginx example overwrites client-supplied forwarding headers.
+
+Create a GitHub Environment named `production`:
+
+- Variables: `DEPLOY_HOST` (server address), `DEPLOY_USER` (SSH user).
+- Secrets: `DEPLOY_SSH_KEY` (dedicated deployment private key),
+  `DEPLOY_KNOWN_HOSTS` (verified server SSH host key entry).
+- Add the public key to the chosen user's `authorized_keys`.
+  The user needs access to `/opt/brevity` and Docker.
+
+Database credentials, application keys and `.env` stay on the server.
+After publishing the workflow, select **Actions → Deploy production → Run workflow**,
+branch `main`, and an existing image tag (`1.10.21`) or `sha256:<digest>`.
+Deployment is manual; publishing an image does not update the server.
+
+The script pulls and pins the image digest before stopping web/workers,
+then applies migrations through the scheduler and waits for healthy services
+and `/up`. Updates interrupt service. On failure after stopping the app,
+application services stay stopped; database migrations are not rolled back.
+The last successful digest is stored in `.deploy/image.env`, with the previous
+one in `.deploy/previous-image.env`. Inspect the deployment with:
+
+```bash
+cd /opt/brevity
+docker compose --env-file .env --env-file .deploy/image.env \
+    -f docker-compose.production.yml -f docker-compose.host.yml ps
+```
+
 ## Deploying your own instance
 
 GitHub Actions publishes `ghcr.io/vaslv/brevity` for `linux/amd64`.

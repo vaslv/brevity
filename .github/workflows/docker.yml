@@ -26,13 +26,17 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Validate both database configurations
+      - name: Validate deployment configurations
         env:
           LARAVEL_IMAGE: brevity:check
           DB_PASSWORD: compose-validation-only
         run: |
           docker compose --env-file .env.production.example -f docker-compose.production.yml config --quiet
           docker compose --env-file .env.production.example -f docker-compose.production.yml -f docker-compose.db.yml config --quiet
+          docker compose --env-file .env.production.example -f docker-compose.production.yml -f docker-compose.host.yml config --quiet
+
+      - name: Test host deployment script
+        run: sh tests/deployment-host.sh
 
       - name: Prepare image version
         id: version

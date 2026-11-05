@@ -1,0 +1,33 @@
+# Overlay for a host-managed Nginx and PostgreSQL.
+# docker compose -f docker-compose.production.yml -f docker-compose.host.yml ...
+services:
+  nginx-proxy:
+    profiles: [bundled-proxy]
+
+  acme-companion:
+    profiles: [bundled-proxy]
+
+  web:
+    environment: !reset {}
+    ports:
+      - "127.0.0.1:${BREVITY_HTTP_PORT:-8081}:8000"
+    networks:
+      - database
+
+  scheduler:
+    container_name: !reset null
+    networks:
+      - database
+
+  horizon:
+    container_name: !reset null
+    networks:
+      - database
+
+  redis:
+    container_name: !reset null
+
+networks:
+  database:
+    external: true
+    name: ${DATABASE_NETWORK:-services_database}
