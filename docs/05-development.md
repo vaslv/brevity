@@ -63,7 +63,7 @@ For the full i18n layout, see [docs/04-admin.md](./04-admin.md).
 ## Releases
 
 Versioning: semver **without** the `v` prefix (`1.4.1`, not `v1.4.1`).
-The git tag is the **single** source of truth — nothing in the working
+The git tag is the source of the release version — nothing in the working
 tree records the version, and `composer.json` deliberately carries no
 `version` field.
 
@@ -91,8 +91,9 @@ The command:
 ### How the version reaches the application
 
 ```
-git tag 1.4.1
-   └─ CI: --build-arg APP_VERSION=$CI_COMMIT_TAG   (.gitlab-ci.yml)
+Git tag 1.4.1 or commit SHA
+   └─ GitHub Actions (.github/workflows/docker.yml):
+      --build-arg APP_VERSION=1.4.1 or sha-<full commit SHA>
         └─ Dockerfile: ENV APP_VERSION + OCI image labels
              └─ config/app.php: 'version' => env('APP_VERSION')
                   └─ config/filament-app-version.php → the topbar chip
@@ -117,9 +118,13 @@ Consequences worth knowing:
 - **Do not put `APP_VERSION` in `.env`.** Laravel's dotenv is immutable
   and leaves an already-set process variable alone, so the value from
   the image always wins and the `.env` entry would be silently ignored.
-- The image tag, `APP_VERSION` and the
-  `org.opencontainers.image.version` label are the same string by
-  construction, so they cannot disagree.
+- `APP_VERSION`, `SENTRY_RELEASE` and the `org.opencontainers.image.version`
+  label contain the same value. A release build uses the Git tag; a build
+  from `main` uses `sha-<full commit SHA>`.
+- Builds from `main` publish `latest` and the SHA tag; release builds publish
+  only the release tag. `latest` is a moving image reference, not a version.
+  Rerunning a build can overwrite release and SHA tags too. Pin the published
+  digest (`ghcr.io/vaslv/brevity@sha256:<digest>`) to select an exact image.
 
 ## Git conventions
 

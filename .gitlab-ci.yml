@@ -1,3 +1,9 @@
+# Historical pipeline, disabled after moving image builds to GitHub Actions.
+# See .github/workflows/docker.yml and docs/06-deploy.md.
+workflow:
+  rules:
+    - when: never
+
 # Reference build-and-deploy pipeline. Optional: the app builds and runs from
 # the Dockerfile + docker-compose.production.yml alone; this file automates
 # "build image -> push to registry -> deploy over SSH" on any GitLab instance.

@@ -60,27 +60,36 @@ deployment, plans and recorded decisions.
 
 ## Deployment
 
-Everything needed to self-host on any Docker server ships in the
-repository: a production `Dockerfile` (FrankenPHP + Octane), a fully
-parameterised `docker-compose.production.yml` (nginx-proxy + automatic
-Let's Encrypt, one-shot migrator, web, scheduler, Horizon, Redis), an
-optional `docker-compose.db.yml` overlay that adds PostgreSQL to the
-stack, and a production environment template
-(`.env.production.example`). In short:
+GitHub Actions builds the production image (FrankenPHP + Octane, bundled
+assets) and publishes it to `ghcr.io/vaslv/brevity`. You need Docker with
+Compose v2, a server with ports 80/443 available, and DNS pointing to it.
+The published image targets `linux/amd64`.
 
 ```bash
-docker build -t you/brevity:latest .
-cp .env.production.example .env   # fill in the blanks
+cp .env.production.example .env
+# Fill APP_KEY, HASHIDS_SALT, APP_URL, APP_HOST,
+# LETSENCRYPT_EMAIL, DB_PASSWORD and SMTP settings.
+# LARAVEL_IMAGE defaults to ghcr.io/vaslv/brevity:latest.
+
+# Option 1: PostgreSQL in Docker, DB_HOST=pgsql
 docker compose --env-file .env \
-    -f docker-compose.production.yml -f docker-compose.db.yml up -d
-docker exec -it laravel-web php artisan make:filament-user
+    -f docker-compose.production.yml -f docker-compose.db.yml up -d --pull always --wait --wait-timeout 300
+
+# Option 2: existing PostgreSQL — fill DB_HOST/PORT/DATABASE/USERNAME/PASSWORD,
+# then use only the base file instead of the command above:
+# docker compose --env-file .env -f docker-compose.production.yml up -d --pull always --wait --wait-timeout 300
+
+docker compose --env-file .env -f docker-compose.production.yml exec web php artisan make:filament-user
 ```
 
-The admin panel is served at the root of the technical host
-(`https://<your-host>/login`). `.gitlab-ci.yml` is a reference
-build-and-deploy pipeline for any GitLab instance and container
-registry — everything infrastructure-specific is supplied via CI
-variables. Full walkthrough: [docs/06-deploy.md](./docs/06-deploy.md).
+The scheduler applies migrations automatically; web and Horizon wait for
+it to become healthy. Bundled PostgreSQL persists data in a Docker volume.
+An external database must be reachable from containers; `localhost` means
+the container itself. Use `host.docker.internal` for a database on the
+Docker host. The admin panel is at `https://<your-host>/login`.
+
+See the [deployment guide](./docs/06-deploy.md) for key generation, GHCR
+access and updates. The old GitLab pipeline is disabled.
 
 ## Intended use
 

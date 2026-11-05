@@ -62,7 +62,7 @@ vendor/bin/sail bin pint --dirty --format agent
 ## Релизы
 
 Версионирование: semver **без** префикса `v` (`1.4.1`, не `v1.4.1`).
-Единственный источник истины — git-тег: в рабочем дереве версия нигде
+Источник версии релиза — git-тег: в рабочем дереве версия нигде
 не записана, поля `version` в `composer.json` намеренно нет.
 
 Интерактивную команду релиза даёт dev-пакет
@@ -87,8 +87,9 @@ composer release
 ### Как версия доезжает до приложения
 
 ```
-git tag 1.4.1
-   └─ CI: --build-arg APP_VERSION=$CI_COMMIT_TAG   (.gitlab-ci.yml)
+Git-тег 1.4.1 или SHA коммита
+   └─ GitHub Actions (.github/workflows/docker.yml):
+      --build-arg APP_VERSION=1.4.1 или sha-<полный SHA коммита>
         └─ Dockerfile: ENV APP_VERSION + OCI-лейблы образа
              └─ config/app.php: 'version' => env('APP_VERSION')
                   └─ config/filament-app-version.php → чип в топбаре
@@ -113,9 +114,14 @@ fallback — литерал `dev`, и он появляется, только е
   трогает уже установленную переменную процесса, поэтому значение из
   образа всегда выигрывает, а запись в `.env` будет молча
   проигнорирована.
-- Тег образа, `APP_VERSION` и лейбл
-  `org.opencontainers.image.version` — одна и та же строка по
-  построению, разойтись они не могут.
+- `APP_VERSION`, `SENTRY_RELEASE` и лейбл `org.opencontainers.image.version`
+  содержат одно значение. Для релизной сборки это Git-тег, для сборки из
+  `main` — `sha-<полный SHA коммита>`.
+- Сборки из `main` публикуют `latest` и SHA-тег; релизные сборки публикуют
+  только релизный тег. `latest` — изменяемый указатель на образ, а не версия.
+  Повторная сборка может перезаписать и релизные, и SHA-теги. Чтобы закрепить
+  конкретный образ, использовать digest опубликованного образа
+  (`ghcr.io/vaslv/brevity@sha256:<digest>`).
 
 ## Соглашения по git
 

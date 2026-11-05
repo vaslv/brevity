@@ -62,27 +62,36 @@ HTTP API, админка, разработка, деплой, планы и пр
 
 ## Деплой
 
-Для self-hosted запуска на любом сервере с Docker в репозитории есть
-всё: продовый `Dockerfile` (FrankenPHP + Octane), полностью
-параметризованный `docker-compose.production.yml` (nginx-proxy +
-автоматический Let's Encrypt, one-shot мигратор, web, scheduler,
-Horizon, Redis), опциональный оверлей `docker-compose.db.yml`,
-добавляющий PostgreSQL в стек, и шаблон продового окружения
-(`.env.production.example`). Кратко:
+GitHub Actions собирает production-образ (FrankenPHP + Octane, готовые
+ассеты) и публикует его в `ghcr.io/vaslv/brevity`. Для первого запуска
+нужны Docker с Compose v2, сервер с открытыми портами 80/443 и домен,
+направленный на сервер. Образ из GitHub рассчитан на `linux/amd64`.
 
 ```bash
-docker build -t you/brevity:latest .
-cp .env.production.example .env   # заполнить пропуски
+cp .env.production.example .env
+# Заполнить APP_KEY, HASHIDS_SALT, APP_URL, APP_HOST,
+# LETSENCRYPT_EMAIL, DB_PASSWORD и SMTP-настройки.
+# LARAVEL_IMAGE уже указывает на ghcr.io/vaslv/brevity:latest.
+
+# Вариант 1: PostgreSQL в Docker, DB_HOST=pgsql
 docker compose --env-file .env \
-    -f docker-compose.production.yml -f docker-compose.db.yml up -d
-docker exec -it laravel-web php artisan make:filament-user
+    -f docker-compose.production.yml -f docker-compose.db.yml up -d --pull always --wait --wait-timeout 300
+
+# Вариант 2: существующий PostgreSQL — заполнить DB_HOST/PORT/DATABASE/USERNAME/PASSWORD,
+# затем запустить только основной файл вместо команды выше:
+# docker compose --env-file .env -f docker-compose.production.yml up -d --pull always --wait --wait-timeout 300
+
+docker compose --env-file .env -f docker-compose.production.yml exec web php artisan make:filament-user
 ```
 
-Админка отдаётся в корне технического хоста
-(`https://<ваш-хост>/login`). `.gitlab-ci.yml` — референсный пайплайн
-сборки и деплоя для любого GitLab и container registry: вся
-инфраструктурная специфика передаётся через CI-переменные. Полный
-разбор: [docs/ru/06-deploy.md](./docs/ru/06-deploy.md).
+Планировщик автоматически применяет миграции; web и Horizon ждут его
+готовности. Встроенная база хранит данные в отдельном Docker volume.
+Внешняя база должна быть доступна из контейнеров; `localhost` указывает
+на сам контейнер, а для базы на Docker-хосте используйте `host.docker.internal`.
+Админка: `https://<ваш-хост>/login`.
+
+Генерация ключей, доступ к GHCR и обновление приложения:
+[инструкция деплоя](./docs/ru/06-deploy.md). Старый GitLab CI отключён.
 
 ## Назначение
 

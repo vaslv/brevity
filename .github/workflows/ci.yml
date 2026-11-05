@@ -1,6 +1,5 @@
 # Tests, code style and static analysis for pushes to main and PRs.
-# Deliberately NOT triggered on tags: tag pushes drive the deploy pipeline
-# (see .gitlab-ci.yml), and the initial tag import must not fan out here.
+# Docker image builds and publication are handled by docker.yml.
 name: CI
 
 on:

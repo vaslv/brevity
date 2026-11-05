@@ -6,78 +6,99 @@
 
 ## Развёртывание своего инстанса
 
-В репозитории есть всё, кроме PostgreSQL: `Dockerfile` собирает
-продовый образ (FrankenPHP + Octane, ассеты пресобраны), а
-`docker-compose.production.yml` поднимает весь стек — nginx-proxy +
-acme-companion (автоматический Let's Encrypt), one-shot мигратор, web,
-scheduler, Horizon и Redis.
+GitHub Actions публикует готовый образ `ghcr.io/vaslv/brevity` для
+`linux/amd64`. На сервере не нужны PHP, Composer, Node или GitLab.
+Нужны Docker с Compose v2, свободные порты 80/443 и DNS-записи всех
+обслуживаемых доменов, направленные на сервер.
 
-1. **Собрать и опубликовать образ** (любой registry, либо собрать
-   прямо на сервере):
-
-   ```bash
-   docker build -t registry.example.com/you/brevity:1.0.0 .
-   docker push registry.example.com/you/brevity:1.0.0
-   ```
-
-2. **Подготовить сервер**: Docker с Compose v2, свободные порты
-   80/443, DNS-записи всех обслуживаемых хостов указывают на него.
-   **PostgreSQL не входит в базовый compose-файл** — используйте
-   managed-базу или свою, доступную из контейнеров, ЛИБО добавьте
-   встроенную оверлеем `docker-compose.db.yml` (данные на named
-   volume; `DB_HOST=pgsql`). Один инстанс на сервер: имя
-   compose-проекта запинено (`brevity`), имена контейнеров
-   фиксированы; для соседства с другим проектом задайте
-   `docker compose -p <имя>`.
-
-3. **Скопировать `docker-compose.production.yml` (плюс
-   `docker-compose.db.yml`, если используется) и продовый `.env`**
-   (за основу — **`.env.production.example`**: в нём продовый профиль —
-   очередь/кэш/сессии на Redis под Horizon, логи в stderr, debug
-   выключен) на сервер. Ключевые параметры:
-
-   - `APP_KEY` — сгенерировать `php artisan key:generate --show`;
-   - `APP_URL=https://<технический-хост>` — хост админки, API и
-     Horizon;
-   - `APP_HOST` — список **всех** хостов через запятую (технический +
-     каждый домен коротких ссылок); он подставляется в
-     `VIRTUAL_HOST`/`LETSENCRYPT_HOST` прокси, а `domains:sync` на
-     деплое заполняет из него справочник доменов;
-   - `LETSENCRYPT_EMAIL` — уведомления об истечении сертификатов;
-   - `DB_*` — ваш PostgreSQL; `REDIS_HOST=redis` (compose-сервис);
-   - `HASHIDS_SALT` — независим от `APP_KEY`, неизменяем после
-     появления ссылок (смена ломает все выданные короткие коды);
-   - опционально: SMTP-доступы, `GEOIP_LICENSE_KEY` (MaxMind) для
-     геолокации кликов.
-
-4. **Запустить стек** (`LARAVEL_IMAGE` можно задать в `.env` вместо
-   export; при встроенном PostgreSQL добавьте
-   `-f docker-compose.db.yml`):
+1. Скопировать из репозитория `docker-compose.production.yml`,
+   `docker-compose.db.yml` и `.env.production.example` в отдельную директорию.
+   Создать `.env`: `cp .env.production.example .env`, затем `chmod 600 .env`.
+   При обновлении существующей установки сохранить её `.env` и ключи.
+2. В `.env` оставить `LARAVEL_IMAGE=ghcr.io/vaslv/brevity:latest`
+   или указать опубликованный релизный тег / `sha-<полный SHA коммита>`.
+   Для форка заменить владельца и название репозитория.
+   Образ появится после первого успешного запуска workflow **Docker image**.
+   Для скачивания без авторизации владелец должен сделать пакет Public
+   в GitHub → Packages → пакет → Package settings → Change visibility.
+   Для приватного пакета выполнить `docker login ghcr.io -u <github-user>`
+   и ввести PAT (classic) с `read:packages` в запросе пароля.
+3. Сгенерировать **два отдельных значения** для новой установки:
 
    ```bash
-   export LARAVEL_IMAGE=registry.example.com/you/brevity:1.0.0
-   docker compose --env-file .env -f docker-compose.production.yml up -d
+   docker run --rm --entrypoint php ghcr.io/vaslv/brevity:latest -r 'echo "base64:".base64_encode(random_bytes(32)).PHP_EOL;'
+   docker run --rm --entrypoint php ghcr.io/vaslv/brevity:latest -r 'echo bin2hex(random_bytes(16)).PHP_EOL;'
    ```
 
-   One-shot `migrate` применяет миграции и синхронизирует домены; web,
-   scheduler и Horizon стартуют только после его успеха; прокси
-   получает сертификаты автоматически.
+   Записать первое в `APP_KEY`, второе в `HASHIDS_SALT`. Не менять соль
+   после создания ссылок. Заполнить `APP_URL=https://<технический-хост>`,
+   `APP_HOST` (все домены через запятую), `LETSENCRYPT_EMAIL`, SMTP и `DB_*`.
+   Оставить `REDIS_HOST=redis`. Геолокация опциональна (`GEOIP_LICENSE_KEY`).
+4. Выбрать **один** вариант PostgreSQL:
 
-5. **Создать первого админа**:
+   **База в Docker:** `DB_HOST=pgsql`, `DB_PORT=5432`, заполнить
+   `DB_DATABASE`, `DB_USERNAME`, непустой `DB_PASSWORD`.
 
    ```bash
-   docker exec -it laravel-web php artisan make:filament-user
+   docker compose --env-file .env -f docker-compose.production.yml -f docker-compose.db.yml up -d --pull always --wait --wait-timeout 300
    ```
 
-   Админка живёт в **корне технического хоста** — вход на
-   `https://<технический-хост>/login`. Остальные настроенные хосты
-   обслуживают только короткие ссылки и отдают 404 для панели, API и
-   Horizon.
+   Данные сохраняются в `brevity_pgsql_data`, порт базы наружу не открыт.
+   Изменение пароля в `.env` не меняет пароль в уже созданной базе.
 
-6. **CI/CD (опционально)**: `.gitlab-ci.yml` — референсный пайплайн
-   для любого GitLab: сборка, пуш, деплой по SSH на пуш тега, ручной
-   rollback-джоб. Вся инфраструктурная специфика — через CI/CD
-   переменные; полный список — в шапке-комментарии самого файла.
+   **Существующая внешняя база:** указать доступные из контейнеров
+   `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` и,
+   при необходимости, `DB_SSLMODE`. База должна существовать, а пользователь
+   должен иметь права на миграции. Для PostgreSQL на Docker-хосте используйте
+   `host.docker.internal`, а не `localhost`. Отдельный PostgreSQL-контейнер
+   не создаётся:
+
+   ```bash
+   docker compose --env-file .env -f docker-compose.production.yml up -d --pull always --wait --wait-timeout 300
+   ```
+
+   Планировщик применяет миграции и синхронизирует домены перед запуском
+   расписания. Web и Horizon ждут его готовности. Прокси получает TLS-сертификаты.
+5. Создать первого администратора:
+
+   ```bash
+   docker compose --env-file .env -f docker-compose.production.yml exec web php artisan make:filament-user
+   ```
+
+   Вход: `https://<технический-хост>/login`. Остальные домены обслуживают
+   короткие ссылки, но не админку/API/Horizon.
+
+## Сборка в GitHub и обновления
+
+Workflow `.github/workflows/docker.yml`:
+
+- `pull_request`: проверка обеих Compose-конфигураций и сборка без публикации;
+- push в `main`: публикация `latest` и `sha-<полный SHA>` в GHCR;
+- push версионного тега вида `1.2.3`: публикация только релизного тега,
+  без изменения `latest` и `sha-<полный SHA>`;
+- `workflow_dispatch`: ручной запуск; публикация только для `main` и тегов.
+
+Используется штатный `GITHUB_TOKEN` с `packages: write`; дополнительные
+секреты registry, SSH или базы не нужны. Политика организации должна
+разрешать GitHub Actions создавать пакеты. Workflow не подключается к серверу.
+Отдельный workflow `CI` продолжает запускать тесты и статический анализ.
+
+Версия в панели и `SENTRY_RELEASE` вшиты в образ: релизный Git-тег либо
+`sha-<полный SHA>`. Не задавать `APP_VERSION` в серверном `.env`.
+`latest` указывает на сборку из `main`; его имя не является версией приложения.
+Релизные и SHA-теги могут перезаписываться при повторной сборке. Для фиксации
+конкретного образа задать `LARAVEL_IMAGE=ghcr.io/vaslv/brevity@sha256:<digest>`,
+подставив digest опубликованного образа.
+
+Для обновления сделать резервную копию базы, изменить `LARAVEL_IMAGE`
+в серверном `.env` и повторить выбранную команду `up` выше. Это обычное
+обновление Compose с возможным перерывом обслуживания. Не выполнять
+`down -v`: эта команда удалит постоянные тома. Возврат старого образа
+не отменяет миграции базы.
+
+Старый `.gitlab-ci.yml` отключён через `workflow.rules: when: never` и
+сохранён как исторический пример. Раздел про перенос старого деплоя ниже
+описывает прежнюю инфраструктуру, а не текущую процедуру запуска.
 
 ## Топология
 
@@ -88,43 +109,6 @@ scheduler, Horizon и Redis.
   томов certs/acme = перевыпуск сертификатов.
 - Приложение: Octane (FrankenPHP), очереди — Horizon (`redis`), отдельная
   очередь `callbacks` (изоляция от записи кликов).
-
-## CI/CD (GitLab, деплой по тегу)
-
-- Пайплайн деплоит по SSH под `DEPLOY_USER` (CI-переменная; прод —
-  `brevity`, не root). `.env` и compose-файл копируются в домашнюю
-  директорию этого пользователя.
-- **`LARAVEL_IMAGE` не хранится в серверном `.env`** — CI экспортирует её
-  в команде деплоя. Любая ручная `docker compose`-команда на сервере
-  требует её явно (для `down`/`ps` годится заглушка:
-  `LARAVEL_IMAGE=dummy`). Реальный образ:
-  `docker inspect laravel-web --format '{{.Config.Image}}'`.
-- Миграции выполняются на деплое (gated `migrate --force`).
-- Smoke-тест после деплоя — `HEALTHCHECK_URL`
-  (`https://brevity.example.com/up`); manual-job `rollback` с
-  `ROLLBACK_TAG`.
-- Пайплайн по уже существующему тегу не перезапускается после правок
-  `.gitlab-ci.yml` — пересоздать тег или запустить вручную.
-
-## Релиз
-
-Semver **без** префикса `v`; единственный источник истины — git-тег.
-Интерактивная команда — `composer release` (dev-пакет
-`vaslv/composer-release`), она создаёт только тег, без релизного
-коммита; пуш тега запускает деплой.
-
-Сборка прокидывает тег в образ build-аргументом `APP_VERSION`, поэтому
-тег образа, версия в панели, лейбл `org.opencontainers.image.version` и
-`SENTRY_RELEASE` — одна и та же строка. Что реально крутится в
-контейнере:
-
-```bash
-docker inspect laravel-web --format '{{index .Config.Labels "org.opencontainers.image.version"}}'
-```
-
-`APP_VERSION` **нельзя** задавать в серверном `.env`: вшитое в образ
-значение всегда перебивает смонтированный файл. Детали —
-[05-development.md](./05-development.md).
 
 ## Ручные операции на сервере
 
@@ -137,7 +121,7 @@ docker exec laravel-horizon php artisan horizon:terminate
 Проверка здоровья:
 
 ```bash
-docker compose -p brevity ps
+docker compose --env-file .env -f docker-compose.production.yml ps
 curl -I https://brevity.example.com/up
 docker exec laravel-horizon php artisan horizon:status
 ```
@@ -145,7 +129,7 @@ docker exec laravel-horizon php artisan horizon:status
 ## Незакрытые пост-деплой шаги (этапы развития 1–4)
 
 Выполнить **один раз** при первом деплое веток с этими этапами; после —
-вычеркнуть отсюда. Миграции применяются автоматически (gated `migrate`).
+вычеркнуть отсюда. Миграции применяются автоматически (scheduler).
 
 **Деплой этапов 1–3 — в тихое окно.** Причины (ревью 2026-07-12):
 
@@ -169,8 +153,8 @@ docker exec laravel-horizon php artisan horizon:status
 миграций:
 
 ```bash
-docker exec laravel-web php artisan user-agents:detect-bots
-docker exec laravel-web php artisan clicks:rebuild-counters   # только ПОСЛЕ detect-bots
+docker compose --env-file .env -f docker-compose.production.yml exec web php artisan user-agents:detect-bots
+docker compose --env-file .env -f docker-compose.production.yml exec web php artisan clicks:rebuild-counters   # только ПОСЛЕ detect-bots
 ```
 
 Порядок обязателен: `rebuild-counters` берёт флаг бота из `user_agents`,
@@ -221,7 +205,7 @@ EXCLUSIVE от `ADD COLUMN`. На таблице в миллионы строк 
 - Первичная загрузка базы (после установки ключа):
 
   ```bash
-  docker exec laravel-web php artisan geo:download-db
+  docker compose --env-file .env -f docker-compose.production.yml exec web php artisan geo:download-db
   ```
 
   База лежит на общем named-volume `geoip_data` (смонтирован во все
@@ -232,14 +216,14 @@ EXCLUSIVE от `ADD COLUMN`. На таблице в миллионы строк 
   нужен). Первичную установку воркер, ещё не открывавший ридер, подхватывает
   сразу; при **ручной перезакачке поверх уже открытой** базы octane-воркеры
   продолжат читать старый inode до рестарта — если нужна немедленная замена,
-  `docker exec laravel-web php artisan octane:reload` (гео-данные меняются
+  `docker compose --env-file .env -f docker-compose.production.yml exec web php artisan octane:reload` (гео-данные меняются
   медленно, обычно не требуется).
 - Догеолокация исторических кликов — **после** установки базы (без неё команда
   сразу выходит, ничего не сканируя). Идемпотентно и возобновляемо, можно гонять
   в фоне отдельными заходами:
 
   ```bash
-  docker exec laravel-web php artisan geo:locate-clicks
+  docker compose --env-file .env -f docker-compose.production.yml exec web php artisan geo:locate-clicks
   ```
 
 **`trustProxies` — сузить до реального прокси.** `bootstrap/app.php`
@@ -263,7 +247,7 @@ deprecated (этап 2). Уведомить партнёров — см. [03-api
 держатся синхронными; `.env.production.example` (публичный шаблон)
 пополняется, когда новый ключ актуален для прода.
 
-## Ранбук: переезд деплоя (новый сервер / деплой-пользователь)
+## Исторический ранбук GitLab: переезд деплоя (новый сервер / деплой-пользователь)
 
 Впервые выполнен 2026-06-10 (root → `brevity`). Окно простоя между
 остановкой и подъёмом — 2–5 минут.
@@ -296,7 +280,7 @@ deprecated (этап 2). Уведомить партнёров — см. [03-api
    `DEPLOY_USER=<user>`, `HEALTHCHECK_URL=https://<host>/up`. Флаг
    Protected — только если деплойные теги protected.
 5. **Задеплоить**: создать и запушить новый тег.
-6. **Проверка**: `docker compose -p brevity ps` (up/healthy), `curl -I
+6. **Проверка**: `docker compose --env-file .env -f docker-compose.production.yml ps` (up/healthy), `curl -I
    .../up` (200), `horizon:status` (running), `docker logs
    acme-companion --since 10m` (**не** выпускает новые сертификаты —
    признак, что тома certs переехали), `docker exec redis redis-cli

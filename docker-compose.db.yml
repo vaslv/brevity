@@ -10,22 +10,22 @@ services:
     container_name: pgsql
     restart: always
     environment:
-      POSTGRES_DB: "${DB_DATABASE}"
-      POSTGRES_USER: "${DB_USERNAME}"
-      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_DATABASE:?set DB_DATABASE}"
+      POSTGRES_USER: "${DB_USERNAME:?set DB_USERNAME}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD:?set DB_PASSWORD}"
     volumes:
       - pgsql_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - proxy
 
-  # The one-shot migrator must not start before the database accepts
-  # connections; web/scheduler/horizon already wait for the migrator.
-  migrate:
+  # The scheduler applies migrations before becoming healthy.
+  # Web and Horizon already wait for the scheduler's health check.
+  scheduler:
     depends_on:
       pgsql:
         condition: service_healthy

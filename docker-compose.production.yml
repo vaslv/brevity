@@ -4,7 +4,7 @@
 name: brevity
 
 x-laravel: &laravel
-  image: "${LARAVEL_IMAGE:?set LARAVEL_IMAGE to the app image, e.g. registry.example.com/you/brevity:1.0.0}"
+  image: "${LARAVEL_IMAGE:?set LARAVEL_IMAGE to the app image, e.g. ghcr.io/vaslv/brevity:latest}"
   restart: always
   volumes:
     - ${LARAVEL_ENV_FILE:-./.env}:/app/.env:ro
@@ -97,6 +97,8 @@ services:
       interval: 5s
       timeout: 10s
       retries: 3
+      # Migrations run first; the scheduler heartbeat then arrives once a minute.
+      start_period: 120s
     command: >
       sh -c "rm -f /tmp/healthy &&
       if [ \"$$RUN_MIGRATIONS\" = 1 ]; then

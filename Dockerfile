@@ -54,7 +54,7 @@ COPY composer.json composer.lock ./
 # autoloader is generated further down instead, once the tree is in place.
 #
 # The BuildKit cache mount keeps Composer's archive cache on the runner between
-# builds (DOCKER_BUILDKIT=1 is set in .gitlab-ci.yml), so even a lock bump only
+# builds (GitHub Actions uses Buildx), so even a lock bump only
 # fetches what actually changed. COMPOSER_CACHE_DIR has to be pointed at the
 # mount explicitly — the default lives under HOME and would be baked into the
 # layer rather than cached outside it.
@@ -71,8 +71,8 @@ COPY --from=assets /app/public/build /app/public/build
 # and it needs no network, because vendor/ is already complete.
 RUN composer dump-autoload --no-dev --optimize --no-interaction
 
-# The application version, baked into the image. The git tag is the single
-# source of truth: CI passes it here as a build argument (.gitlab-ci.yml), and
+# The application version, baked into the image. The git tag or commit is the
+# source of truth: CI passes it as a build argument (.github/workflows/docker.yml), and
 # .dockerignore keeps .git out of the image, so an environment variable is the
 # only channel a running container has. The mounted /app/.env cannot override
 # it — Laravel's dotenv is immutable and leaves an already-set process

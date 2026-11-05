@@ -6,80 +6,97 @@ changing the server or the deploy user).
 
 ## Deploying your own instance
 
-Everything ships in the repo except PostgreSQL: the `Dockerfile` builds
-the production image (FrankenPHP + Octane, assets prebuilt), and
-`docker-compose.production.yml` runs the full stack — nginx-proxy +
-acme-companion (automatic Let's Encrypt), a one-shot migrator, web,
-scheduler, Horizon and Redis.
+GitHub Actions publishes `ghcr.io/vaslv/brevity` for `linux/amd64`.
+The server needs Docker with Compose v2, available ports 80/443 and DNS
+records pointing every served hostname at it. PHP, Composer, Node and
+GitLab are not required on the server.
 
-1. **Build and publish the image** (any registry, or build straight on
-   the server):
-
-   ```bash
-   docker build -t registry.example.com/you/brevity:1.0.0 .
-   docker push registry.example.com/you/brevity:1.0.0
-   ```
-
-2. **Prepare the server**: Docker with Compose v2, ports 80/443 free,
-   DNS records for every hostname you plan to serve pointing at it.
-   **PostgreSQL is not part of the base compose file** — bring a
-   managed database or run your own, reachable from the containers, OR
-   add the bundled one with the `docker-compose.db.yml` overlay (data
-   on a named volume; `DB_HOST=pgsql`). One instance per server: the
-   compose project name is pinned to `brevity` and container names are
-   fixed; pass `docker compose -p <name>` to run it alongside another
-   compose project.
-
-3. **Copy `docker-compose.production.yml` (plus
-   `docker-compose.db.yml` if used) and a production `.env`** (start
-   from **`.env.production.example`** — it carries the production
-   profile: Redis-backed queue/cache/session for Horizon, stderr
-   logging, debug off) to the server. The load-bearing keys:
-
-   - `APP_KEY` — generate with `php artisan key:generate --show`;
-   - `APP_URL=https://<technical-host>` — the host that serves the
-     admin panel, API and Horizon;
-   - `APP_HOST` — comma-separated list of **all** hostnames (the
-     technical host and every short-link domain); it feeds
-     `VIRTUAL_HOST`/`LETSENCRYPT_HOST` for the proxy, and
-     `domains:sync` seeds the Domain dictionary from it on deploy;
-   - `LETSENCRYPT_EMAIL` — certificate expiry notices;
-   - `DB_*` — your PostgreSQL; `REDIS_HOST=redis` (the compose
-     service);
-   - `HASHIDS_SALT` — independent of `APP_KEY`, immutable once links
-     exist (changing it breaks every issued short code);
-   - optional: SMTP credentials, `GEOIP_LICENSE_KEY` (MaxMind) for
-     click geolocation.
-
-4. **Start the stack** (`LARAVEL_IMAGE` may live in `.env` instead of
-   the export; add `-f docker-compose.db.yml` when using the bundled
-   PostgreSQL):
+1. Copy `docker-compose.production.yml`, `docker-compose.db.yml` and
+   `.env.production.example` into a dedicated directory. Run
+   `cp .env.production.example .env` and `chmod 600 .env`.
+   Preserve the existing `.env` and keys when upgrading an installation.
+2. Set `LARAVEL_IMAGE=ghcr.io/vaslv/brevity:latest` or a published release
+   tag / `sha-<full commit SHA>`. For a fork, change the owner/repository.
+   The image becomes available after the first successful **Docker image**
+   workflow run. To allow anonymous pulls, the owner must make the package
+   Public under GitHub → Packages → package → Package settings → Change visibility.
+   For private packages, use `docker login ghcr.io -u <github-user>` and
+   enter a classic PAT with `read:packages` at the password prompt.
+3. Generate two independent secrets for a new installation:
 
    ```bash
-   export LARAVEL_IMAGE=registry.example.com/you/brevity:1.0.0
-   docker compose --env-file .env -f docker-compose.production.yml up -d
+   docker run --rm --entrypoint php ghcr.io/vaslv/brevity:latest -r 'echo "base64:".base64_encode(random_bytes(32)).PHP_EOL;'
+   docker run --rm --entrypoint php ghcr.io/vaslv/brevity:latest -r 'echo bin2hex(random_bytes(16)).PHP_EOL;'
    ```
 
-   The `migrate` one-shot applies migrations and syncs domains; web,
-   scheduler and Horizon start only after it succeeds; the proxy
-   obtains certificates automatically.
+   Store the first as `APP_KEY`, the second as `HASHIDS_SALT`. Keep the salt
+   unchanged once links exist. Fill `APP_URL=https://<technical-host>`,
+   `APP_HOST` (all hostnames, comma-separated), `LETSENCRYPT_EMAIL`, SMTP
+   settings and `DB_*`. Keep `REDIS_HOST=redis`. GeoIP is optional
+   (`GEOIP_LICENSE_KEY`).
+4. Choose **one** PostgreSQL setup:
 
-5. **Create the first admin user**:
+   **Bundled database:** set `DB_HOST=pgsql`, `DB_PORT=5432`,
+   `DB_DATABASE`, `DB_USERNAME` and a nonempty `DB_PASSWORD`.
 
    ```bash
-   docker exec -it laravel-web php artisan make:filament-user
+   docker compose --env-file .env -f docker-compose.production.yml -f docker-compose.db.yml up -d --pull always --wait --wait-timeout 300
    ```
 
-   The admin panel lives at the **root of the technical host** — sign
-   in at `https://<technical-host>/login`. Every other configured
-   hostname serves short links only and returns 404 for the panel,
-   API and Horizon.
+   Data persists in `brevity_pgsql_data`; the database port is not exposed.
+   Editing `.env` does not change the password in an already initialized database.
 
-6. **CI/CD (optional)**: `.gitlab-ci.yml` is a reference pipeline for
-   any GitLab instance — build, push, deploy over SSH on tag push,
-   with a manual rollback job. Every infrastructure-specific value
-   comes from CI/CD variables; see the header comment in that file for
-   the full list.
+   **Existing external database:** configure reachable `DB_HOST`, `DB_PORT`,
+   `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` and, if required, `DB_SSLMODE`.
+   The database must exist and the user must have migration privileges.
+   Use `host.docker.internal` for PostgreSQL on the Docker host, not `localhost`.
+   No PostgreSQL container is created:
+
+   ```bash
+   docker compose --env-file .env -f docker-compose.production.yml up -d --pull always --wait --wait-timeout 300
+   ```
+
+   The scheduler applies migrations and syncs domains before starting the
+   schedule. Web and Horizon wait until it is healthy. The proxy obtains TLS certificates.
+5. Create the first administrator:
+
+   ```bash
+   docker compose --env-file .env -f docker-compose.production.yml exec web php artisan make:filament-user
+   ```
+
+   Sign in at `https://<technical-host>/login`. Other configured hosts serve
+   short links only, not the admin panel/API/Horizon.
+
+## GitHub builds and updates
+
+Workflow `.github/workflows/docker.yml`:
+
+- Pull requests validate both Compose configurations and build without publishing.
+- Pushes to `main` publish `latest` and `sha-<full SHA>` to GHCR.
+- Version tag pushes such as `1.2.3` publish only the release tag, leaving
+  `latest` and `sha-<full SHA>` unchanged.
+- `workflow_dispatch` allows manual builds; only `main` and tags publish images.
+
+The built-in `GITHUB_TOKEN` uses `packages: write`; no registry, SSH or
+database secrets are required. Organization policy must allow Actions to
+create packages. The workflow does not connect to the deployment server.
+The separate `CI` workflow continues running tests and static analysis.
+
+The panel version and `SENTRY_RELEASE` are baked into the image: the release
+Git tag or `sha-<full SHA>`. Do not set `APP_VERSION` in the server `.env`.
+`latest` points to a build from `main`; its name is not the application version.
+Release and SHA tags can be overwritten when a build is rerun. To pin an
+exact image, set `LARAVEL_IMAGE=ghcr.io/vaslv/brevity@sha256:<published-digest>`
+using the digest of the published image.
+
+To update, back up the database, change `LARAVEL_IMAGE` in the server `.env`
+and repeat the chosen `up` command above. This is a regular Compose update
+and may interrupt service. Do not use `down -v`, which deletes persistent
+volumes. Reverting the image does not undo database migrations.
+
+The old `.gitlab-ci.yml` is disabled with `workflow.rules: when: never` and
+retained as a historical example. The old deployment move runbook below
+describes the previous infrastructure, not the current setup process.
 
 ## Topology
 
@@ -92,43 +109,6 @@ scheduler, Horizon and Redis.
 - Application: Octane (FrankenPHP); queues — Horizon (`redis`), with a
   separate `callbacks` queue (isolated from click recording).
 
-## CI/CD (GitLab, deploy on tag)
-
-- The pipeline deploys over SSH as `DEPLOY_USER` (a CI variable;
-  production — `brevity`, not root). `.env` and the compose file are
-  copied into that user's home directory.
-- **`LARAVEL_IMAGE` is not stored in the server `.env`** — CI exports
-  it in the deploy command. Any manual `docker compose` command on the
-  server requires it explicitly (for `down`/`ps` a stub is fine:
-  `LARAVEL_IMAGE=dummy`). The real image:
-  `docker inspect laravel-web --format '{{.Config.Image}}'`.
-- Migrations run during deploy (gated `migrate --force`).
-- Post-deploy smoke test — `HEALTHCHECK_URL`
-  (`https://brevity.example.com/up`); manual `rollback` job with
-  `ROLLBACK_TAG`.
-- A pipeline for an already existing tag does not rerun after edits to
-  `.gitlab-ci.yml` — recreate the tag or run the pipeline manually.
-
-## Releases
-
-Semver **without** the `v` prefix; the git tag is the single source of
-truth. The interactive command is `composer release` (the
-`vaslv/composer-release` dev package) and it creates a tag only, no
-release commit; pushing the tag triggers the deploy.
-
-The build passes the tag into the image as the `APP_VERSION` build
-argument, so the image tag, the version the panel reports, the
-`org.opencontainers.image.version` label and `SENTRY_RELEASE` are all
-the same string. What a running container actually is:
-
-```bash
-docker inspect laravel-web --format '{{index .Config.Labels "org.opencontainers.image.version"}}'
-```
-
-`APP_VERSION` must **not** be set in the server `.env`: the value baked
-into the image always wins over the mounted file. Details —
-[05-development.md](./05-development.md).
-
 ## Manual operations on the server
 
 Before stopping containers, let Horizon finish processing the queue:
@@ -140,7 +120,7 @@ docker exec laravel-horizon php artisan horizon:terminate
 Health check:
 
 ```bash
-docker compose -p brevity ps
+docker compose --env-file .env -f docker-compose.production.yml ps
 curl -I https://brevity.example.com/up
 docker exec laravel-horizon php artisan horizon:status
 ```
@@ -148,8 +128,7 @@ docker exec laravel-horizon php artisan horizon:status
 ## Outstanding post-deploy steps (development stages 1–4)
 
 Run **once** on the first deploy of the branches with these stages;
-cross them off here afterwards. Migrations apply automatically (gated
-`migrate`).
+cross them off here afterwards. Migrations apply automatically (scheduler).
 
 **Deploy stages 1–3 in a quiet window.** Reasons (review 2026-07-12):
 
@@ -176,8 +155,8 @@ cross them off here afterwards. Migrations apply automatically (gated
 the migrations:
 
 ```bash
-docker exec laravel-web php artisan user-agents:detect-bots
-docker exec laravel-web php artisan clicks:rebuild-counters   # only AFTER detect-bots
+docker compose --env-file .env -f docker-compose.production.yml exec web php artisan user-agents:detect-bots
+docker compose --env-file .env -f docker-compose.production.yml exec web php artisan clicks:rebuild-counters   # only AFTER detect-bots
 ```
 
 The order is mandatory: `rebuild-counters` takes the bot flag from
@@ -238,7 +217,7 @@ After the migration:
 - Initial database download (after setting the key):
 
   ```bash
-  docker exec laravel-web php artisan geo:download-db
+  docker compose --env-file .env -f docker-compose.production.yml exec web php artisan geo:download-db
   ```
 
   The database lives on the shared `geoip_data` named volume (mounted
@@ -252,7 +231,7 @@ After the migration:
   **manual re-download over an already open** database the octane
   workers keep reading the old inode until a restart — if an
   immediate swap is needed, run
-  `docker exec laravel-web php artisan octane:reload` (geo data
+  `docker compose --env-file .env -f docker-compose.production.yml exec web php artisan octane:reload` (geo data
   changes slowly, usually not required).
 - Backfilling geolocation for historical clicks — **after** the
   database is installed (without it the command exits immediately
@@ -260,7 +239,7 @@ After the migration:
   the background in separate passes:
 
   ```bash
-  docker exec laravel-web php artisan geo:locate-clicks
+  docker compose --env-file .env -f docker-compose.production.yml exec web php artisan geo:locate-clicks
   ```
 
 **`trustProxies` — narrow it down to the real proxy.**
@@ -287,7 +266,7 @@ credentials. Convention: the keys (not the values) of `.env` /
 `.env.production.example` (the public template) follows whenever a new
 key is production-relevant.
 
-## Runbook: moving the deployment (new server / deploy user)
+## Historical GitLab runbook: moving the deployment (new server / deploy user)
 
 First performed 2026-06-10 (root → `brevity`). The downtime window
 between stopping and bringing back up is 2–5 minutes.
@@ -320,7 +299,7 @@ between stopping and bringing back up is 2–5 minutes.
    `DEPLOY_USER=<user>`, `HEALTHCHECK_URL=https://<host>/up`. The
    Protected flag — only if the deploy tags are protected.
 5. **Deploy**: create and push a new tag.
-6. **Verify**: `docker compose -p brevity ps` (up/healthy), `curl -I
+6. **Verify**: `docker compose --env-file .env -f docker-compose.production.yml ps` (up/healthy), `curl -I
    .../up` (200), `horizon:status` (running), `docker logs
    acme-companion --since 10m` (it does **not** issue new
    certificates — a sign that the certs volumes moved over correctly),
