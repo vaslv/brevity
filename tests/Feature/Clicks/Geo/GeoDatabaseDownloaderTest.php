@@ -125,10 +125,13 @@ class GeoDatabaseDownloaderTest extends TestCase
     {
         // Prod incident: PharData extraction of the real ~60 MB database peaks
         // above the 128M worker ceiling and fatals silently (display_errors=Off),
-        // skipping the finally that releases the download lock. Reproduce the
-        // 128M ceiling and assert the download lifts it before extracting.
+        // skipping the finally that releases the download lock. Reproduce a
+        // ceiling below the raised limit and assert the download lifts it before
+        // extracting. 256M stands in for the worker's 128M: PHP refuses to set a
+        // limit below current usage, and a full suite run is already past 128M
+        // by the time it reaches this test.
         $original = ini_get('memory_limit');
-        ini_set('memory_limit', '128M');
+        ini_set('memory_limit', '256M');
 
         Http::fake(['*' => Http::response($this->makeTarball())]);
 
