@@ -31,9 +31,13 @@ jobs:
           LARAVEL_IMAGE: brevity:check
           DB_PASSWORD: compose-validation-only
         run: |
-          docker compose --env-file .env.production.example -f docker-compose.production.yml config --quiet
-          docker compose --env-file .env.production.example -f docker-compose.production.yml -f docker-compose.db.yml config --quiet
-          docker compose --env-file .env.production.example -f docker-compose.production.yml -f docker-compose.host.yml config --quiet
+          for mode in public behind-host; do
+            docker compose --env-file .env.production.example --profile "$mode" -f docker-compose.production.yml config --quiet
+            docker compose --env-file .env.production.example --profile "$mode" -f docker-compose.production.yml -f docker-compose.db.yml config --quiet
+          done
+          export BREVITY_GENERATION=1 LARAVEL_IMAGE=brevity:check LARAVEL_ENV_FILE=/tmp/brevity.env DATABASE_NETWORK=database
+          docker compose --env-file /dev/null -f docker-compose.generation.yml config --quiet
+          docker compose --env-file /dev/null -f docker-compose.generation.yml -f docker-compose.host.yml config --quiet
 
       - name: Test host deployment script
         run: sh tests/deployment-host.sh

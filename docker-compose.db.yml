@@ -1,9 +1,6 @@
-# Optional overlay: run PostgreSQL inside the same compose stack instead of
-# bringing an external database. Data lives on the named pgsql_data volume.
-# Usage:
-#   docker compose --env-file .env \
-#     -f docker-compose.production.yml -f docker-compose.db.yml up -d
-# The app reaches it at DB_HOST=pgsql (the service name below).
+# Stable overlay for a bundled PostgreSQL (BREVITY_DATABASE=bundled): the database lives in
+# the stable project next to Redis and survives releases. Data is on the named volume
+# brevity_pgsql_data; generations reach it at DB_HOST=pgsql over the brevity_proxy network.
 services:
   pgsql:
     image: postgres:17-alpine
@@ -22,13 +19,6 @@ services:
       retries: 5
     networks:
       - proxy
-
-  # The scheduler applies migrations before becoming healthy.
-  # Web and Horizon already wait for the scheduler's health check.
-  scheduler:
-    depends_on:
-      pgsql:
-        condition: service_healthy
 
 volumes:
   pgsql_data:

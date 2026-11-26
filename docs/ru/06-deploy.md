@@ -1,202 +1,272 @@
 # Продакшен и деплой
 
-Факты об эксплуатации, которые нельзя вывести из кода, плюс ранбук
-переезда деплоя (выполнен 2026-06-10, пригодится при смене сервера или
-деплой-пользователя).
+Факты об эксплуатации, которые нельзя вывести из кода.
 
-## Сервер с собственными Nginx и PostgreSQL
+## Как проходит релиз
 
-Для совместного размещения Brevity и другого сервиса использовать
-`docker-compose.production.yml` вместе с `docker-compose.host.yml`.
-Оверлей отключает контейнерные Nginx/ACME, публикует web только на
-`127.0.0.1:8081` и подключает приложение к существующей Docker-сети
-`services_database`. Redis остаётся в отдельной сети проекта Brevity;
-PostgreSQL и второй сервис этим деплоем не управляются.
+В production-установке два вида Compose-проектов:
 
-На сервер скопировать в `/opt/brevity` оба Compose-файла и `deploy-host.sh`.
-Серверный `.env` хранить с правами `600`, используя `.env.production.example`
-как основу. Дополнительно настроить:
+- **Стабильный проект `brevity`** (`docker-compose.production.yml`): Caddy
+  приложения, Redis и при `BREVITY_DATABASE=bundled` — PostgreSQL
+  (`docker-compose.db.yml`). Они переживают релизы.
+- **Поколение `brevity-gen-<N>`** (`docker-compose.generation.yml`): web
+  (Octane на FrankenPHP), Horizon и планировщик одного digest образа.
+  Каждый релиз запускает новое поколение рядом с работающим.
 
-```dotenv
-DB_HOST=172.18.0.1
-DB_PORT=5432
-DATABASE_NETWORK=services_database
-BREVITY_HTTP_PORT=8081
+Caddy приложения — веб-сервер перед FrankenPHP и переключатель поколений.
+Его конфигурация — `Caddyfile` из репозитория; во время релиза меняется
+только `caddy/conf/upstream.caddy` — одна строка с активным поколением.
+
+`sh deploy-host.sh deploy <образ>` выполняет шаги под блокировкой хоста:
+
+1. Скачивает образ и определяет digest. Пока ничего не изменено.
+2. Готовит вход: проверяет каталоги и настройки, держит Redis (и
+   встроенный PostgreSQL) запущенными без пересоздания, запускает Caddy,
+   если он не работает, применяет изменённый `Caddyfile` через
+   `caddy validate` и `caddy reload`.
+3. Останавливает планировщик и Horizon активного поколения (Horizon
+   дорабатывает текущие задачи, до 360 с).
+4. Выполняет `migrate --force` и `domains:sync` из нового образа.
+5. Запускает новый web и ждёт его health-check.
+6. Проверяет новый web изнутри Caddy, записывает маршрут, выполняет
+   `caddy validate` и `caddy reload`.
+7. Проверяет `/up` и `/login` через Caddy: оба должны ответить 200 с
+   `X-Brevity-Generation: <N>`.
+8. Запускает новые планировщик и Horizon и ждёт их health-check.
+9. Записывает активное поколение в `.deploy/active.env` (прежняя запись
+   переходит в `.deploy/previous.env`).
+10. Ждёт, пока у Caddy не останется запросов к прежнему web (до 300 с), и
+    удаляет прежнее поколение.
+
+Сбой до шага 9 возвращает прежний маршрут, удаляет кандидата и снова
+запускает остановленные фоновые роли: прежнее поколение продолжает
+работать. **Миграции не откатываются**: они должны оставаться
+совместимыми с кодом работающего поколения (сначала добавлять колонки и
+таблицы, удалять — в следующем релизе).
+
+Следствия:
+
+- HTTP работает без простоя. Обработка очередей и задачи планировщика
+  стоят с шага 3 до шага 8 (в основном это время миграций); задачи ждут в
+  Redis.
+- Во время переключения одновременно работают два web: хост должен
+  вмещать оба.
+- Caddy 2.11 при reload может сбросить соединение, ждущее в очереди
+  прежнего listener; запросы в полёте завершаются.
+- Откат — деплой более раннего digest (`IMAGE` в `.deploy/previous.env`).
+  Схема БД более нового релиза остаётся.
+
+## Размещение на сервере
+
+В каталоге установки (`/opt/brevity` в production):
+
+| Путь | Содержимое |
+|---|---|
+| `docker-compose.*.yml`, `Caddyfile`, `deploy-host.sh` | Загружаются workflow деплоя при каждом релизе |
+| `.env` | Настройки и секреты установки, права `600` |
+| `.deploy/` | Блокировка, счётчик поколений, `active.env`, `previous.env`, маркер `database-ready` |
+| `caddy/conf/` | `Caddyfile` и `upstream.caddy`, их пишет `deploy-host.sh` (`0755` / `0644`) |
+| `caddy/data/`, `caddy/config/` | Данные Caddy: ACME-аккаунт и сертификаты. Владелец UID `65532`, права `0700`, создаёт root один раз. В режиме public `caddy/data` входит в бэкап |
+
+Объекты Docker: тома `brevity_redis_data`, `brevity_geoip_data` (база
+MaxMind, общая для всех поколений) и `brevity_pgsql_data` (встроенная БД);
+сети `brevity_proxy` (Redis, встроенный PostgreSQL) и `brevity-apps`
+(Caddy и web, закреплённая подсеть).
+
+## Настройки
+
+`deploy-host.sh` читает эти ключи из `.env` (шаблон —
+`.env.production.example`) и отказывает при несогласованных значениях до
+любых изменений:
+
+| Ключ | Значение |
+|---|---|
+| `CADDY_MODE` | `public`: Brevity — единственный сайт на хосте, Caddy занимает 80/443 и получает сертификаты для `APP_HOST`. `behind-host`: веб-сервер хоста завершает TLS и проксирует на `127.0.0.1:CADDY_PORT` |
+| `ACME_EMAIL`, `TLS_MAX` | Режим public: контакт ACME; верхняя версия TLS (по умолчанию `tls1.3`) |
+| `CADDY_PORT` | Режим behind-host: loopback-порт Caddy приложения (по умолчанию `8082`) |
+| `CADDY_TRUSTED_PROXY` | Режим behind-host: шлюз сети `brevity-apps`, с которого подключается веб-сервер хоста. Единственный источник, чьи `X-Forwarded-*` Caddy сохраняет |
+| `BREVITY_APPS_SUBNET` | Закреплённая подсеть `brevity-apps` (по умолчанию `172.31.250.0/24`) |
+| `TRUSTED_PROXIES` | Равен `BREVITY_APPS_SUBNET`: приложение доверяет только своему Caddy |
+| `BREVITY_DATABASE` | `external`, `bundled` или `host`; для `host` нужен ещё `DATABASE_NETWORK` — Docker-сеть PostgreSQL хоста |
+| `APP_HOST` | Все обслуживаемые имена, технический домен первым. Caddy обслуживает ровно их; неизвестное имя сертификат не получает |
+
+Версия в панели и `SENTRY_RELEASE` вшиты в образ. Не задавать
+`APP_VERSION` в `.env`.
+
+## Веб-сервер хоста (behind-host)
+
+Веб-сервер хоста завершает TLS для всех имён из `APP_HOST`, выставляет
+HSTS и редирект с HTTP на HTTPS и проксирует в Caddy приложения. Пример
+сайта для Caddy на хосте (`/etc/caddy/sites/brevity.caddy`):
+
+```caddyfile
+brevity.example.com, lnk1.example.com {
+	tls {
+		protocols tls1.2 tls1.3
+	}
+	header Strict-Transport-Security "max-age=31536000"
+	request_body {
+		max_size 20MB
+	}
+	reverse_proxy 127.0.0.1:8082 {
+		header_up X-Forwarded-Port 443
+		header_up -X-Forwarded-Prefix
+	}
+}
 ```
 
-Адрес базы должен совпадать с адресом PostgreSQL на шлюзе существующей сети.
-`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` задаются для отдельной базы
-Brevity. При переносе сохранить исходные `APP_KEY` и `HASHIDS_SALT`.
-Сначала восстановить и проверить бэкап, затем разрешить запуск:
+В глобальных опциях Caddy хоста остаются `protocols h1 h2` и
+`ocsp_stapling off`, а его `write_idle` больше 60-секундного таймаута
+чтения маршрута приложения. Применение — `caddy validate`, затем
+`systemctl reload caddy`. Caddy приложения публикует порт только на
+`127.0.0.1` и доверяет `X-Forwarded-*` только шлюзу `brevity-apps`.
 
-```bash
-cd /opt/brevity
-mkdir -p .deploy
-chmod 700 .deploy
-touch .deploy/database-ready
-```
+## Переход со схемы без поколений
 
-Этот файл создавать **только после готовности базы**. Пока его нет,
-скрипт и GitHub workflow отказываются запускать приложение и миграции.
-Восстановление бэкапа не входит в обычный деплой и не выполняется автоматически.
+До поколений production запускал web, Horizon и планировщик в проекте
+`brevity` (`laravel-horizon`, `laravel-scheduler`, web на
+`127.0.0.1:8081`), а веб-сервер хоста проксировал на порт 8081. Переход —
+один деплой и изменение на хосте; HTTP всё это время работает.
 
-Для Nginx использовать `nginx.brevity.conf.example`: заменить домены и,
-при необходимости, локальный порт. Подготовить TLS на сервере для всех
-обслуживаемых доменов, проверить `nginx -t`, затем активировать виртуальный
-хост. `APP_URL` должен совпадать с HTTPS-адресом технического домена;
-`APP_HOST` содержит технический домен и домены коротких ссылок.
-Для `TRUSTED_PROXIES` указать фактический адрес шлюза сети приложения,
-через который Nginx обращается к контейнеру. Пример Nginx перезаписывает
-переданные клиентом forwarding-заголовки.
+1. Сделать бэкап базы.
+2. В `.env` задать `CADDY_MODE=behind-host`, `CADDY_PORT=8082`,
+   `BREVITY_APPS_SUBNET=<свободная /24>`, `TRUSTED_PROXIES=<та же
+   подсеть>`, `CADDY_TRUSTED_PROXY=<первый адрес подсети>`,
+   `BREVITY_DATABASE=host` и `DATABASE_NETWORK=<сеть PostgreSQL хоста>`;
+   `DB_HOST` не менять. Старый web прочитал конфигурацию при старте, его
+   это не затрагивает.
+3. От root, один раз: `install -d -m 700 -o 65532 -g 65532
+   /opt/brevity/caddy/data /opt/brevity/caddy/config`.
+4. Запустить **Actions → Deploy production** с тегом релиза. Скрипт
+   остановит старые Horizon и планировщик (и снимет у них политику
+   перезапуска), выполнит миграции, запустит поколение 1 и Caddy на
+   `127.0.0.1:8082`. Старый web продолжает работать через порт 8081.
+5. На хосте перевести сайт Brevity на `127.0.0.1:8082`, затем
+   `caddy validate` и `systemctl reload caddy`. Проверить, что
+   `curl -sI https://<технический-домен>/up` возвращает
+   `X-Brevity-Generation`.
+6. `sh /opt/brevity/deploy-host.sh retire-legacy` удалит старые web,
+   Horizon и планировщик (и `nginx-proxy` / `acme-companion`, если есть).
+7. Удалить оставшиеся тома старой схемы (`brevity_nginx_*`) после
+   проверки.
 
-В GitHub создать Environment `production`:
-
-- Variables: `DEPLOY_HOST` (адрес сервера), `DEPLOY_USER` (SSH-пользователь).
-- Secrets: `DEPLOY_SSH_KEY` (отдельный приватный ключ деплоя),
-  `DEPLOY_KNOWN_HOSTS` (проверенная запись SSH host key сервера).
-- Публичную часть ключа добавить в `authorized_keys` выбранного пользователя.
-  Пользователь должен иметь доступ к `/opt/brevity` и Docker.
-
-Пароль базы, ключи приложения и `.env` остаются на сервере.
-После публикации workflow выбрать **Actions → Deploy production → Run workflow**,
-ветку `main` и существующий тег образа (`1.10.21`) либо `sha256:<digest>`.
-Деплой ручной; сборка нового образа сама по себе сервер не обновляет.
-
-Скрипт сначала скачивает образ и фиксирует его digest, затем останавливает
-web и воркеры, запускает миграции через планировщик и дожидается здоровья
-сервисов и ответа `/up`. Обновление сопровождается перерывом обслуживания.
-При неудаче после остановки приложения сервисы приложения остаются
-остановленными, миграции не откатываются автоматически.
-Последний успешный digest хранится в `.deploy/image.env`, предыдущий —
-в `.deploy/previous-image.env`. Проверить состояние после деплоя:
-
-```bash
-cd /opt/brevity
-docker compose --env-file .env --env-file .deploy/image.env \
-    -f docker-compose.production.yml -f docker-compose.host.yml ps
-```
+До шага 6 путь назад такой: вернуть сайт хоста на 8081, затем
+`docker update --restart=always laravel-horizon laravel-scheduler` и
+`docker start laravel-horizon laravel-scheduler`.
 
 ## Развёртывание своего инстанса
 
-GitHub Actions публикует готовый образ `ghcr.io/vaslv/brevity` для
-`linux/amd64`. На сервере не нужны PHP, Composer, Node или GitLab.
-Нужны Docker с Compose v2, свободные порты 80/443 и DNS-записи всех
-обслуживаемых доменов, направленные на сервер.
+GitHub Actions публикует `ghcr.io/vaslv/brevity` для `linux/amd64`. На
+сервере нужен Docker с Compose v2. В режиме public — ещё свободные порты
+80/443 и DNS-записи A всех обслуживаемых имён на сервер; AAAA-записи не
+публиковать, пока сети Docker только IPv4: иначе все IPv6-посетители
+приходят в Caddy с одного адреса моста.
 
-1. Скопировать из репозитория `docker-compose.production.yml`,
-   `docker-compose.db.yml` и `.env.production.example` в отдельную директорию.
-   Создать `.env`: `cp .env.production.example .env`, затем `chmod 600 .env`.
-   При обновлении существующей установки сохранить её `.env` и ключи.
-2. В `.env` оставить `LARAVEL_IMAGE=ghcr.io/vaslv/brevity:latest`
-   или указать опубликованный релизный тег / `sha-<полный SHA коммита>`.
-   Для форка заменить владельца и название репозитория.
-   Образ появится после первого успешного запуска workflow **Docker image**.
-   Для скачивания без авторизации владелец должен сделать пакет Public
-   в GitHub → Packages → пакет → Package settings → Change visibility.
-   Для приватного пакета выполнить `docker login ghcr.io -u <github-user>`
-   и ввести PAT (classic) с `read:packages` в запросе пароля.
-3. Сгенерировать **два отдельных значения** для новой установки:
+1. Скопировать `docker-compose.production.yml`,
+   `docker-compose.generation.yml`, `docker-compose.db.yml`,
+   `docker-compose.host.yml`, `Caddyfile`, `deploy-host.sh` и
+   `.env.production.example` из тега релиза в отдельный каталог.
+   Выполнить `cp .env.production.example .env` и `chmod 600 .env`. При
+   обновлении сохранить существующий `.env` и ключи.
+2. Образ доступен после первого успешного запуска workflow **Docker
+   image**. Для анонимного pull владелец делает пакет Public: GitHub →
+   Packages → пакет → Package settings → Change visibility. Для
+   приватного пакета — `docker login ghcr.io -u <github-user>` и classic
+   PAT с `read:packages` в ответ на запрос пароля.
+3. Для новой установки сгенерировать два независимых секрета:
 
    ```bash
-   docker run --rm --entrypoint php ghcr.io/vaslv/brevity:latest -r 'echo "base64:".base64_encode(random_bytes(32)).PHP_EOL;'
-   docker run --rm --entrypoint php ghcr.io/vaslv/brevity:latest -r 'echo bin2hex(random_bytes(16)).PHP_EOL;'
+   docker run --rm --entrypoint php ghcr.io/vaslv/brevity:<релиз> -r 'echo "base64:".base64_encode(random_bytes(32)).PHP_EOL;'
+   docker run --rm --entrypoint php ghcr.io/vaslv/brevity:<релиз> -r 'echo bin2hex(random_bytes(16)).PHP_EOL;'
    ```
 
-   Записать первое в `APP_KEY`, второе в `HASHIDS_SALT`. Не менять соль
-   после создания ссылок. Заполнить `APP_URL=https://<технический-хост>`,
-   `APP_HOST` (все домены через запятую), `LETSENCRYPT_EMAIL`, SMTP и `DB_*`.
-   Оставить `REDIS_HOST=redis`. Геолокация опциональна (`GEOIP_LICENSE_KEY`).
+   Первый — `APP_KEY`, второй — `HASHIDS_SALT`. Соль не менять после
+   появления ссылок. Заполнить `APP_URL=https://<технический-домен>`,
+   `APP_HOST` (все домены через запятую), настройки режима выше, SMTP и
+   `DB_*`. `REDIS_HOST=redis` оставить. GeoIP необязателен
+   (`GEOIP_LICENSE_KEY`).
 4. Выбрать **один** вариант PostgreSQL:
-
-   **База в Docker:** `DB_HOST=pgsql`, `DB_PORT=5432`, заполнить
-   `DB_DATABASE`, `DB_USERNAME`, непустой `DB_PASSWORD`.
-
-   ```bash
-   docker compose --env-file .env -f docker-compose.production.yml -f docker-compose.db.yml up -d --pull always --wait --wait-timeout 300
-   ```
-
-   Данные сохраняются в `brevity_pgsql_data`, порт базы наружу не открыт.
-   Изменение пароля в `.env` не меняет пароль в уже созданной базе.
-
-   **Существующая внешняя база:** указать доступные из контейнеров
-   `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` и,
-   при необходимости, `DB_SSLMODE`. База должна существовать, а пользователь
-   должен иметь права на миграции. Для PostgreSQL на Docker-хосте используйте
-   `host.docker.internal`, а не `localhost`. Отдельный PostgreSQL-контейнер
-   не создаётся:
+   - **Встроенный:** `BREVITY_DATABASE=bundled`, `DB_HOST=pgsql`,
+     `DB_PORT=5432`, `DB_DATABASE`, `DB_USERNAME` и непустой
+     `DB_PASSWORD`. Данные — в `brevity_pgsql_data`, порт наружу не
+     публикуется. Изменение `.env` не меняет пароль уже
+     инициализированной базы.
+   - **Внешний:** `BREVITY_DATABASE=external` и доступные `DB_HOST`,
+     `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` и при
+     необходимости `DB_SSLMODE`. База должна существовать, у пользователя
+     — права на миграции. `localhost` — это сам контейнер; для PostgreSQL
+     на Docker-хосте — `host.docker.internal`.
+5. Один раз подготовить каталоги и разрешить первую миграцию:
 
    ```bash
-   docker compose --env-file .env -f docker-compose.production.yml up -d --pull always --wait --wait-timeout 300
+   sudo install -d -m 700 -o 65532 -g 65532 caddy/data caddy/config
+   mkdir -p .deploy && chmod 700 .deploy && touch .deploy/database-ready
    ```
 
-   Планировщик применяет миграции и синхронизирует домены перед запуском
-   расписания. Web и Horizon ждут его готовности. Прокси получает TLS-сертификаты.
-5. Создать первого администратора:
+   `.deploy/database-ready` создавать **только когда база готова**; после
+   восстановления — сначала проверить бэкап. Без маркера скрипт не
+   запускает миграции.
+6. Выкатить и создать первого администратора:
 
    ```bash
-   docker compose --env-file .env -f docker-compose.production.yml exec web php artisan make:filament-user
+   sh deploy-host.sh deploy ghcr.io/vaslv/brevity:<релиз>
+   sh deploy-host.sh artisan make:filament-user
    ```
 
-   Вход: `https://<технический-хост>/login`. Остальные домены обслуживают
-   короткие ссылки, но не админку/API/Horizon.
+   Вход — `https://<технический-домен>/login`. Остальные домены
+   обслуживают только короткие ссылки, без панели, API и Horizon.
 
 ## Сборка в GitHub и обновления
 
 Workflow `.github/workflows/docker.yml`:
 
-- `pull_request`: проверка обеих Compose-конфигураций и сборка без публикации;
+- `pull_request`: проверка Compose-конфигураций, тест скрипта деплоя и
+  сборка без публикации;
 - push в `main`: публикация `latest` и `sha-<полный SHA>` в GHCR;
 - push версионного тега вида `1.2.3`: публикация только релизного тега,
   без изменения `latest` и `sha-<полный SHA>`;
 - `workflow_dispatch`: ручной запуск; публикация только для `main` и тегов.
 
 Используется штатный `GITHUB_TOKEN` с `packages: write`; дополнительные
-секреты registry, SSH или базы не нужны. Политика организации должна
-разрешать GitHub Actions создавать пакеты. Workflow не подключается к серверу.
-Отдельный workflow `CI` продолжает запускать тесты и статический анализ.
+секреты registry, SSH или базы не нужны, к серверу workflow не
+подключается. Отдельный workflow `CI` запускает тесты и статический анализ.
 
-Версия в панели и `SENTRY_RELEASE` вшиты в образ: релизный Git-тег либо
-`sha-<полный SHA>`. Не задавать `APP_VERSION` в серверном `.env`.
-`latest` указывает на сборку из `main`; его имя не является версией приложения.
-Релизные и SHA-теги могут перезаписываться при повторной сборке. Для фиксации
-конкретного образа задать `LARAVEL_IMAGE=ghcr.io/vaslv/brevity@sha256:<digest>`,
-подставив digest опубликованного образа.
+Релизные и SHA-теги могут перезаписываться при повторной сборке;
+`deploy-host.sh` при скачивании переводит тег в digest и запускает именно
+его.
 
-Для обновления сделать резервную копию базы, изменить `LARAVEL_IMAGE`
-в серверном `.env` и повторить выбранную команду `up` выше. Это обычное
-обновление Compose с возможным перерывом обслуживания. Не выполнять
-`down -v`: эта команда удалит постоянные тома. Возврат старого образа
-не отменяет миграции базы.
+Production обновляется через **Actions → Deploy production → Run
+workflow** на `main` с опубликованным тегом (`1.12.0`) или
+`sha256:<digest>`. Новый образ сам по себе сервер не обновляет. Workflow
+работает в GitHub Environment `production`:
 
-Старый `.gitlab-ci.yml` отключён через `workflow.rules: when: never` и
-сохранён как исторический пример. Раздел про перенос старого деплоя ниже
-описывает прежнюю инфраструктуру, а не текущую процедуру запуска.
+- Variables: `DEPLOY_HOST` (адрес сервера), `DEPLOY_USER` (SSH-пользователь).
+- Secrets: `DEPLOY_SSH_KEY` (отдельный приватный ключ деплоя),
+  `DEPLOY_KNOWN_HOSTS` (проверенная запись SSH host key сервера).
+- Публичный ключ — в `authorized_keys` этого пользователя, у него есть
+  доступ к `/opt/brevity` и Docker.
 
-## Топология
-
-- Прод: Docker Compose, проект **`brevity`** (имя зафиксировано в
-  `docker-compose.production.yml`, от директории запуска не зависит).
-- Именованные тома: `brevity_nginx_html`, `brevity_nginx_certs`,
-  `brevity_nginx_acme` (Let's Encrypt), `brevity_redis_data`. Потеря
-  томов certs/acme = перевыпуск сертификатов.
-- Приложение: Octane (FrankenPHP), очереди — Horizon (`redis`), отдельная
-  очередь `callbacks` (изоляция от записи кликов).
+Workflow загружает файлы деплоя выбранного коммита и запускает
+`deploy-host.sh deploy`. Свой инстанс запускает ту же команду вручную.
+Никогда не выполнять `docker compose down -v` для стабильного проекта:
+команда удалит постоянные тома.
 
 ## Ручные операции на сервере
 
-Перед остановкой контейнеров дать Horizon дообработать очередь:
-
 ```bash
-docker exec laravel-horizon php artisan horizon:terminate
+cd /opt/brevity
+sh deploy-host.sh status                  # активное поколение, маршрут, контейнеры
+sh deploy-host.sh artisan horizon:status  # php artisan в web активного поколения
+docker compose -p brevity-gen-<N> logs --tail 100 web horizon scheduler
+curl -sI https://brevity.example.com/up   # X-Brevity-Generation: <N>
 ```
 
-Проверка здоровья:
-
-```bash
-docker compose --env-file .env -f docker-compose.production.yml ps
-curl -I https://brevity.example.com/up
-docker exec laravel-horizon php artisan horizon:status
-```
+`sh deploy-host.sh entrance` применяет изменённое описание сервиса Caddy
+(новый digest образа, порты, лимиты): проверяет конфигурацию и пересоздаёт
+Caddy. Вход прерывается на несколько секунд — выполнять в окно.
+Изменённый `Caddyfile` окна не требует: каждый деплой применяет его через
+reload. После любого изменения `Caddyfile`, сервиса Caddy или доверия
+прокси запускать локально `sh tests/caddy-chain.sh`.
 
 ## Незакрытые пост-деплой шаги (этапы развития 1–4)
 
@@ -225,8 +295,8 @@ docker exec laravel-horizon php artisan horizon:status
 миграций:
 
 ```bash
-docker compose --env-file .env -f docker-compose.production.yml exec web php artisan user-agents:detect-bots
-docker compose --env-file .env -f docker-compose.production.yml exec web php artisan clicks:rebuild-counters   # только ПОСЛЕ detect-bots
+sh deploy-host.sh artisan user-agents:detect-bots
+sh deploy-host.sh artisan clicks:rebuild-counters   # только ПОСЛЕ detect-bots
 ```
 
 Порядок обязателен: `rebuild-counters` берёт флаг бота из `user_agents`,
@@ -277,35 +347,32 @@ EXCLUSIVE от `ADD COLUMN`. На таблице в миллионы строк 
 - Первичная загрузка базы (после установки ключа):
 
   ```bash
-  docker compose --env-file .env -f docker-compose.production.yml exec web php artisan geo:download-db
+  sh deploy-host.sh artisan geo:download-db
   ```
 
-  База лежит на общем named-volume `geoip_data` (смонтирован во все
-  laravel-контейнеры), поэтому загрузка из `laravel-web` сразу видна ридеру в
-  `laravel-horizon`, где происходят lookups, и переживает пересоздание
-  контейнеров при деплое. Дальше база держится свежей сама: клик асинхронно
+  База лежит на общем named-volume `geoip_data` (смонтирован в каждое
+  поколение), поэтому загрузка из web сразу видна ридеру в Horizon, где
+  происходят lookups, и переживает каждый релиз. Дальше база держится свежей сама: клик асинхронно
   пингует проверку возраста и при устаревании ставит фоновую перекачку (cron не
   нужен). Первичную установку воркер, ещё не открывавший ридер, подхватывает
   сразу; при **ручной перезакачке поверх уже открытой** базы octane-воркеры
   продолжат читать старый inode до рестарта — если нужна немедленная замена,
-  `docker compose --env-file .env -f docker-compose.production.yml exec web php artisan octane:reload` (гео-данные меняются
+  `sh deploy-host.sh artisan octane:reload` (гео-данные меняются
   медленно, обычно не требуется).
 - Догеолокация исторических кликов — **после** установки базы (без неё команда
   сразу выходит, ничего не сканируя). Идемпотентно и возобновляемо, можно гонять
   в фоне отдельными заходами:
 
   ```bash
-  docker compose --env-file .env -f docker-compose.production.yml exec web php artisan geo:locate-clicks
+  sh deploy-host.sh artisan geo:locate-clicks
   ```
 
-**`trustProxies` — сузить до реального прокси.** `bootstrap/app.php`
-сейчас доверяет всем приватным подсетям (`10/8`, `172.16/12`,
-`192.168/16`). За Docker-шлюзом `REMOTE_ADDR` каждого запроса — приватный
-адрес шлюза, так что `X-Forwarded-For` спуфится. Это влияет на
-IP-условия (`ip_address`), список `TRACKING_IGNORED_SOURCES` и per-IP
-лимитер резолва. Перед активным использованием IP-условий как гейта
-сузить список до CIDR реального фронт-прокси. До тех пор IP-условия —
-эвристика, не средство доступа.
+**`trustProxies`.** Приложение доверяет `X-Forwarded-*` из
+`TRUSTED_PROXIES`, а `deploy-host.sh` требует, чтобы он совпадал с
+подсетью `brevity-apps`, откуда запросы шлёт только свой Caddy. При пустой
+переменной код всё ещё доверяет всем приватным диапазонам (`10/8`,
+`172.16/12`, `192.168/16`); этот fallback уходит в пункте A1
+[07-plans.md](./07-plans.md).
 
 Контрактные изменения для интеграторов: метка `is_bot` в каждом колбеке
 (этап 1), пути перешли на `/api/v1` с RFC 7807-ошибками, legacy `/api/*`
@@ -318,53 +385,3 @@ deprecated (этап 2). Уведомить партнёров — см. [03-api
 Конвенция: ключи (не значения) `.env` / `.env.example` / `.env.production`
 держатся синхронными; `.env.production.example` (публичный шаблон)
 пополняется, когда новый ключ актуален для прода.
-
-## Исторический ранбук GitLab: переезд деплоя (новый сервер / деплой-пользователь)
-
-Впервые выполнен 2026-06-10 (root → `brevity`). Окно простоя между
-остановкой и подъёмом — 2–5 минут.
-
-1. **Пользователь** (на сервере, под root): `useradd -m -s /bin/bash
-   <user>`, `usermod -aG docker <user>`, скопировать
-   `authorized_keys` в `~/.ssh` (права 700/600). Проверка с локальной
-   машины: `ssh <user>@<host> docker ps` — без sudo.
-2. **Остановить старый проект, не трогая тома** (сначала
-   `horizon:terminate`, дождаться остановки контейнера):
-
-   ```bash
-   cd <старая-директория>
-   LARAVEL_IMAGE=dummy docker compose -p <старый-проект> --env-file .env \
-     -f docker-compose.production.yml down     # БЕЗ -v!
-   ```
-
-3. **Перенести тома под новый префикс** (переименования томов в Docker
-   нет — копируем содержимое):
-
-   ```bash
-   for v in nginx_html nginx_certs nginx_acme redis_data; do
-     docker volume create brevity_$v
-     docker run --rm -v <старый>_$v:/from:ro -v brevity_$v:/to alpine \
-       sh -c "cp -a /from/. /to/"
-   done
-   ```
-
-4. **CI-переменные GitLab** (Settings → CI/CD → Variables):
-   `DEPLOY_USER=<user>`, `HEALTHCHECK_URL=https://<host>/up`. Флаг
-   Protected — только если деплойные теги protected.
-5. **Задеплоить**: создать и запушить новый тег.
-6. **Проверка**: `docker compose --env-file .env -f docker-compose.production.yml ps` (up/healthy), `curl -I
-   .../up` (200), `horizon:status` (running), `docker logs
-   acme-companion --since 10m` (**не** выпускает новые сертификаты —
-   признак, что тома certs переехали), `docker exec redis redis-cli
-   dbsize` (не пустой).
-7. **Уборка** — только через день-два после успешной проверки: удалить
-   старые тома и `.env`/compose-файл из старой директории.
-
-**Откат**: пока старые тома целы — поднять старый проект из старой
-директории (`LARAVEL_IMAGE=<реальный-образ> docker compose -p
-<старый-проект> ... up -d`).
-
-**Грабли первого прогона**: `LARAVEL_IMAGE` обязателен даже для `down`
-(compose падает на валидации); строка с `: ` внутри plain-скаляра в
-`script:` `.gitlab-ci.yml` парсится как словарь — оборачивать в одинарные
-кавычки целиком; пайплайн по существующему тегу сам не перезапустится.

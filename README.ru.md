@@ -62,36 +62,32 @@ HTTP API, админка, разработка, деплой, планы и пр
 
 ## Деплой
 
-GitHub Actions собирает production-образ (FrankenPHP + Octane, готовые
-ассеты) и публикует его в `ghcr.io/vaslv/brevity`. Для первого запуска
-нужны Docker с Compose v2, сервер с открытыми портами 80/443 и домен,
-направленный на сервер. Образ из GitHub рассчитан на `linux/amd64`.
+GitHub Actions собирает production-образ (FrankenPHP + Octane, собранные
+ассеты) и публикует его в `ghcr.io/vaslv/brevity` для `linux/amd64`.
+На сервере нужен Docker с Compose v2. Собственный Caddy приложения стоит
+перед приложением и переключает трафик между релизами, поэтому
+обновления проходят без простоя. Он либо сам занимает порты 80/443 и
+получает сертификаты (`CADDY_MODE=public`), либо работает за веб-сервером
+хоста (`CADDY_MODE=behind-host`).
 
 ```bash
-cp .env.production.example .env
-# Заполнить APP_KEY, HASHIDS_SALT, APP_URL, APP_HOST,
-# LETSENCRYPT_EMAIL, DB_PASSWORD и SMTP-настройки.
-# LARAVEL_IMAGE уже указывает на ghcr.io/vaslv/brevity:latest.
-
-# Вариант 1: PostgreSQL в Docker, DB_HOST=pgsql
-docker compose --env-file .env \
-    -f docker-compose.production.yml -f docker-compose.db.yml up -d --pull always --wait --wait-timeout 300
-
-# Вариант 2: существующий PostgreSQL — заполнить DB_HOST/PORT/DATABASE/USERNAME/PASSWORD,
-# затем запустить только основной файл вместо команды выше:
-# docker compose --env-file .env -f docker-compose.production.yml up -d --pull always --wait --wait-timeout 300
-
-docker compose --env-file .env -f docker-compose.production.yml exec web php artisan make:filament-user
+# В каталоге установки, рядом с compose-файлами, Caddyfile и deploy-host.sh:
+cp .env.production.example .env && chmod 600 .env
+# Заполнить APP_KEY, HASHIDS_SALT, APP_URL, APP_HOST, ACME_EMAIL, DB_PASSWORD
+# и SMTP. BREVITY_DATABASE=bundled запускает PostgreSQL в Docker.
+sudo install -d -m 700 -o 65532 -g 65532 caddy/data caddy/config
+mkdir -p .deploy && touch .deploy/database-ready
+sh deploy-host.sh deploy ghcr.io/vaslv/brevity:<релиз>
+sh deploy-host.sh artisan make:filament-user
 ```
 
-Планировщик автоматически применяет миграции; web и Horizon ждут его
-готовности. Встроенная база хранит данные в отдельном Docker volume.
-Внешняя база должна быть доступна из контейнеров; `localhost` указывает
-на сам контейнер, а для базы на Docker-хосте используйте `host.docker.internal`.
-Админка: `https://<ваш-хост>/login`.
+Каждый релиз запускается новым поколением: миграции, затем новый web,
+затем Caddy переключается на него, а прежнее поколение дожидается
+завершения запросов и удаляется. Миграции должны оставаться совместимыми
+с работающим релизом. Панель — `https://<ваш-домен>/login`.
 
-Генерация ключей, доступ к GHCR и обновление приложения:
-[инструкция деплоя](./docs/ru/06-deploy.md). Старый GitLab CI отключён.
+Генерация ключей, доступ к GHCR, настройка веб-сервера хоста и
+обновления — в [руководстве по деплою](./docs/ru/06-deploy.md).
 
 ## Назначение
 

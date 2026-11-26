@@ -1,33 +1,22 @@
-# Overlay for a host-managed Nginx and PostgreSQL.
-# docker compose -f docker-compose.production.yml -f docker-compose.host.yml ...
+# Generation overlay for PostgreSQL managed on the host (BREVITY_DATABASE=host).
+# Every role joins the existing Docker network the host database listens on;
+# deploy-host.sh passes DATABASE_NETWORK from the server .env.
 services:
-  nginx-proxy:
-    profiles: [bundled-proxy]
-
-  acme-companion:
-    profiles: [bundled-proxy]
-
   web:
-    environment: !reset {}
-    ports:
-      - "127.0.0.1:${BREVITY_HTTP_PORT:-8081}:8000"
     networks:
-      - database
+      database: {}
 
   scheduler:
-    container_name: !reset null
     networks:
+      - backend
       - database
 
   horizon:
-    container_name: !reset null
     networks:
+      - backend
       - database
-
-  redis:
-    container_name: !reset null
 
 networks:
   database:
     external: true
-    name: ${DATABASE_NETWORK:-services_database}
+    name: ${DATABASE_NETWORK:?set DATABASE_NETWORK to the network of the host PostgreSQL}

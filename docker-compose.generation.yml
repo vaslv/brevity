@@ -1,0 +1,93 @@
+# One release generation: web, Horizon and the scheduler of one image. deploy-host.sh starts
+# each release as the project brevity-gen-<N> next to the previous one, switches the
+# application Caddy to it and only then retires the previous generation.
+#
+# Interpolation (set by deploy-host.sh, never by the application .env):
+#   BREVITY_GENERATION  generation number N
+#   LARAVEL_IMAGE       image by digest
+#   LARAVEL_ENV_FILE    absolute path of the server .env
+name: brevity-gen-${BREVITY_GENERATION:?}
+
+x-laravel: &laravel
+  image: ${LARAVEL_IMAGE:?}
+  restart: unless-stopped
+  labels:
+    app.brevity.generation: "${BREVITY_GENERATION:?}"
+  volumes:
+    - ${LARAVEL_ENV_FILE:?}:/app/.env:ro
+    # Shared by every generation: geo lookups run in Horizon, geo:download-db in web, and the
+    # redis lock in GeoDatabaseDownloader serializes writers across containers.
+    - geoip_data:/app/storage/app/geoip
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "5"
+  networks: [backend]
+  extra_hosts:
+    - 'host.docker.internal:host-gateway'
+
+services:
+  web:
+    <<: *laravel
+    # Longer than the read timeout of the Caddy route: requests in flight finish first.
+    stop_grace_period: 70s
+    networks:
+      backend: {}
+      apps:
+        aliases: ["brevity-web-${BREVITY_GENERATION:?}"]
+    healthcheck:
+      test: [ "CMD", "php", "-r", "@file_get_contents('http://127.0.0.1:8000/up'); exit(str_contains($$http_response_header[0] ?? '', ' 200 ') ? 0 : 1);" ]
+      interval: 3s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    command: >
+      sh -c "php artisan storage:link --force --no-interaction &&
+      php artisan optimize --no-interaction &&
+      exec php artisan octane:frankenphp --host=0.0.0.0 --port=8000 --no-interaction"
+
+  scheduler:
+    <<: *laravel
+    healthcheck:
+      test: [ "CMD-SHELL", "test -n \"$$(find /tmp/healthy -mmin -1 2>/dev/null)\"" ]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      # The scheduler heartbeat arrives once a minute.
+      start_period: 90s
+    command: >
+      sh -c "rm -f /tmp/healthy &&
+      php artisan optimize --except=routes,views --no-interaction &&
+      php artisan schedule:clear-cache --no-interaction &&
+      exec php artisan schedule:work --verbose --no-interaction"
+
+  horizon:
+    <<: *laravel
+    # On SIGTERM Horizon stops taking jobs and lets running ones finish. The geo download runs
+    # up to 300s (supervisor-geo grace 330s): a shorter grace would kill it mid-run and wedge
+    # the download lock.
+    stop_grace_period: 360s
+    healthcheck:
+      test: [ "CMD-SHELL", "php artisan horizon:status | grep running" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # exec makes Horizon PID 1, so it receives SIGTERM itself.
+    command: >
+      sh -c "php artisan optimize --except=routes,views --no-interaction &&
+      exec php artisan horizon --no-interaction"
+
+volumes:
+  geoip_data:
+    external: true
+    name: brevity_geoip_data
+
+networks:
+  # Redis and the bundled PostgreSQL of the stable project.
+  backend:
+    external: true
+    name: brevity_proxy
+  apps:
+    external: true
+    name: brevity-apps

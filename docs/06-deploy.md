@@ -1,199 +1,270 @@
 # Production and deployment
 
-Operational facts that cannot be derived from the code, plus the
-runbook for moving the deployment (performed 2026-06-10; useful when
-changing the server or the deploy user).
+Operational facts that cannot be derived from the code.
 
-## Host-managed Nginx and PostgreSQL
+## How a release works
 
-When sharing a server with another service, combine
-`docker-compose.production.yml` with `docker-compose.host.yml`.
-The overlay disables bundled Nginx/ACME, exposes web only on
-`127.0.0.1:8081`, and connects the application to the existing
-`services_database` Docker network. Redis stays on Brevity's own network.
-This deployment does not manage PostgreSQL or the other service.
+A production installation has two kinds of Compose projects:
 
-Copy both Compose files and `deploy-host.sh` to `/opt/brevity`.
-Keep the server `.env` at mode `600`, starting from `.env.production.example`.
-Configure the host deployment settings:
+- **Stable project `brevity`** (`docker-compose.production.yml`): the
+  application Caddy, Redis and, with `BREVITY_DATABASE=bundled`, PostgreSQL
+  (`docker-compose.db.yml`). They outlive releases.
+- **Generation `brevity-gen-<N>`** (`docker-compose.generation.yml`): web
+  (Octane on FrankenPHP), Horizon and the scheduler of one image digest.
+  Every release starts a new generation next to the live one.
 
-```dotenv
-DB_HOST=172.18.0.1
-DB_PORT=5432
-DATABASE_NETWORK=services_database
-BREVITY_HTTP_PORT=8081
+The application Caddy is the web server in front of FrankenPHP and the
+switch between generations. Its configuration is the `Caddyfile` of the
+repository; during a release only `caddy/conf/upstream.caddy` changes, a
+single line naming the live generation.
+
+`sh deploy-host.sh deploy <image>` runs these steps under a host lock:
+
+1. Pull the image and resolve its digest. Nothing has changed yet.
+2. Prepare the entrance: check the directories and settings, keep Redis
+   (and the bundled PostgreSQL) running without recreating them, start
+   Caddy if it is not running, apply a changed `Caddyfile` with
+   `caddy validate` and `caddy reload`.
+3. Stop the scheduler and Horizon of the live generation (Horizon finishes
+   its running jobs, up to 360 s).
+4. Run `migrate --force` and `domains:sync` from the new image.
+5. Start the new web role and wait for its health check.
+6. Check the new web from inside Caddy, write the route, `caddy validate`,
+   `caddy reload`.
+7. Probe `/up` and `/login` through Caddy: both must answer 200 with
+   `X-Brevity-Generation: <N>`.
+8. Start the new scheduler and Horizon and wait for their health checks.
+9. Record the live generation in `.deploy/active.env` (the previous record
+   moves to `.deploy/previous.env`).
+10. Wait until Caddy has no request in flight to the previous web (up to
+    300 s), then remove the previous generation.
+
+A failure before step 9 puts the previous route back, removes the
+candidate and restarts the stopped background roles: the previous
+generation keeps serving. **Migrations are not rolled back**: they must
+stay compatible with the code of the running generation (add columns and
+tables first, drop them in a later release).
+
+Consequences:
+
+- HTTP has no downtime. Queue processing and scheduled tasks pause from
+  step 3 to step 8 (mostly the migrations); jobs wait in Redis.
+- Two web roles run side by side during a switch: the host must fit both.
+- Caddy 2.11 may reset a connection that waits in the queue of the old
+  listener during a reload; requests in flight finish.
+- Rollback is a deploy of an earlier digest (`IMAGE` in
+  `.deploy/previous.env`). The schema of the newer release stays.
+
+## Server layout
+
+The install directory (`/opt/brevity` in production) holds:
+
+| Path | Content |
+|---|---|
+| `docker-compose.*.yml`, `Caddyfile`, `deploy-host.sh` | Uploaded by the deploy workflow on every release |
+| `.env` | Settings and secrets of the installation, mode `600` |
+| `.deploy/` | Lock, generation counter, `active.env`, `previous.env`, the `database-ready` marker |
+| `caddy/conf/` | `Caddyfile` and `upstream.caddy`, written by `deploy-host.sh` (`0755` / `0644`) |
+| `caddy/data/`, `caddy/config/` | Caddy data: ACME account and certificates. Owner UID `65532`, mode `0700`, created once by root. Back up `caddy/data` in the public mode |
+
+Docker objects: volumes `brevity_redis_data`, `brevity_geoip_data` (the
+MaxMind database shared by every generation) and `brevity_pgsql_data`
+(bundled database); networks `brevity_proxy` (Redis, bundled PostgreSQL)
+and `brevity-apps` (Caddy and the web role, fixed subnet).
+
+## Settings
+
+`deploy-host.sh` reads these keys from `.env` (template:
+`.env.production.example`) and refuses inconsistent values before it
+changes anything:
+
+| Key | Meaning |
+|---|---|
+| `CADDY_MODE` | `public`: Brevity is the only site on the host, Caddy holds 80/443 and obtains certificates for `APP_HOST`. `behind-host`: a web server on the host terminates TLS and proxies to `127.0.0.1:CADDY_PORT` |
+| `ACME_EMAIL`, `TLS_MAX` | Public mode: ACME contact; highest TLS version (`tls1.3` by default) |
+| `CADDY_PORT` | Behind-host mode: loopback port of the application Caddy (default `8082`) |
+| `CADDY_TRUSTED_PROXY` | Behind-host mode: gateway of `brevity-apps`, the address the host web server connects from. The only source whose `X-Forwarded-*` Caddy keeps |
+| `BREVITY_APPS_SUBNET` | Fixed subnet of `brevity-apps` (default `172.31.250.0/24`) |
+| `TRUSTED_PROXIES` | Must equal `BREVITY_APPS_SUBNET`: the application trusts only its own Caddy |
+| `BREVITY_DATABASE` | `external`, `bundled` or `host`; `host` also needs `DATABASE_NETWORK`, the Docker network of the host PostgreSQL |
+| `APP_HOST` | Every served name, technical host first. Caddy serves exactly these names; an unknown name gets no certificate |
+
+The version shown in the panel and `SENTRY_RELEASE` are baked into the
+image. Do not set `APP_VERSION` in `.env`.
+
+## Host web server (behind-host)
+
+The host web server terminates TLS for every `APP_HOST` name, sets HSTS
+and the HTTP-to-HTTPS redirect, and proxies to the application Caddy.
+Example site for a Caddy on the host (`/etc/caddy/sites/brevity.caddy`):
+
+```caddyfile
+brevity.example.com, lnk1.example.com {
+	tls {
+		protocols tls1.2 tls1.3
+	}
+	header Strict-Transport-Security "max-age=31536000"
+	request_body {
+		max_size 20MB
+	}
+	reverse_proxy 127.0.0.1:8082 {
+		header_up X-Forwarded-Port 443
+		header_up -X-Forwarded-Prefix
+	}
+}
 ```
 
-The database address must match PostgreSQL's listener on the existing
-network gateway. Set `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` for
-Brevity's own database. Preserve the original `APP_KEY` and `HASHIDS_SALT`
-when migrating an installation. Restore and verify the backup first, then
-allow startup:
+The global options of the host Caddy keep `protocols h1 h2` and
+`ocsp_stapling off`, and its `write_idle` stays above the 60 s read timeout
+of the application route. Apply with `caddy validate` and
+`systemctl reload caddy`. The application Caddy publishes its port on
+`127.0.0.1` only, and trusts `X-Forwarded-*` only from the gateway of
+`brevity-apps`.
 
-```bash
-cd /opt/brevity
-mkdir -p .deploy
-chmod 700 .deploy
-touch .deploy/database-ready
-```
+## Moving from the layout before generations
 
-Create this marker **only after the database is ready**. Without it, both
-the script and GitHub workflow refuse to start the application or migrations.
-Backup restoration is separate from routine deployment and is never automatic.
+Before generations, production ran web, Horizon and the scheduler in the
+project `brevity` (`laravel-horizon`, `laravel-scheduler`, web on
+`127.0.0.1:8081`), and the host web server proxied to port 8081. The move
+is one deploy plus a change on the host; HTTP keeps working throughout.
 
-Use `nginx.brevity.conf.example`, replacing the domains and local port as
-needed. Configure host TLS for every served domain, validate with `nginx -t`,
-then activate the virtual host. Set `APP_URL` to the technical domain's HTTPS
-URL and `APP_HOST` to all technical/short-link domains. Set `TRUSTED_PROXIES`
-to the actual application-network gateway address used by the host proxy.
-The Nginx example overwrites client-supplied forwarding headers.
+1. Back up the database.
+2. In `.env` set `CADDY_MODE=behind-host`, `CADDY_PORT=8082`,
+   `BREVITY_APPS_SUBNET=<free /24>`, `TRUSTED_PROXIES=<the same subnet>`,
+   `CADDY_TRUSTED_PROXY=<first address of the subnet>`,
+   `BREVITY_DATABASE=host` and `DATABASE_NETWORK=<network of the host
+   PostgreSQL>`; keep `DB_HOST`. The old web read its configuration at
+   start and is not affected.
+3. As root, once: `install -d -m 700 -o 65532 -g 65532
+   /opt/brevity/caddy/data /opt/brevity/caddy/config`.
+4. Run **Actions → Deploy production** with the release tag. The script
+   stops the old Horizon and scheduler (and disables their restart
+   policy), migrates, starts generation 1 and Caddy on `127.0.0.1:8082`.
+   The old web keeps serving through port 8081.
+5. On the host, point the Brevity site at `127.0.0.1:8082`, then
+   `caddy validate` and `systemctl reload caddy`. Check that
+   `curl -sI https://<technical-host>/up` returns `X-Brevity-Generation`.
+6. `sh /opt/brevity/deploy-host.sh retire-legacy` removes the old web,
+   Horizon and scheduler (and `nginx-proxy` / `acme-companion`, if any).
+7. Remove leftover volumes of the old layout (`brevity_nginx_*`) after a
+   check.
 
-Create a GitHub Environment named `production`:
-
-- Variables: `DEPLOY_HOST` (server address), `DEPLOY_USER` (SSH user).
-- Secrets: `DEPLOY_SSH_KEY` (dedicated deployment private key),
-  `DEPLOY_KNOWN_HOSTS` (verified server SSH host key entry).
-- Add the public key to the chosen user's `authorized_keys`.
-  The user needs access to `/opt/brevity` and Docker.
-
-Database credentials, application keys and `.env` stay on the server.
-After publishing the workflow, select **Actions → Deploy production → Run workflow**,
-branch `main`, and an existing image tag (`1.10.21`) or `sha256:<digest>`.
-Deployment is manual; publishing an image does not update the server.
-
-The script pulls and pins the image digest before stopping web/workers,
-then applies migrations through the scheduler and waits for healthy services
-and `/up`. Updates interrupt service. On failure after stopping the app,
-application services stay stopped; database migrations are not rolled back.
-The last successful digest is stored in `.deploy/image.env`, with the previous
-one in `.deploy/previous-image.env`. Inspect the deployment with:
-
-```bash
-cd /opt/brevity
-docker compose --env-file .env --env-file .deploy/image.env \
-    -f docker-compose.production.yml -f docker-compose.host.yml ps
-```
+Until step 6 the way back is: point the host site at 8081 again, then
+`docker update --restart=always laravel-horizon laravel-scheduler` and
+`docker start laravel-horizon laravel-scheduler`.
 
 ## Deploying your own instance
 
-GitHub Actions publishes `ghcr.io/vaslv/brevity` for `linux/amd64`.
-The server needs Docker with Compose v2, available ports 80/443 and DNS
-records pointing every served hostname at it. PHP, Composer, Node and
-GitLab are not required on the server.
+GitHub Actions publishes `ghcr.io/vaslv/brevity` for `linux/amd64`. The
+server needs Docker with Compose v2. In the public mode it also needs free
+ports 80/443 and DNS A records of every served name pointing at it; do not
+publish AAAA records while Docker networks are IPv4 only, or every IPv6
+visitor reaches Caddy from one bridge address.
 
-1. Copy `docker-compose.production.yml`, `docker-compose.db.yml` and
-   `.env.production.example` into a dedicated directory. Run
-   `cp .env.production.example .env` and `chmod 600 .env`.
-   Preserve the existing `.env` and keys when upgrading an installation.
-2. Set `LARAVEL_IMAGE=ghcr.io/vaslv/brevity:latest` or a published release
-   tag / `sha-<full commit SHA>`. For a fork, change the owner/repository.
-   The image becomes available after the first successful **Docker image**
-   workflow run. To allow anonymous pulls, the owner must make the package
-   Public under GitHub → Packages → package → Package settings → Change visibility.
-   For private packages, use `docker login ghcr.io -u <github-user>` and
-   enter a classic PAT with `read:packages` at the password prompt.
+1. Copy `docker-compose.production.yml`, `docker-compose.generation.yml`,
+   `docker-compose.db.yml`, `docker-compose.host.yml`, `Caddyfile`,
+   `deploy-host.sh` and `.env.production.example` of a release tag into a
+   dedicated directory. Run `cp .env.production.example .env` and
+   `chmod 600 .env`. Preserve the existing `.env` and keys when upgrading.
+2. The image becomes available after the first successful **Docker
+   image** workflow run. To allow anonymous pulls, the owner must make the
+   package Public under GitHub → Packages → package → Package settings →
+   Change visibility. For private packages, use
+   `docker login ghcr.io -u <github-user>` and enter a classic PAT with
+   `read:packages` at the password prompt.
 3. Generate two independent secrets for a new installation:
 
    ```bash
-   docker run --rm --entrypoint php ghcr.io/vaslv/brevity:latest -r 'echo "base64:".base64_encode(random_bytes(32)).PHP_EOL;'
-   docker run --rm --entrypoint php ghcr.io/vaslv/brevity:latest -r 'echo bin2hex(random_bytes(16)).PHP_EOL;'
+   docker run --rm --entrypoint php ghcr.io/vaslv/brevity:<release> -r 'echo "base64:".base64_encode(random_bytes(32)).PHP_EOL;'
+   docker run --rm --entrypoint php ghcr.io/vaslv/brevity:<release> -r 'echo bin2hex(random_bytes(16)).PHP_EOL;'
    ```
 
-   Store the first as `APP_KEY`, the second as `HASHIDS_SALT`. Keep the salt
-   unchanged once links exist. Fill `APP_URL=https://<technical-host>`,
-   `APP_HOST` (all hostnames, comma-separated), `LETSENCRYPT_EMAIL`, SMTP
-   settings and `DB_*`. Keep `REDIS_HOST=redis`. GeoIP is optional
+   Store the first as `APP_KEY`, the second as `HASHIDS_SALT`. Keep the
+   salt unchanged once links exist. Fill `APP_URL=https://<technical-host>`,
+   `APP_HOST` (all hostnames, comma-separated), the mode settings above,
+   SMTP and `DB_*`. Keep `REDIS_HOST=redis`. GeoIP is optional
    (`GEOIP_LICENSE_KEY`).
 4. Choose **one** PostgreSQL setup:
-
-   **Bundled database:** set `DB_HOST=pgsql`, `DB_PORT=5432`,
-   `DB_DATABASE`, `DB_USERNAME` and a nonempty `DB_PASSWORD`.
-
-   ```bash
-   docker compose --env-file .env -f docker-compose.production.yml -f docker-compose.db.yml up -d --pull always --wait --wait-timeout 300
-   ```
-
-   Data persists in `brevity_pgsql_data`; the database port is not exposed.
-   Editing `.env` does not change the password in an already initialized database.
-
-   **Existing external database:** configure reachable `DB_HOST`, `DB_PORT`,
-   `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` and, if required, `DB_SSLMODE`.
-   The database must exist and the user must have migration privileges.
-   Use `host.docker.internal` for PostgreSQL on the Docker host, not `localhost`.
-   No PostgreSQL container is created:
+   - **Bundled:** `BREVITY_DATABASE=bundled`, `DB_HOST=pgsql`,
+     `DB_PORT=5432`, `DB_DATABASE`, `DB_USERNAME` and a nonempty
+     `DB_PASSWORD`. Data persists in `brevity_pgsql_data`; the port is not
+     exposed. Editing `.env` does not change the password of an
+     initialized database.
+   - **External:** `BREVITY_DATABASE=external` and a reachable `DB_HOST`,
+     `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` and, if
+     required, `DB_SSLMODE`. The database must exist and the user must
+     have migration privileges. `localhost` is the container itself; use
+     `host.docker.internal` for PostgreSQL on the Docker host.
+5. Prepare the directories once and allow the first migration:
 
    ```bash
-   docker compose --env-file .env -f docker-compose.production.yml up -d --pull always --wait --wait-timeout 300
+   sudo install -d -m 700 -o 65532 -g 65532 caddy/data caddy/config
+   mkdir -p .deploy && chmod 700 .deploy && touch .deploy/database-ready
    ```
 
-   The scheduler applies migrations and syncs domains before starting the
-   schedule. Web and Horizon wait until it is healthy. The proxy obtains TLS certificates.
-5. Create the first administrator:
+   Create `.deploy/database-ready` **only when the database is ready**;
+   after a restore, verify the backup first. Without the marker the script
+   refuses to run migrations.
+6. Deploy and create the first administrator:
 
    ```bash
-   docker compose --env-file .env -f docker-compose.production.yml exec web php artisan make:filament-user
+   sh deploy-host.sh deploy ghcr.io/vaslv/brevity:<release>
+   sh deploy-host.sh artisan make:filament-user
    ```
 
-   Sign in at `https://<technical-host>/login`. Other configured hosts serve
-   short links only, not the admin panel/API/Horizon.
+   Sign in at `https://<technical-host>/login`. Other configured hosts
+   serve short links only, not the admin panel, API or Horizon.
 
 ## GitHub builds and updates
 
 Workflow `.github/workflows/docker.yml`:
 
-- Pull requests validate both Compose configurations and build without publishing.
-- Pushes to `main` publish `latest` and `sha-<full SHA>` to GHCR.
-- Version tag pushes such as `1.2.3` publish only the release tag, leaving
-  `latest` and `sha-<full SHA>` unchanged.
-- `workflow_dispatch` allows manual builds; only `main` and tags publish images.
+- `pull_request`: validation of the Compose configurations, the
+  deployment script test and a build without publishing;
+- push to `main`: publishes `latest` and `sha-<full SHA>` to GHCR;
+- push of a version tag like `1.2.3`: publishes only the release tag,
+  without changing `latest` and `sha-<full SHA>`;
+- `workflow_dispatch`: manual run; publishing only for `main` and tags.
 
-The built-in `GITHUB_TOKEN` uses `packages: write`; no registry, SSH or
-database secrets are required. Organization policy must allow Actions to
-create packages. The workflow does not connect to the deployment server.
-The separate `CI` workflow continues running tests and static analysis.
+It uses the built-in `GITHUB_TOKEN` with `packages: write`; no extra
+registry, SSH or database secrets are needed, and it never connects to
+the server. The separate `CI` workflow runs the tests and static analysis.
 
-The panel version and `SENTRY_RELEASE` are baked into the image: the release
-Git tag or `sha-<full SHA>`. Do not set `APP_VERSION` in the server `.env`.
-`latest` points to a build from `main`; its name is not the application version.
-Release and SHA tags can be overwritten when a build is rerun. To pin an
-exact image, set `LARAVEL_IMAGE=ghcr.io/vaslv/brevity@sha256:<published-digest>`
-using the digest of the published image.
+Release and SHA tags can be overwritten by a rebuild; `deploy-host.sh`
+resolves the tag to a digest at pull time and runs that digest.
 
-To update, back up the database, change `LARAVEL_IMAGE` in the server `.env`
-and repeat the chosen `up` command above. This is a regular Compose update
-and may interrupt service. Do not use `down -v`, which deletes persistent
-volumes. Reverting the image does not undo database migrations.
+Production is updated by **Actions → Deploy production → Run workflow**
+on `main` with a published tag (`1.12.0`) or `sha256:<digest>`. A new
+image alone does not update the server. The workflow runs in the GitHub
+Environment `production`:
 
-The old `.gitlab-ci.yml` is disabled with `workflow.rules: when: never` and
-retained as a historical example. The old deployment move runbook below
-describes the previous infrastructure, not the current setup process.
+- Variables: `DEPLOY_HOST` (server address), `DEPLOY_USER` (SSH user).
+- Secrets: `DEPLOY_SSH_KEY` (dedicated private deploy key),
+  `DEPLOY_KNOWN_HOSTS` (the verified SSH host key entry).
+- The public key is in `authorized_keys` of that user, who has access to
+  `/opt/brevity` and Docker.
 
-## Topology
-
-- Production: Docker Compose, project **`brevity`** (the name is pinned
-  in `docker-compose.production.yml` and does not depend on the
-  directory it is launched from).
-- Named volumes: `brevity_nginx_html`, `brevity_nginx_certs`,
-  `brevity_nginx_acme` (Let's Encrypt), `brevity_redis_data`. Losing
-  the certs/acme volumes = reissuing the certificates.
-- Application: Octane (FrankenPHP); queues — Horizon (`redis`), with a
-  separate `callbacks` queue (isolated from click recording).
+It uploads the deployment files of the selected commit and runs
+`deploy-host.sh deploy`. A self-hosted instance runs the same command by
+hand. Never run `docker compose down -v` on the stable project: it
+deletes the persistent volumes.
 
 ## Manual operations on the server
 
-Before stopping containers, let Horizon finish processing the queue:
-
 ```bash
-docker exec laravel-horizon php artisan horizon:terminate
+cd /opt/brevity
+sh deploy-host.sh status                  # live generation, route, containers
+sh deploy-host.sh artisan horizon:status  # php artisan in the live web role
+docker compose -p brevity-gen-<N> logs --tail 100 web horizon scheduler
+curl -sI https://brevity.example.com/up   # X-Brevity-Generation: <N>
 ```
 
-Health check:
-
-```bash
-docker compose --env-file .env -f docker-compose.production.yml ps
-curl -I https://brevity.example.com/up
-docker exec laravel-horizon php artisan horizon:status
-```
+`sh deploy-host.sh entrance` applies a changed Caddy service definition
+(a new Caddy image digest, ports, limits): it validates the configuration
+and recreates Caddy. This interrupts the entrance for a few seconds; run
+it in a window. A changed `Caddyfile` alone needs no window: every deploy
+applies it with a reload. After any change of the `Caddyfile`, the Caddy
+service or proxy trust, run `sh tests/caddy-chain.sh` locally.
 
 ## Outstanding post-deploy steps (development stages 1–4)
 
@@ -225,8 +296,8 @@ cross them off here afterwards. Migrations apply automatically (scheduler).
 the migrations:
 
 ```bash
-docker compose --env-file .env -f docker-compose.production.yml exec web php artisan user-agents:detect-bots
-docker compose --env-file .env -f docker-compose.production.yml exec web php artisan clicks:rebuild-counters   # only AFTER detect-bots
+sh deploy-host.sh artisan user-agents:detect-bots
+sh deploy-host.sh artisan clicks:rebuild-counters   # only AFTER detect-bots
 ```
 
 The order is mandatory: `rebuild-counters` takes the bot flag from
@@ -287,13 +358,13 @@ After the migration:
 - Initial database download (after setting the key):
 
   ```bash
-  docker compose --env-file .env -f docker-compose.production.yml exec web php artisan geo:download-db
+  sh deploy-host.sh artisan geo:download-db
   ```
 
   The database lives on the shared `geoip_data` named volume (mounted
-  into all laravel containers), so a download from `laravel-web` is
-  immediately visible to the reader in `laravel-horizon`, where the
-  lookups happen, and survives container re-creation on deploy. From
+  into every generation), so a download from the web role is
+  immediately visible to the reader in Horizon, where the lookups
+  happen, and survives every release. From
   then on the database keeps itself fresh: a click asynchronously
   pings the age check and, when the database is stale, schedules a
   background re-download (no cron needed). A worker that has not yet
@@ -301,7 +372,7 @@ After the migration:
   **manual re-download over an already open** database the octane
   workers keep reading the old inode until a restart — if an
   immediate swap is needed, run
-  `docker compose --env-file .env -f docker-compose.production.yml exec web php artisan octane:reload` (geo data
+  `sh deploy-host.sh artisan octane:reload` (geo data
   changes slowly, usually not required).
 - Backfilling geolocation for historical clicks — **after** the
   database is installed (without it the command exits immediately
@@ -309,18 +380,15 @@ After the migration:
   the background in separate passes:
 
   ```bash
-  docker compose --env-file .env -f docker-compose.production.yml exec web php artisan geo:locate-clicks
+  sh deploy-host.sh artisan geo:locate-clicks
   ```
 
-**`trustProxies` — narrow it down to the real proxy.**
-`bootstrap/app.php` currently trusts all private subnets (`10/8`,
-`172.16/12`, `192.168/16`). Behind the Docker gateway the
-`REMOTE_ADDR` of every request is the gateway's private address, so
-`X-Forwarded-For` can be spoofed. This affects IP conditions
-(`ip_address`), the `TRACKING_IGNORED_SOURCES` list, and the per-IP
-resolve rate limiter. Before actively using IP conditions as a gate,
-narrow the list down to the CIDR of the real front proxy. Until then,
-IP conditions are a heuristic, not an access control.
+**`trustProxies`.** The application trusts `X-Forwarded-*` from
+`TRUSTED_PROXIES`, and `deploy-host.sh` requires it to equal the
+`brevity-apps` subnet, where only its own Caddy sends requests from. The
+code still falls back to all private ranges (`10/8`, `172.16/12`,
+`192.168/16`) when the variable is empty; that fallback goes away with
+item A1 of [07-plans.md](./07-plans.md).
 
 Contract changes for integrators: the `is_bot` flag in every callback
 (stage 1); paths moved to `/api/v1` with RFC 7807 errors, legacy
@@ -335,54 +403,3 @@ credentials. Convention: the keys (not the values) of `.env` /
 `.env.example` / `.env.production` are kept in sync;
 `.env.production.example` (the public template) follows whenever a new
 key is production-relevant.
-
-## Historical GitLab runbook: moving the deployment (new server / deploy user)
-
-First performed 2026-06-10 (root → `brevity`). The downtime window
-between stopping and bringing back up is 2–5 minutes.
-
-1. **User** (on the server, as root): `useradd -m -s /bin/bash
-   <user>`, `usermod -aG docker <user>`, copy `authorized_keys` into
-   `~/.ssh` (permissions 700/600). Check from the local machine:
-   `ssh <user>@<host> docker ps` — without sudo.
-2. **Stop the old project without touching the volumes** (first
-   `horizon:terminate`, wait for the container to stop):
-
-   ```bash
-   cd <old-directory>
-   LARAVEL_IMAGE=dummy docker compose -p <old-project> --env-file .env \
-     -f docker-compose.production.yml down     # WITHOUT -v!
-   ```
-
-3. **Move the volumes to the new prefix** (Docker has no volume
-   rename — copy the contents):
-
-   ```bash
-   for v in nginx_html nginx_certs nginx_acme redis_data; do
-     docker volume create brevity_$v
-     docker run --rm -v <old>_$v:/from:ro -v brevity_$v:/to alpine \
-       sh -c "cp -a /from/. /to/"
-   done
-   ```
-
-4. **GitLab CI variables** (Settings → CI/CD → Variables):
-   `DEPLOY_USER=<user>`, `HEALTHCHECK_URL=https://<host>/up`. The
-   Protected flag — only if the deploy tags are protected.
-5. **Deploy**: create and push a new tag.
-6. **Verify**: `docker compose --env-file .env -f docker-compose.production.yml ps` (up/healthy), `curl -I
-   .../up` (200), `horizon:status` (running), `docker logs
-   acme-companion --since 10m` (it does **not** issue new
-   certificates — a sign that the certs volumes moved over correctly),
-   `docker exec redis redis-cli dbsize` (not empty).
-7. **Cleanup** — only a day or two after a successful check: delete
-   the old volumes and the `.env`/compose file from the old directory.
-
-**Rollback**: as long as the old volumes are intact — bring the old
-project up from the old directory (`LARAVEL_IMAGE=<real-image> docker
-compose -p <old-project> ... up -d`).
-
-**First-run pitfalls**: `LARAVEL_IMAGE` is required even for `down`
-(compose fails validation without it); a line containing `: ` inside a
-plain scalar in `script:` of `.gitlab-ci.yml` is parsed as a mapping —
-wrap the whole line in single quotes; a pipeline for an existing tag
-will not rerun on its own.

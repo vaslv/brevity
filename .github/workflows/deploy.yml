@@ -64,15 +64,16 @@ jobs:
             "$DEPLOY_USER@$DEPLOY_HOST" \
             "test -f '$DEPLOY_PATH/.env' && test -f '$DEPLOY_PATH/.deploy/database-ready'"
           scp -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 \
-            docker-compose.production.yml docker-compose.host.yml deploy-host.sh \
+            docker-compose.production.yml docker-compose.generation.yml docker-compose.host.yml \
+            docker-compose.db.yml Caddyfile deploy-host.sh \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
 
-      - name: Deploy and verify application
+      - name: Release a new generation without downtime
         run: |
           ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 \
             -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
             "$DEPLOY_USER@$DEPLOY_HOST" \
-            "sh '$DEPLOY_PATH/deploy-host.sh' '$DEPLOY_IMAGE'"
+            "sh '$DEPLOY_PATH/deploy-host.sh' deploy '$DEPLOY_IMAGE'"
 
       - name: Remove SSH credentials
         if: always()

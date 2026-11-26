@@ -54,10 +54,11 @@ boost.json
 phpunit.xml
 pint.json
 
-# CI / compose / container build files
-.gitlab-ci.yml
+# CI / compose / container build files and the host deployment
 .github
 docker-compose*.yml
+Caddyfile
+deploy-host.sh
 Dockerfile
 .dockerignore
 .editorconfig

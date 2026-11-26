@@ -61,35 +61,31 @@ deployment, plans and recorded decisions.
 ## Deployment
 
 GitHub Actions builds the production image (FrankenPHP + Octane, bundled
-assets) and publishes it to `ghcr.io/vaslv/brevity`. You need Docker with
-Compose v2, a server with ports 80/443 available, and DNS pointing to it.
-The published image targets `linux/amd64`.
+assets) and publishes it to `ghcr.io/vaslv/brevity` for `linux/amd64`.
+The server needs Docker with Compose v2. Brevity's own Caddy is the web
+server in front of the application and switches traffic between releases,
+so updates have no downtime. It either holds ports 80/443 and obtains
+certificates itself (`CADDY_MODE=public`), or sits behind a web server on
+the host (`CADDY_MODE=behind-host`).
 
 ```bash
-cp .env.production.example .env
-# Fill APP_KEY, HASHIDS_SALT, APP_URL, APP_HOST,
-# LETSENCRYPT_EMAIL, DB_PASSWORD and SMTP settings.
-# LARAVEL_IMAGE defaults to ghcr.io/vaslv/brevity:latest.
-
-# Option 1: PostgreSQL in Docker, DB_HOST=pgsql
-docker compose --env-file .env \
-    -f docker-compose.production.yml -f docker-compose.db.yml up -d --pull always --wait --wait-timeout 300
-
-# Option 2: existing PostgreSQL — fill DB_HOST/PORT/DATABASE/USERNAME/PASSWORD,
-# then use only the base file instead of the command above:
-# docker compose --env-file .env -f docker-compose.production.yml up -d --pull always --wait --wait-timeout 300
-
-docker compose --env-file .env -f docker-compose.production.yml exec web php artisan make:filament-user
+# In the install directory, with the compose files, Caddyfile and deploy-host.sh:
+cp .env.production.example .env && chmod 600 .env
+# Fill APP_KEY, HASHIDS_SALT, APP_URL, APP_HOST, ACME_EMAIL, DB_PASSWORD
+# and SMTP settings. BREVITY_DATABASE=bundled runs PostgreSQL in Docker.
+sudo install -d -m 700 -o 65532 -g 65532 caddy/data caddy/config
+mkdir -p .deploy && touch .deploy/database-ready
+sh deploy-host.sh deploy ghcr.io/vaslv/brevity:<release>
+sh deploy-host.sh artisan make:filament-user
 ```
 
-The scheduler applies migrations automatically; web and Horizon wait for
-it to become healthy. Bundled PostgreSQL persists data in a Docker volume.
-An external database must be reachable from containers; `localhost` means
-the container itself. Use `host.docker.internal` for a database on the
-Docker host. The admin panel is at `https://<your-host>/login`.
+Every release runs as a new generation: migrations, then the new web,
+then Caddy switches to it and the previous generation is drained and
+removed. Migrations must stay compatible with the running release. The
+admin panel is at `https://<your-host>/login`.
 
 See the [deployment guide](./docs/06-deploy.md) for key generation, GHCR
-access and updates. The old GitLab pipeline is disabled.
+access, the host web server setup and updates.
 
 ## Intended use
 

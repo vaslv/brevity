@@ -1,0 +1,96 @@
+# The application Caddy: the web server in front of FrankenPHP and the switch between
+# generations. deploy-host.sh installs this file as caddy/conf/Caddyfile and applies it with
+# `caddy validate` + `caddy reload`; during a release only caddy/conf/upstream.caddy changes.
+# Run `sh tests/caddy-chain.sh` after every edit.
+#
+# Mode (CADDY_MODE, set per Compose service):
+#   public       one application on the host: TLS for APP_HOST, ports 80/443, HSTS
+#   behind-host  a web server on the host terminates TLS and proxies to 127.0.0.1:CADDY_PORT
+{
+	admin localhost:2019
+	# Let's Encrypt dropped OCSP in 2025; a fallback CA may name unreachable responders.
+	ocsp_stapling off
+	# Longer than the read timeout of the generation route: requests in flight finish on the
+	# configuration that accepted them.
+	grace_period 90s
+	servers {
+		# HTTP/3 needs UDP 443, which is not published.
+		protocols h1 h2
+		# No proxy stands in front of the public mode: X-Forwarded-* from clients are replaced.
+		timeouts {
+			read_header 10s
+			# Longer than the read timeout of the generation route.
+			write_idle 2m
+		}
+	}
+	servers :8080 {
+		protocols h1 h2
+		# behind-host: only the host web server may pass X-Forwarded-*. It reaches the loopback
+		# port from the gateway of the brevity-apps network; deploy-host.sh refuses any other
+		# value. The default is never used: public has no :8080 listener.
+		trusted_proxies static {$CADDY_TRUSTED_PROXY:127.0.0.1/32}
+		trusted_proxies_strict
+		timeouts {
+			read_header 10s
+			write_idle 2m
+		}
+	}
+}
+
+# The active generation: `import brevity_generation <address> <generation>`.
+(brevity_generation) {
+	# Equal to PHP upload_max_filesize/post_max_size and the application's validation rules.
+	request_body {
+		max_size 20MB
+	}
+	# Defaults only: a header the application sends itself wins.
+	header ?X-Content-Type-Options nosniff
+	header ?X-Frame-Options SAMEORIGIN
+	header ?Referrer-Policy strict-origin-when-cross-origin
+	# Identity of the generation that answered: the release checks it after a switch.
+	header X-Brevity-Generation {args[1]}
+	encode zstd gzip
+	# Vite assets carry a content hash in the name.
+	@assets path /build/assets/*
+	header @assets ?Cache-Control "public, max-age=31536000, immutable"
+	reverse_proxy {args[0]} {
+		import brevity_forwarded
+		transport http {
+			dial_timeout 5s
+			# Above the PHP max_execution_time of a request.
+			read_timeout 60s
+			write_timeout 60s
+		}
+	}
+}
+
+# Before the first generation starts.
+(brevity_maintenance) {
+	respond 503
+}
+
+(brevity_forwarded) {
+	header_up X-Forwarded-Port 443
+	header_up -X-Forwarded-Prefix
+}
+
+(public) {
+	{$CADDY_SITE_ADDRESSES} {
+		tls {$ACME_EMAIL} {
+			protocols tls1.2 {$TLS_MAX:tls1.3}
+		}
+		header ?Strict-Transport-Security "max-age=31536000"
+		log
+		import /etc/caddy/conf/upstream.caddy
+	}
+}
+
+# The host web server sets HSTS and redirects HTTP to HTTPS.
+(behind-host) {
+	http://:8080 {
+		log
+		import /etc/caddy/conf/upstream.caddy
+	}
+}
+
+import {$CADDY_MODE}

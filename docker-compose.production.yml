@@ -1,140 +1,94 @@
-# Pin the compose project name so it does not depend on the deploy directory
-# (home dir of DEPLOY_USER). Named volumes are prefixed with this; changing it
-# orphans the old <project>_* volumes (certs, redis data) — migrate them first.
+# Stable part of a production installation: the application Caddy and Redis. They outlive
+# releases; web, Horizon and the scheduler run as generations (docker-compose.generation.yml).
+# Manage it only through deploy-host.sh, which derives CADDY_SITE_ADDRESSES and the profile.
+#
+# The project name is fixed so it does not depend on the deploy directory. Named volumes and
+# networks are prefixed with it; changing it orphans brevity_redis_data and brevity_geoip_data.
 name: brevity
 
-x-laravel: &laravel
-  image: "${LARAVEL_IMAGE:?set LARAVEL_IMAGE to the app image, e.g. ghcr.io/vaslv/brevity:latest}"
-  restart: always
+x-caddy: &caddy
+  image: caddy:2.11.9-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
+  user: "65532:65532"
+  command: ["caddy", "run", "--config", "/etc/caddy/conf/Caddyfile", "--adapter", "caddyfile"]
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  sysctls:
+    net.ipv4.ip_unprivileged_port_start: "0"
+  mem_limit: 256m
+  cpus: 1.0
+  tmpfs:
+    - /tmp
   volumes:
-    - ${LARAVEL_ENV_FILE:-./.env}:/app/.env:ro
-    # Shared, persistent home for the MaxMind geo database. storage/ otherwise
-    # lives in the image layer (recreated every deploy), and geo lookups run in
-    # laravel-horizon while geo:download-db is run in laravel-web — without a
-    # shared named volume the download would never reach the reader, and each
-    # deploy would wipe the database and re-hit MaxMind (download limits). The
-    # redis lock in GeoDatabaseDownloader already serializes writers across
-    # containers, so a single shared volume is safe.
-    - geoip_data:/app/storage/app/geoip
-  depends_on:
-    - redis
-  networks:
-    - proxy
-  extra_hosts:
-    - 'host.docker.internal:host-gateway'
+    # A directory, never single files: deploy-host.sh replaces Caddyfile and upstream.caddy
+    # atomically, and a file bind mount would keep showing the old inode.
+    - type: bind
+      source: ./caddy/conf
+      target: /etc/caddy/conf
+      read_only: true
+      bind:
+        create_host_path: false
+    # ACME account and certificates: back up and move them with the installation.
+    - type: bind
+      source: ./caddy/data
+      target: /data
+      bind:
+        create_host_path: false
+    - type: bind
+      source: ./caddy/config
+      target: /config
+      bind:
+        create_host_path: false
+  healthcheck:
+    # Healthy only with this Caddyfile loaded and routing to the upstream on disk.
+    test:
+      - CMD-SHELL
+      - >-
+        set -- $$(cat /etc/caddy/conf/upstream.caddy) &&
+        config=$$(curl -fsS --max-time 3 http://127.0.0.1:2019/config/apps/http/servers) &&
+        case "$$2" in
+        brevity_maintenance) printf %s "$$config" | grep -qF '"status_code":503' ;;
+        *) printf %s "$$config" | grep -qF "\"dial\":\"$$3\"" ;;
+        esac
+    interval: 10s
+    timeout: 5s
+    retries: 3
+    start_interval: 2s
+    start_period: 10s
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "5"
+  # Longer than grace_period in the Caddyfile.
+  stop_grace_period: 100s
+  restart: unless-stopped
+  networks: [apps]
 
 services:
-  nginx-proxy:
-    image: nginxproxy/nginx-proxy:alpine
-    container_name: nginx-proxy
-    restart: always
+  caddy-public:
+    <<: *caddy
+    profiles: [public]
+    environment:
+      CADDY_MODE: public
+      CADDY_SITE_ADDRESSES: ${CADDY_SITE_ADDRESSES:-}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      TLS_MAX: ${TLS_MAX:-tls1.3}
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - nginx_html:/usr/share/nginx/html
-      - nginx_certs:/etc/nginx/certs:ro
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-    labels:
-      com.github.nginx-proxy.nginx: "true"
+      - "80:80/tcp"
+      - "443:443/tcp"
+
+  caddy-behind-host:
+    <<: *caddy
+    profiles: [behind-host]
     environment:
-      # Disable TLS 1.3 (policy allows TLSv1.2 only); default would be Mozilla-Intermediate = TLSv1.2 + TLSv1.3
-      SSL_POLICY: AWS-TLS-1-2-2017-01
-      # Force HTTP/2 on and HTTP/3 (QUIC) off (these are the image defaults, set explicitly)
-      ENABLE_HTTP2: "true"
-      ENABLE_HTTP3: "false"
-    networks:
-      - proxy
+      CADDY_MODE: behind-host
+      CADDY_TRUSTED_PROXY: ${CADDY_TRUSTED_PROXY:-}
+    ports:
+      # Loopback only: the bridge address proves nothing about who connected.
+      - "127.0.0.1:${CADDY_PORT:-8082}:8080"
 
-  acme-companion:
-    image: nginxproxy/acme-companion
-    container_name: acme-companion
-    restart: always
-    volumes:
-      - nginx_html:/usr/share/nginx/html
-      - nginx_certs:/etc/nginx/certs:rw
-      - nginx_acme:/etc/acme.sh
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      - nginx-proxy
-    networks:
-      - proxy
-
-  web:
-    <<: *laravel
-    stop_grace_period: 60s
-    depends_on:
-      redis:
-        condition: service_started
-      scheduler:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD", "php", "-r", "@file_get_contents('http://127.0.0.1:8000/up'); exit(str_contains($$http_response_header[0] ?? '', ' 200 ') ? 0 : 1);" ]
-      interval: 3s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-    environment:
-      VIRTUAL_HOST: ${APP_HOST}
-      VIRTUAL_PORT: 8000
-      LETSENCRYPT_HOST: ${APP_HOST}
-      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
-    command: >
-      sh -c "php artisan storage:link --force --no-interaction &&
-      php artisan optimize --no-interaction &&
-      exec php artisan octane:frankenphp --no-interaction"
-
-  scheduler:
-    <<: *laravel
-    container_name: laravel-scheduler
-    depends_on:
-      redis:
-        condition: service_started
-    environment:
-      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-1}
-    healthcheck:
-      test: [ "CMD-SHELL", "test -n \"$$(find /tmp/healthy -mmin -1 2>/dev/null)\"" ]
-      interval: 5s
-      timeout: 10s
-      retries: 3
-      # Migrations run first; the scheduler heartbeat then arrives once a minute.
-      start_period: 120s
-    command: >
-      sh -c "rm -f /tmp/healthy &&
-      if [ \"$$RUN_MIGRATIONS\" = 1 ]; then
-      php artisan migrate --force --no-interaction &&
-      php artisan domains:sync --no-interaction || exit 1; fi &&
-      php artisan optimize --except=routes,views --no-interaction &&
-      php artisan schedule:clear-cache --no-interaction &&
-      exec php artisan schedule:work --verbose --no-interaction"
-
-  horizon:
-    <<: *laravel
-    container_name: laravel-horizon
-    # Give Horizon time to shut down gracefully on deploy: on SIGTERM it stops
-    # taking jobs and lets in-flight ones finish (up to their own timeout). The
-    # geo download runs up to 300s (supervisor-geo grace 330s), so Docker's
-    # default 10s stop grace would SIGKILL it mid-run — wedging the download
-    # lock. Above supervisor-geo's timeout so the graceful path always wins.
-    stop_grace_period: 360s
-    depends_on:
-      redis:
-        condition: service_started
-      scheduler:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD-SHELL", "php artisan horizon:status | grep running" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    # exec so `php artisan horizon` becomes PID 1 and receives SIGTERM directly;
-    # without it the sh wrapper eats the signal and Horizon never shuts down
-    # gracefully (the stop grace above would be moot).
-    command: >
-      sh -c "php artisan optimize --except=routes,views --no-interaction &&
-      exec php artisan horizon --no-interaction"
-
-
+  # Unchanged since before the Caddy entrance: a changed definition would recreate Redis.
   redis:
     image: redis:8.4.2-alpine
     container_name: redis
@@ -150,12 +104,17 @@ services:
       - proxy
 
 volumes:
-  nginx_html:
-  nginx_certs:
-  nginx_acme:
   redis_data:
-  geoip_data:
 
 networks:
+  # Generations reach Redis (and the bundled PostgreSQL) here as brevity_proxy.
   proxy:
     driver: bridge
+  # Caddy and the web role of every generation. The subnet is fixed: the application trusts
+  # X-Forwarded-* only from it (TRUSTED_PROXIES), and its gateway is the address the host web
+  # server connects from (CADDY_TRUSTED_PROXY).
+  apps:
+    name: brevity-apps
+    ipam:
+      config:
+        - subnet: ${BREVITY_APPS_SUBNET:-172.31.250.0/24}
