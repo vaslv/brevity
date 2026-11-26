@@ -616,27 +616,18 @@ healthcheck on every service; separate Redis instances for queues
 `config/database.php`. Verify with `docker compose config` for all
 three overlays and a local smoke run.
 
-**C3. Caddy as the only web server. [approval: deletes tracked
-files; needs a maintenance window]** Replace `nginx-proxy` +
-`acme-companion` (Docker socket access, unpinned images) and the host
-Nginx example.
-- A Caddy service in Compose, official image pinned by version and
-  digest, non-root, `cap_drop: [ALL]`, static Caddyfile in the
-  repository, two modes selected by Compose profile and env: `public`
-  (own TLS, 80/443) and `behind-host` (plain HTTP on
-  `127.0.0.1:<port>`).
-- TLS 1.2–1.3 with the upper bound from env, `protocols h1 h2`, HSTS,
-  `nosniff`, frame and referrer policies, `encode zstd gzip`,
-  immutable caching for hashed assets, one upload limit shared by
-  Caddy, PHP and validation, timeouts ordered along the chain.
-- A chain test script (client → Caddy → echo backend) built from the
-  production service definition: client IP reaches the app, forged
-  `X-Forwarded-*` are replaced, HTTP redirects to HTTPS, unknown SNI
-  gets no certificate.
-- After the production switch: delete `deploy.sh`, `deploy-proxy.sh`,
-  `nginx.brevity.conf.example`, the disabled `.gitlab-ci.yml`,
-  `tests/deployment-proxy.sh` and the tests that only cover them;
-  rewrite `docs/06-deploy.md`.
+**C3. Caddy and releases without downtime. Done in the repository
+(2026-11-26); the production switch is pending.** The application
+Caddy (`Caddyfile`, `public` and `behind-host` profiles in
+`docker-compose.production.yml`) is the web server in front of
+FrankenPHP and switches generations; `deploy-host.sh` releases every
+image as a generation `brevity-gen-<N>` (see `docs/06-deploy.md`,
+"How a release works"). Checks: `sh tests/deployment-host.sh` (CI),
+`sh tests/caddy-chain.sh` (manual, with mutations). The nginx-proxy
+path (`deploy.sh`, `deploy-proxy.sh`, the Nginx example, the disabled
+`.gitlab-ci.yml` and their tests) is removed. Left: the one-time move
+on the server, "Moving from the layout before generations" in
+`docs/06-deploy.md` [approval: server work].
 
 **C4. Server layout. [approval: server work]** Move the installation
 from `/opt/brevity` to `/srv/brevity` owned by a dedicated `brevity`
@@ -671,8 +662,8 @@ and 6 npm advisories found and fixed the same day). Versions come
 from the server — ask the owner.
 
 **D4. Remove finished material.** Sections 3–6 of this file once their
-deploy steps are confirmed done; "Outstanding post-deploy steps" and
-the historical GitLab runbook in `docs/06-deploy.md`. Long-lived
+deploy steps are confirmed done; "Outstanding post-deploy steps" in
+`docs/06-deploy.md` (the historical GitLab runbook is already gone). Long-lived
 decisions move to `08-decisions.md` first.
 
 **D5. Small fixes.** `docs/06-deploy.md`: the `DB_HOST=172.18.0.1`
