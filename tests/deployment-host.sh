@@ -45,24 +45,23 @@ case "$*" in
     *'.Subnet}}'*) echo '172.31.250.0/24' ;;
     *'.Gateway}}'*) echo '172.31.250.1' ;;
     'exec caddy-1 curl'*'/reverse_proxy/upstreams') echo '[{"address":"brevity-web-1:8000","num_requests":0,"fails":0}]' ;;
+    'exec caddy-1 curl'*'-D -'*)
+        # Answers like Caddy: with the generation named in the route file.
+        set -- $(cat "$TEST_APP/caddy/conf/upstream.caddy")
+        code=200
+        if test "${TEST_PROBE_FAIL:-0}" = 1; then code=502; fi
+        printf 'HTTP/1.1 %s\r\nx-brevity-generation: %s\r\n\r\n%s' "$code" "${4:-}" "$code" ;;
+    'port caddy-1 8080/tcp') echo "${TEST_PUBLISHED:-127.0.0.1:8082}" ;;
     'exec caddy-1 curl'*) fails "${TEST_HEALTH_FAIL:-0}" ;;
     'exec caddy-1 caddy reload'*) fails "${TEST_RELOAD_FAIL:-0}" ;;
 esac
 exit 0
 SH
+# The host may have no curl: the release must not call it.
 cat > "$directory/bin/curl" <<'SH'
 #!/bin/sh
-printf '%s\n' "curl $*" >> "$TEST_LOG"
-headers=
-while test $# -gt 0; do
-    if test "$1" = -D; then headers=$2; fi
-    shift
-done
-set -- $(cat "$TEST_APP/caddy/conf/upstream.caddy")
-code=200
-if test "${TEST_PROBE_FAIL:-0}" = 1; then code=502; fi
-printf 'HTTP/1.1 %s\r\nX-Brevity-Generation: %s\r\n\r\n' "$code" "${4:-}" > "$headers"
-printf '%s' "$code"
+printf '%s\n' "host curl $*" >> "$TEST_LOG"
+exit 1
 SH
 cat > "$directory/bin/flock" <<'SH'
 #!/bin/sh
@@ -119,6 +118,14 @@ test ! -s "$TEST_LOG"
 refuse_log 'docker stop'
 refuse_log 'compose'
 
+# Caddy published on another address than the loopback port is refused before anything stops.
+: > "$TEST_LOG"
+touch "$TEST_STATE/caddy"
+(export TEST_PUBLISHED=0.0.0.0:8082; expect_failure)
+grep -q 'Caddy must publish only 127.0.0.1:8082' "$directory/output"
+refuse_log 'docker stop'
+rm -f "$TEST_STATE/caddy"
+
 # First release on the layout before generations: its web keeps serving the host web server
 # until the operator moves it to Caddy; its background roles stop before the migration.
 : > "$TEST_LOG"
@@ -129,7 +136,8 @@ grep -q "^IMAGE=$TEST_DIGEST$" "$app/.deploy/active.env"
 expect_log 'docker update --restart=no legacy-scheduler'
 expect_log 'docker stop --time 360 legacy-horizon'
 expect_log 'up -d --no-recreate --wait --wait-timeout 300 redis'
-expect_log 'http://127.0.0.1:8082/login'
+expect_log 'http://127.0.0.1:8080/login'
+refuse_log 'host curl'
 refuse_log 'down'
 refuse_log 'legacy-web'
 grep -q 'retire-legacy' "$directory/output"

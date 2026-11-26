@@ -162,22 +162,23 @@ switch_route() {
     fi
 }
 
-# Requests through Caddy must be answered by the expected generation.
+# Requests through Caddy must be answered by the expected generation. They are sent from
+# inside the Caddy container: the host may have no curl, and the route is the same.
 probe() {
     expected=$1
     for path in /up /login; do
         attempt=0
         while :; do
             if test "$mode" = public; then
-                code=$(curl -sS --max-time 10 -o /dev/null -D .deploy/probe.headers -w '%{http_code}' \
-                    --resolve "$technical_host:443:127.0.0.1" "https://$technical_host$path" || true)
+                response=$(caddy_exec curl -sS --max-time 10 -o /dev/null -D - -w '%{http_code}' \
+                    --resolve "$technical_host:443:127.0.0.1" "https://$technical_host$path" 2>/dev/null || true)
             else
-                code=$(curl -sS --max-time 10 -o /dev/null -D .deploy/probe.headers -w '%{http_code}' \
-                    -H "Host: $technical_host" -H 'X-Forwarded-Proto: https' \
-                    "http://127.0.0.1:$caddy_port$path" || true)
+                response=$(caddy_exec curl -sS --max-time 10 -o /dev/null -D - -w '%{http_code}' \
+                    -H "Host: $technical_host" "http://127.0.0.1:8080$path" 2>/dev/null || true)
             fi
+            code=$(printf '%s' "$response" | tail -c 3)
             if test "$code" = 200 &&
-                tr -d '\r' < .deploy/probe.headers | grep -Fxiq "X-Brevity-Generation: $expected"; then
+                printf '%s\n' "$response" | tr -d '\r' | grep -Fxiq "X-Brevity-Generation: $expected"; then
                 break
             fi
             attempt=$((attempt + 1))
@@ -225,11 +226,14 @@ prepare_entrance() {
             chmod 644 "$conf/Caddyfile.next"
             caddy_exec caddy validate --config /etc/caddy/conf/Caddyfile.next --adapter caddyfile ||
                 { rm -f "$conf/Caddyfile.next"; fail 'The new Caddyfile is invalid; the running one is kept.'; }
-            cp "$conf/Caddyfile" .deploy/Caddyfile.previous
+            rm -f .deploy/Caddyfile.previous
+            if test -f "$conf/Caddyfile"; then cp "$conf/Caddyfile" .deploy/Caddyfile.previous; fi
             mv -f "$conf/Caddyfile.next" "$conf/Caddyfile"
             if ! caddy_exec caddy reload --config /etc/caddy/conf/Caddyfile --adapter caddyfile; then
-                cp .deploy/Caddyfile.previous "$conf/Caddyfile.next"
-                mv -f "$conf/Caddyfile.next" "$conf/Caddyfile"
+                if test -f .deploy/Caddyfile.previous; then
+                    cp .deploy/Caddyfile.previous "$conf/Caddyfile.next"
+                    mv -f "$conf/Caddyfile.next" "$conf/Caddyfile"
+                fi
                 fail 'Caddy rejected the new Caddyfile; the running configuration is kept.'
             fi
         fi
@@ -247,6 +251,9 @@ prepare_entrance() {
     test "$(docker network inspect --format '{{(index .IPAM.Config 0).Subnet}}' brevity-apps)" = "$subnet" ||
         fail "The brevity-apps network does not use BREVITY_APPS_SUBNET=$subnet."
     if test "$mode" = behind-host; then
+        published=$(docker port "$caddy" 8080/tcp)
+        test "$published" = "127.0.0.1:$caddy_port" ||
+            fail "Caddy must publish only 127.0.0.1:$caddy_port, got '$published'; run: sh deploy-host.sh entrance"
         gateway=$(docker network inspect --format '{{(index .IPAM.Config 0).Gateway}}' brevity-apps)
         test "$(env_value CADDY_TRUSTED_PROXY)" = "$gateway" ||
             fail "Set CADDY_TRUSTED_PROXY=$gateway (gateway of brevity-apps) and run: sh deploy-host.sh entrance"
