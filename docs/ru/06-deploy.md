@@ -124,12 +124,12 @@ brevity.example.com, lnk1.example.com {
 ## Переход со схемы без поколений
 
 До поколений production запускал web, Horizon и планировщик в проекте
-`brevity` (`laravel-horizon`, `laravel-scheduler`, web на
-`127.0.0.1:8081`), а веб-сервер хоста проксировал на порт 8081. Переход —
+`brevity` (`brevity-web-1` на `127.0.0.1:8081`, `brevity-horizon-1`,
+`brevity-scheduler-1`), а веб-сервер хоста проксировал на порт 8081. Переход —
 один деплой и изменение на хосте; HTTP всё это время работает.
 
 1. Сделать бэкап базы.
-2. В `.env` задать `CADDY_MODE=behind-host`, `CADDY_PORT=8082`,
+2. В `.env` задать `CADDY_MODE=behind-host`, `CADDY_PORT=<свободный loopback-порт>`,
    `BREVITY_APPS_SUBNET=<свободная /24>`, `TRUSTED_PROXIES=<та же
    подсеть>`, `CADDY_TRUSTED_PROXY=<первый адрес подсети>`,
    `BREVITY_DATABASE=host` и `DATABASE_NETWORK=<сеть PostgreSQL хоста>`;
@@ -140,9 +140,11 @@ brevity.example.com, lnk1.example.com {
 4. Запустить **Actions → Deploy production** с тегом релиза. Скрипт
    остановит старые Horizon и планировщик (и снимет у них политику
    перезапуска), выполнит миграции, запустит поколение 1 и Caddy на
-   `127.0.0.1:8082`. Старый web продолжает работать через порт 8081.
-5. На хосте перевести сайт Brevity на `127.0.0.1:8082`, затем
-   `caddy validate` и `systemctl reload caddy`. Проверить, что
+   `127.0.0.1:<CADDY_PORT>`. Старый web продолжает работать через порт 8081.
+5. На хосте перевести все сайты Brevity на `127.0.0.1:<CADDY_PORT>`,
+   затем `caddy validate` и `systemctl reload caddy` (с Nginx на хосте —
+   поменять только `proxy_pass`, заголовки forwarding оставить, затем
+   `nginx -t` и `systemctl reload nginx`). Проверить, что
    `curl -sI https://<технический-домен>/up` возвращает
    `X-Brevity-Generation`.
 6. `sh /opt/brevity/deploy-host.sh retire-legacy` удалит старые web,
@@ -151,8 +153,8 @@ brevity.example.com, lnk1.example.com {
    проверки.
 
 До шага 6 путь назад такой: вернуть сайт хоста на 8081, затем
-`docker update --restart=always laravel-horizon laravel-scheduler` и
-`docker start laravel-horizon laravel-scheduler`.
+`docker update --restart=always brevity-horizon-1 brevity-scheduler-1` и
+`docker start brevity-horizon-1 brevity-scheduler-1`.
 
 ## Развёртывание своего инстанса
 

@@ -124,12 +124,13 @@ of the application route. Apply with `caddy validate` and
 ## Moving from the layout before generations
 
 Before generations, production ran web, Horizon and the scheduler in the
-project `brevity` (`laravel-horizon`, `laravel-scheduler`, web on
-`127.0.0.1:8081`), and the host web server proxied to port 8081. The move
+project `brevity` (`brevity-web-1` on `127.0.0.1:8081`,
+`brevity-horizon-1`, `brevity-scheduler-1`), and the host web server
+proxied to port 8081. The move
 is one deploy plus a change on the host; HTTP keeps working throughout.
 
 1. Back up the database.
-2. In `.env` set `CADDY_MODE=behind-host`, `CADDY_PORT=8082`,
+2. In `.env` set `CADDY_MODE=behind-host`, `CADDY_PORT=<a free loopback port>`,
    `BREVITY_APPS_SUBNET=<free /24>`, `TRUSTED_PROXIES=<the same subnet>`,
    `CADDY_TRUSTED_PROXY=<first address of the subnet>`,
    `BREVITY_DATABASE=host` and `DATABASE_NETWORK=<network of the host
@@ -139,10 +140,13 @@ is one deploy plus a change on the host; HTTP keeps working throughout.
    /opt/brevity/caddy/data /opt/brevity/caddy/config`.
 4. Run **Actions → Deploy production** with the release tag. The script
    stops the old Horizon and scheduler (and disables their restart
-   policy), migrates, starts generation 1 and Caddy on `127.0.0.1:8082`.
+   policy), migrates, starts generation 1 and Caddy on
+   `127.0.0.1:<CADDY_PORT>`.
    The old web keeps serving through port 8081.
-5. On the host, point the Brevity site at `127.0.0.1:8082`, then
-   `caddy validate` and `systemctl reload caddy`. Check that
+5. On the host, point every Brevity site at `127.0.0.1:<CADDY_PORT>`,
+   then `caddy validate` and `systemctl reload caddy` (with Nginx on the
+   host: change only `proxy_pass`, keep its forwarding headers, then
+   `nginx -t` and `systemctl reload nginx`). Check that
    `curl -sI https://<technical-host>/up` returns `X-Brevity-Generation`.
 6. `sh /opt/brevity/deploy-host.sh retire-legacy` removes the old web,
    Horizon and scheduler (and `nginx-proxy` / `acme-companion`, if any).
@@ -150,8 +154,8 @@ is one deploy plus a change on the host; HTTP keeps working throughout.
    check.
 
 Until step 6 the way back is: point the host site at 8081 again, then
-`docker update --restart=always laravel-horizon laravel-scheduler` and
-`docker start laravel-horizon laravel-scheduler`.
+`docker update --restart=always brevity-horizon-1 brevity-scheduler-1` and
+`docker start brevity-horizon-1 brevity-scheduler-1`.
 
 ## Deploying your own instance
 
